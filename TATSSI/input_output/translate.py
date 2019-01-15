@@ -2,7 +2,7 @@
 import os
 import sys
 import gdal
-from helpers import Constants
+from .helpers import Constants
 
 import logging
 logging.basicConfig(level=logging.INFO)
