@@ -1,4 +1,5 @@
 
+import os
 import sys
 sys.path.append ("/home/glopez/Projects/TATSSI")
 from TATSSI.input_output.translate import translate
@@ -15,6 +16,7 @@ import ipywidgets as widgets
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 
+import gdal
 import pandas as pd
 
 class ImportExport():
@@ -40,6 +42,10 @@ class ImportExport():
                        extension = 'tif'):
         """
         Creates a Open File dialog window
+        :param dialog_type: Dialog type, can be open or save. Default is
+                            open
+        :param data_format: Data format to Open/Save. Default is GeoTiff
+        :parm extension: Data format extension. Default is tif
         :return: Full path of selected file
         """
         app = QtWidgets.QApplication([dir])
@@ -51,7 +57,7 @@ class ImportExport():
         elif dialog_type == 'save':
             # Get format and extension
             data_format = self.format.value.split('|')[0].strip()
-            extension = self.format.value.split('|')[1].strip()
+            extension = self.format.value.split('|')[2].strip()
 
             fname = QFileDialog.getSaveFileName(None,
                         "Save file as...", '.',
@@ -64,8 +70,11 @@ class ImportExport():
         """
         Based on user file selection displays the output file
         """
-        print(type(self.output))
         target_img = self.OpenFileDialog('save')
+        if len(target_img) == 0:
+            # If there's no output file, do nothing...
+            return None
+
         if self.output is None:
             # Show input file in a text file
             self.output = widgets.Text(
@@ -78,18 +87,43 @@ class ImportExport():
         else:
             self.output.value = target_img
 
-        if self.translate_button is None:
-            # Create translate button
-            self.translate_button = widgets.Button(
-                description = 'Translate',
-                tooltip = 'Translate input file into output file'
-            )
+        if self.translate_button is not None:
+            # Translate button already created...
+            return None
 
-            self.output_button.on_click(self.on_translate_button_clicked)
-            display(self.translate_button)
+        # Create translate button
+        self.translate_button = widgets.Button(
+            description = 'Translate',
+            tooltip = 'Translate input file into output file'
+        )
+
+        self.translate_button.on_click(self.on_translate_button_clicked)
+        display(self.translate_button)
 
     def on_translate_button_clicked(self, b):
-        pass
+        """
+        Performs the translation into an output file with selected format
+        """
+        # Checks...
+        try:
+            # Use GDAL exceptions
+            gdal.UseExceptions()
+            tmp_d = gdal.Open(self.input.value)
+        except Exception as e:
+            if err.err_level >= gdal.CE_Warning:
+                print('Cannot read input dataset: %s' % self.input.value)
+            # Stop using GDAL exceptions
+            gdal.DontUseExceptions()
+            raise RuntimeError(err.err_level, err.err_no, err.err_msg)
+
+        if not os.path.isdir(os.path.dirname(self.output.value)):
+            print("Output directory %s does not exist" % \
+                  os.path.dirname(self.output.value))
+
+        # Selected GDAL driver
+        driver = self.format.value.split('|')[1].strip()
+        # Translate
+        translate(self.input.value, self.output.value, driver)
 
     def on_input_button_clicked(self, b):
         """
@@ -100,6 +134,10 @@ class ImportExport():
         display(self.input_button)
 
         source_img = self.OpenFileDialog('open')
+        if len(source_img) == 0:
+            # If there's no source file, do nothing...
+            return None
+
         if translate.has_subdatasets(source_img):
             # Get SubDatasets
             sds = translate.get_subdatasets(source_img)
@@ -124,6 +162,8 @@ class ImportExport():
 
         # Display output formats
         formats = translate.get_formats()
+        # Sort by Long Name
+        formats.sort_values(by=['long_name'], inplace = True)
 
         options = list(formats.long_name + " | " + 
                        formats.short_name + " | " +
@@ -131,7 +171,7 @@ class ImportExport():
 
         self.format = widgets.Dropdown(
                           options = options,
-                          value = options[1],
+                          value = options[29], # Default GeoTiff format
                           description = "Output format",
                           tooltip = "Long name | GDAL driver | extension",
                           layout=Layout(width='100%'))
@@ -159,16 +199,21 @@ class ImportExport():
 
         if self.output_button is not None:
             self.output_button.close()
+            self.output_button = None
 
         if self.translate_button is not None:
             self.translate_button.close()
+            self.translate_button = None
 
         if self.input is not None:
             self.input.close()
+            self.input = None
 
         if self.output is not None:
             self.output.close()
+            self.output = None
 
         if self.format is not None:
             self.format.close()
+            self.format = None
 

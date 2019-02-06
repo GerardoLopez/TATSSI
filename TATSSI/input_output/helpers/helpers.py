@@ -69,7 +69,6 @@ class Constants:
                                     'long_name' : LongName,
                                     'extension' : Extension})
 
-
         df = pd.DataFrame(data = driver_dict)
 
         return df

@@ -1,17 +1,6 @@
 <PAMDataset>
-  <Metadata domain="IMAGE_STRUCTURE">
-    <MDI key="INTERLEAVE">BAND</MDI>
-  </Metadata>
-  <Metadata domain="ENVI">
-    <MDI key="bands">1</MDI>
-    <MDI key="byte_order">0</MDI>
-    <MDI key="data_type">2</MDI>
-    <MDI key="file_type">ENVI Standard</MDI>
-    <MDI key="header_offset">0</MDI>
-    <MDI key="interleave">bsq</MDI>
-    <MDI key="lines">1200</MDI>
-    <MDI key="samples">1200</MDI>
-  </Metadata>
+  <SRS>PROJCS["unnamed",GEOGCS["Unknown datum based upon the custom spheroid",DATUM["Not specified (based on custom spheroid)",SPHEROID["Custom spheroid",6371007.181,0]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],PROJECTION["Sinusoidal"],PARAMETER["longitude_of_center",0],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["Meter",1]]</SRS>
+  <GeoTransform> -1.0007554676999999e+07,  9.2662543305583301e+02,  0.0000000000000000e+00,  2.2239010393329998e+06,  0.0000000000000000e+00, -9.2662543305499980e+02</GeoTransform>
   <Metadata>
     <MDI key="add_offset">0</MDI>
     <MDI key="add_offset_err">0</MDI>
@@ -78,7 +67,7 @@
     <MDI key="LOCALGRANULEID">MOD13A2.A2018145.h09v07.006.2018162000027.hdf</MDI>
     <MDI key="LOCALVERSIONID">6.0.0</MDI>
     <MDI key="LONGNAME">MODIS/Terra Vegetation Indices 16-Day L3 Global 1km SIN Grid</MDI>
-    <MDI key="long_name">1 km 16 days EVI</MDI>
+    <MDI key="long_name">1 km 16 days NDVI</MDI>
     <MDI key="NDVI1KM16DAYQCLASSPERCENTAGE">14</MDI>
     <MDI key="NORTHBOUNDINGCOORDINATE">19.9999999982039</MDI>
     <MDI key="NUMBEROFDAYS">16</MDI>
@@ -191,7 +180,7 @@
     <MDI key="SOUTHBOUNDINGCOORDINATE">9.99999999910196</MDI>
     <MDI key="SPSOPARAMETERS">2749, 4334, 2749a, 4334a</MDI>
     <MDI key="TileID">51009007</MDI>
-    <MDI key="units">EVI</MDI>
+    <MDI key="units">NDVI</MDI>
     <MDI key="valid_range">-2000, 10000</MDI>
     <MDI key="VERSIONID">6</MDI>
     <MDI key="VERTICALTILENUMBER">07</MDI>
@@ -199,8 +188,9 @@
     <MDI key="_FillValue">-3000</MDI>
   </Metadata>
   <PAMRasterBand band="1">
-    <Description>1 km 16 days EVI</Description>
+    <Description>1 km 16 days NDVI</Description>
     <NoDataValue>-3.00000000000000E+03</NoDataValue>
+    <UnitType>NDVI</UnitType>
     <Scale>10000</Scale>
   </PAMRasterBand>
 </PAMDataset>
