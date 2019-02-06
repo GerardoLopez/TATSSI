@@ -2,7 +2,8 @@
 import os
 import sys
 sys.path.append ("/home/glopez/Projects/TATSSI")
-from TATSSI.input_output.translate import translate
+from TATSSI.input_output.translate import Translate
+from TATSSI.input_output.utils import *
 
 from IPython.display import clear_output
 from IPython.display import display
@@ -123,7 +124,7 @@ class ImportExport():
         # Selected GDAL driver
         driver = self.format.value.split('|')[1].strip()
         # Translate
-        translate(self.input.value, self.output.value, driver)
+        Translate(self.input.value, self.output.value, driver)
 
     def on_input_button_clicked(self, b):
         """
@@ -138,9 +139,9 @@ class ImportExport():
             # If there's no source file, do nothing...
             return None
 
-        if translate.has_subdatasets(source_img):
+        if has_subdatasets(source_img):
             # Get SubDatasets
-            sds = translate.get_subdatasets(source_img)
+            sds = get_subdatasets(source_img)
             sds_df = pd.DataFrame(list(sds))
             sds_df.columns = ['SubDataset', 'Resolution']
 
@@ -161,7 +162,7 @@ class ImportExport():
         display(self.input)
 
         # Display output formats
-        formats = translate.get_formats()
+        formats = get_formats()
         # Sort by Long Name
         formats.sort_values(by=['long_name'], inplace = True)
 
