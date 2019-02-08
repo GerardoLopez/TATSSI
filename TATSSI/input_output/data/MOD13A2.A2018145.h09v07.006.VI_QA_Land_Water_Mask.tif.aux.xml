@@ -1,0 +1,57 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.4955357142857143</HistMin>
+        <HistMax>111.4955357142857</HistMax>
+        <BucketCount>112</BucketCount>
+        <IncludeOutOfRange>0</IncludeOutOfRange>
+        <Approximate>1</Approximate>
+        <HistCounts>19933|185793|0|0|0|0|0|0|0|0|16409|2985|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|6144|61856</HistCounts>
+      </HistItem>
+    </Histograms>
+    <GDALRasterAttributeTable>
+      <FieldDefn index="0">
+        <Name>Value</Name>
+        <Type>0</Type>
+        <Usage>5</Usage>
+      </FieldDefn>
+      <FieldDefn index="1">
+        <Name>Descr</Name>
+        <Type>2</Type>
+        <Usage>2</Usage>
+      </FieldDefn>
+      <Row index="0">
+        <F>1</F>
+        <F>Land (Nothing else but land)</F>
+      </Row>
+      <Row index="1">
+        <F>0</F>
+        <F>Shallow ocean</F>
+      </Row>
+      <Row index="2">
+        <F>10</F>
+        <F>Ocean coastlines and lake shorelines</F>
+      </Row>
+      <Row index="3">
+        <F>111</F>
+        <F>Deep ocean</F>
+      </Row>
+      <Row index="4">
+        <F>110</F>
+        <F>Moderate or continental ocean</F>
+      </Row>
+      <Row index="5">
+        <F>11</F>
+        <F>Shallow inland water</F>
+      </Row>
+    </GDALRasterAttributeTable>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">111</MDI>
+      <MDI key="STATISTICS_MEAN">27.03525518559</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">46.154494424683</MDI>
+      <MDI key="_FillValue">65535</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

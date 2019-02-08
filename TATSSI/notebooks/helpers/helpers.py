@@ -110,7 +110,7 @@ class ImportExport():
             # Use GDAL exceptions
             gdal.UseExceptions()
             tmp_d = gdal.Open(self.input.value)
-        except Exception as e:
+        except Exception as err:
             if err.err_level >= gdal.CE_Warning:
                 print('Cannot read input dataset: %s' % self.input.value)
             # Stop using GDAL exceptions

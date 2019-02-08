@@ -1,7 +1,12 @@
 
+import os
 import gdal
+from gdal import gdalconst
 import requests
 import numpy as np
+
+# Import TATSSI utils
+from TATSSI.input_output.utils import save_to_file
 
 SERVICES_URL = "https://lpdaacsvc.cr.usgs.gov/services/appeears-api/"
 
@@ -104,44 +109,59 @@ def qualityDecodeArray(product, qualityLayer, intValue,
     Function to decode an input array
     """
     qualityDecodeInt_Vect = np.vectorize(qualityDecodeInt)
-    qualityDecodeArr = qualityDecodeInt_Vect(product, qualityLayer,
-                                             intValue, bitField,
-                                             qualityCache)
+    # Create output QA decoded array
+    qualityDecodeArr = np.zeros_like(intValue)
+
+    # Get unique values in QA layer
+    unique_values = np.unique(intValue)
+    for value in unique_values:
+        decoded_value = qualityDecodeInt_Vect(product, qualityLayer,
+                                              value, bitField,
+                                              qualityCache)
+
+        qualityDecodeArr[intValue == value] = decoded_value
 
     return qualityDecodeArr
 
-def qualityDecoder(inRst, outWorkspace, outFileName, product,
-                   qualityLayer, bitField):
+def createAttributeTable(bitField, qualityCache):
     """
-    Decode...
+    Create a GDAL raster attribute table
+    """
+    # Get attributes
+    qualityAttributes = [dict(y) for y in set(tuple(i[bitField].items()) \
+                         for i in qualityCache.values())]
+
+    #https://www.gdal.org/gdal_8h.html#a810154ac91149d1a63c42717258fe16e
+    rat = gdal.RasterAttributeTable()
+    # Create fields
+    rat.CreateColumn("Value", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
+    rat.CreateColumn("Descr", gdalconst.GFT_String, gdalconst.GFU_Name)
+
+    for i, q in enumerate(qualityAttributes):
+        value = int(q['bits'][2:])
+        description = q['description']
+
+        rat.SetValueAsInt(i, 0, value)
+        rat.SetValueAsString(i, 1, description)
+
+    return rat
+
+def qualityDecoder(inRst, product, qualityLayer, bitField = 'ALL'):
+    """
+    Decode QA flags from specific product
     """
     SERVICES_URL = "https://lpdaacsvc.cr.usgs.gov/services/appeears-api/"
 
     # Read in the input raster layer.
     d = gdal.Open(inRst)
-    #inRaster = arcpy.Raster(inRst)
 
     # Get GeoTransform and Projection
-    gt = d.GetGeoTransform()
-    proj = d.GetProjection()
+    gt, proj = d.GetGeoTransform(), d.GetProjection()
     # Get fill value
     md = d.GetMetadata()
     fill_value = int(md['_FillValue'])
 
-    #''' Get spatial reference info for inRaster '''
-    #spatialRef = arcpy.Describe(inRaster).spatialReference
-    #cellSize = arcpy.Describe(inRaster).meanCellWidth
-    #extent = arcpy.Describe(inRaster).Extent
-    #llc = arcpy.Point(extent.XMin,extent.YMin)
-    #noDataVal = inRaster.noDataValue
-
-    #''' Convert inRaster to a Numpy Array. '''
     inArray = d.ReadAsArray()
-    #inArray = arcpy.RasterToNumPyArray(inRaster)
-
-    # ClEAN-UP
-    #inRaster = None
-
     bitFieldList = defineQualityBitField(product, qualityLayer, bitField)
     # Set up a cache to store decoded values
     qualityCache = {}
@@ -152,31 +172,11 @@ def qualityDecoder(inRst, outWorkspace, outFileName, product,
         qualityDecoded = qualityDecodeArray(product, qualityLayer,
                                             inArray, f, qualityCache)
 
-        # TODO
-        # - Save files
-        # - Edit attribute table
-
-        qualityRaster = arcpy.NumPyArrayToRaster(qualityDecoded, llc, cellSize, cellSize)
-        qualityDecoded = None
-
-        arcpy.DefineProjection_management(qualityRaster, spatialRef)
-        qualityRaster.save(outName(outWorkspace, outFileName, f))
-        qualityRaster = None
-
-        # Edit raster attribute table
-        #   Get all the quality information from the quality cache and pull
-        #   out unique values for the bit field...
-        #   See: http://stackoverflow.com/questions/6280978/how-to-uniqify-a-list-of-dict-in-python
-        qualityAttributes = [dict(y) for y in set(tuple(i[f].items()) for i in qualityCache.values())]
-        r = outName(outWorkspace, outFileName, f)
-        arcpy.AddField_management(r, "Descr", "TEXT", "","", 150)
-        fields = ("Value", "Descr")
-
-        with arcpy.da.UpdateCursor(r, fields) as cursor:
-            for row in cursor:
-                for q in qualityAttributes:
-                    if row[0] == int(q['bits'][2:]):
-                        row[1] = q['description']
-                        cursor.updateRow(row)
-                    else:
-                        continue
+        # Create attribute table
+        rat = createAttributeTable(f, qualityCache)
+        # Save file
+        outDir = os.path.dirname(inRst)
+        outFileName = os.path.splitext(os.path.basename(inRst))[0]
+        dst_img = outName(outDir, outFileName, f)
+        save_to_file(dst_img, qualityDecoded, proj, gt,
+                     fill_value, rat)

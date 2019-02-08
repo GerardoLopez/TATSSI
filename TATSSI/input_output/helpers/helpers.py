@@ -4,27 +4,6 @@ import gdal
 import pandas as pd
 from collections import OrderedDict
 
-class Utils:
-
-    @staticmethod
-    def get_array_size(rows, cols, bands, dtype):
-        """
-        Get array size in human readable units
-        :param rows: Number of rows
-        :param cols: Number of columns
-        :param bands: Number of band/layers
-        :param dtype: NumPy data type
-        :return: Array size in human readable units and unit
-        """
-        array_size = rows * cols * bands * np.dtype(dtype).itemsize
-        # Return array size in GB or smaller units
-        units = ['', 'kB', 'MB', 'GB']
-        for unit in units:
-            if abs(array_size) < 1024.0 or unit == units[-1]:
-                return array_size, unit
-
-            array_size /= 1024.0
-
 class Constants:
     GDAL2NUMPY = {gdal.GDT_Byte: np.uint8,
                   gdal.GDT_UInt16: np.uint16,
