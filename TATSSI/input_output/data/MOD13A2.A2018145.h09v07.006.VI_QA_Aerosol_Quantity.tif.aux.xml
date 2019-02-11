@@ -1,15 +1,5 @@
 <PAMDataset>
   <PAMRasterBand band="1">
-    <Histograms>
-      <HistItem>
-        <HistMin>-0.4583333333333333</HistMin>
-        <HistMax>11.45833333333333</HistMax>
-        <BucketCount>12</BucketCount>
-        <IncludeOutOfRange>0</IncludeOutOfRange>
-        <Approximate>1</Approximate>
-        <HistCounts>45298|50762|0|0|0|0|0|0|0|0|72434|124626</HistCounts>
-      </HistItem>
-    </Histograms>
     <GDALRasterAttributeTable>
       <FieldDefn index="0">
         <Name>Value</Name>
@@ -26,24 +16,17 @@
         <F>Average</F>
       </Row>
       <Row index="1">
-        <F>0</F>
-        <F>Climatology</F>
-      </Row>
-      <Row index="2">
         <F>11</F>
         <F>High</F>
+      </Row>
+      <Row index="2">
+        <F>0</F>
+        <F>Climatology</F>
       </Row>
       <Row index="3">
         <F>1</F>
         <F>Low</F>
       </Row>
     </GDALRasterAttributeTable>
-    <Metadata>
-      <MDI key="STATISTICS_MAXIMUM">11</MDI>
-      <MDI key="STATISTICS_MEAN">7.3211926855895</MDI>
-      <MDI key="STATISTICS_MINIMUM">0</MDI>
-      <MDI key="STATISTICS_STDDEV">4.7676343081531</MDI>
-      <MDI key="_FillValue">65535</MDI>
-    </Metadata>
   </PAMRasterBand>
 </PAMDataset>

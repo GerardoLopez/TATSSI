@@ -1,6 +1,7 @@
 
 import os
 import gdal
+import numpy as np
 from osgeo import gdal_array
 from .helpers import Constants
 """
@@ -67,7 +68,7 @@ def get_dst_dataset(dst_img, cols, rows, layers, dtype, proj, gt):
     return dst_ds
 
 def save_to_file(dst_img, data_array, proj, gt,
-                 fill_value = 0, rat = None):
+                 fill_value = 255, rat = None):
     """
     Saves data into a selected file
     :param dst_img: Output filenane full path
@@ -102,6 +103,31 @@ def save_to_file(dst_img, data_array, proj, gt,
         # Raster attribute table
         if rat is not None:
             dst_band.SetDefaultRAT(rat)
+
+        # Create colour table
+        start_color = 0
+        rows = rat.GetRowCount()
+        colors = np.floor(np.linspace(0, 255, rows)).astype(np.uint8)
+        ct = gdal.ColorTable()
+
+        # Empty list for category names
+        #####descriptions = [] * (fill_value + 1)
+
+        for row in range(rows):
+            # Column 0 is QA human readable value
+            value = rat.GetValueAsInt(row, 0)
+            # Set color table value
+            ct.SetColorEntry(value, (colors[row],
+                                     colors[row],
+                                     colors[row], 255))
+
+            # Column 1 is the description
+            descriptions[value] = rat.GetValueAsString(row,1)
+
+        # Set colour table
+        dst_band.SetRasterColorTable(ct)
+        # Set category names
+        dst_band.SetRasterCategoryNames(descriptions)
 
     # Flush to disk
     dst_ds = None

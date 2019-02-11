@@ -1,15 +1,9 @@
 <PAMDataset>
   <PAMRasterBand band="1">
-    <Histograms>
-      <HistItem>
-        <HistMin>-0.25</HistMin>
-        <HistMax>1.25</HistMax>
-        <BucketCount>2</BucketCount>
-        <IncludeOutOfRange>0</IncludeOutOfRange>
-        <Approximate>1</Approximate>
-        <HistCounts>191128|101992</HistCounts>
-      </HistItem>
-    </Histograms>
+    <CategoryNames>
+      <Category>No</Category>
+      <Category>Yes</Category>
+    </CategoryNames>
     <GDALRasterAttributeTable>
       <FieldDefn index="0">
         <Name>Value</Name>
@@ -22,20 +16,13 @@
         <Usage>2</Usage>
       </FieldDefn>
       <Row index="0">
-        <F>1</F>
-        <F>Yes</F>
-      </Row>
-      <Row index="1">
         <F>0</F>
         <F>No</F>
       </Row>
+      <Row index="1">
+        <F>1</F>
+        <F>Yes</F>
+      </Row>
     </GDALRasterAttributeTable>
-    <Metadata>
-      <MDI key="STATISTICS_MAXIMUM">1</MDI>
-      <MDI key="STATISTICS_MEAN">0.34795305676856</MDI>
-      <MDI key="STATISTICS_MINIMUM">0</MDI>
-      <MDI key="STATISTICS_STDDEV">0.47632103360441</MDI>
-      <MDI key="_FillValue">65535</MDI>
-    </Metadata>
   </PAMRasterBand>
 </PAMDataset>
