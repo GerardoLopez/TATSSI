@@ -111,7 +111,11 @@ def save_to_file(dst_img, data_array, proj, gt,
         ct = gdal.ColorTable()
 
         # Empty list for category names
-        #####descriptions = [] * (fill_value + 1)
+        #descriptions = []
+        descriptions = [''] * (fill_value + 1)
+        #descriptions = [None] * (fill_value + 1)
+
+        #from IPython import embed ; ipshell = embed()
 
         for row in range(rows):
             # Column 0 is QA human readable value
@@ -123,6 +127,7 @@ def save_to_file(dst_img, data_array, proj, gt,
 
             # Column 1 is the description
             descriptions[value] = rat.GetValueAsString(row,1)
+            #descriptions.append(rat.GetValueAsString(row,1))
 
         # Set colour table
         dst_band.SetRasterColorTable(ct)
