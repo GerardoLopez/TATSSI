@@ -2,6 +2,11 @@
 import os
 import gdal
 from gdal import gdalconst
+
+import json
+from collections import OrderedDict
+import pandas as pd
+
 import requests
 import numpy as np
 
@@ -44,6 +49,39 @@ def listQALayers(product):
 
     return(qaLayerList)
 
+def getQualityBitFieldsDef(product, qualityLayer):
+    """
+    Get the QA defintion for a particular product and QA layer
+    """
+    url_str = '{}/quality/{}/{}?format=json'.format(SERVICES_URL,
+                                                    product,
+                                                    qualityLayer)
+    if requests.get(url_str).status_code == 404:
+        #  HTTP 404, 404 Not Found
+        return None
+
+    # Get the QA definition stored in an OrderedDict to keep
+    # the bit order
+    bitFieldInfo = json.loads(requests.get(url_str).text,
+                              object_pairs_hook = OrderedDict)
+
+    # Convert into a pandas DataFrame
+    bitFieldInfo = pd.DataFrame(bitFieldInfo)
+
+    # Add column to store bit field position and length
+    bitFieldInfo['Length'] = 0
+
+    # For each QA bit field
+    for bitField in bitFieldInfo.Name.unique():
+        # Get the number of bits needed to store info
+        max_val_dec = bitFieldInfo[bitFieldInfo.Name == bitField].Value.max()
+        length = len(bin(max_val_dec)) - 2
+
+        # Add column with new value for this bitField
+        bitFieldInfo.loc[bitFieldInfo.Name == bitField, 'Length'] = length
+
+    return bitFieldInfo
+
 def listQualityBitField(product, qualityLayer):
     """
     Get list of bit-field names
@@ -51,6 +89,9 @@ def listQualityBitField(product, qualityLayer):
     url_str = '{}/quality/{}/{}?format=json'.format(SERVICES_URL,
                                                     product,
                                                     qualityLayer)
+    if requests.get(url_str).status_code == 404:
+        #  HTTP 404, 404 Not Found
+        return None
 
     bitFieldInfo = requests.get(url_str).json()
 
@@ -88,6 +129,8 @@ def qualityDecodeInt(product, qualityLayer, intValue, bitField, qualityCache):
     Function to decode the input raster layer. Requires that an empty
     qualityCache dictionary variable is created.
     """
+    # format(2057, '#018b')
+
     quality = None
     if intValue in qualityCache:
         quality = qualityCache[intValue]

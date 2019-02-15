@@ -115,8 +115,6 @@ def save_to_file(dst_img, data_array, proj, gt,
         descriptions = [''] * (fill_value + 1)
         #descriptions = [None] * (fill_value + 1)
 
-        #from IPython import embed ; ipshell = embed()
-
         for row in range(rows):
             # Column 0 is QA human readable value
             value = rat.GetValueAsInt(row, 0)
