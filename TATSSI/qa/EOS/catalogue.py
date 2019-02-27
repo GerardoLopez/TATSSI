@@ -1,8 +1,10 @@
 
 import os
 import glob
+import json
+import requests
 import pandas as pd
-from .Quality_Services import *
+from collections import OrderedDict
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -14,10 +16,21 @@ class Catalogue():
     Class to manage EOS QA/QC products
     """
 
-    def __init__(self):
+    def __init__(self, default_products = None):
         """
         Constructor for Catalogue class
         """
+        # Check if there are some specific default products
+        # TODO Get default products from a user defined config file
+        if default_products is None:
+            default_products = ['Terra MODIS',
+                                'Aqua MODIS',
+                                'Combined MODIS',
+                                'S-NPP NASA VIIRS',
+                                'WELD']
+
+        self.default_products = default_products
+
         # Location to store QA/QC definitions
         self.datadir = os.path.join(os.path.dirname(__file__), 'products')
 
@@ -59,7 +72,72 @@ class Catalogue():
         # Convert into a pandas DataFrame
         products = pd.DataFrame(products)
 
+        # Filter to get only default products
+        products = products[products.Platform.isin(self.default_products)]
+
         return products
+
+    def __get_QA_layers(self, product):
+        """
+        List all quality layers associated with a product
+        :param product: An EOS product in PRODUCT.VERSION format
+        :return: A set object with all QA layer for product
+        """
+        url_str = '{}/quality/{}?format=json'.format(self.SERVICES_URL,
+                                                     product)
+
+        if requests.get(url_str).status_code == 404:
+            # HTTP 404, 404 Not Found
+            # {"message": "No quality layers defined for: product"}
+            # Return an empty list
+            return set([])
+
+        qa_layer_info = requests.get(url_str).json()
+
+        qa_layer_list = []
+        for i in qa_layer_info:
+            for k, l in i.items():
+                if k == 'QualityLayers':
+                    qa_layer_list.append(l[0])
+
+        # Get unique QA layers
+        qa_layer_list = set(qa_layer_list)
+
+        return qa_layer_list
+
+    def __get_quality_bit_fields_def(self, product, qa_layer):
+        """
+        Get the QA defintion for a particular product and QA layer
+        """
+        url_str = '{}/quality/{}/{}?format=json'.format(self.SERVICES_URL,
+                                                        product,
+                                                        qa_layer)
+
+        if requests.get(url_str).status_code == 404:
+            #  HTTP 404, 404 Not Found
+            return None
+
+        # Get the QA definition stored in an OrderedDict to keep
+        # the bit order
+        bitFieldInfo = json.loads(requests.get(url_str).text,
+                                  object_pairs_hook = OrderedDict)
+
+        # Convert into a pandas DataFrame
+        bitFieldInfo = pd.DataFrame(bitFieldInfo)
+
+        # Add column to store bit field position and length
+        bitFieldInfo['Length'] = 0
+
+        # For each QA bit field
+        for bitField in bitFieldInfo.Name.unique():
+            # Get the number of bits needed to store info
+            max_val_dec = bitFieldInfo[bitFieldInfo.Name == bitField].Value.max()
+            length = len(bin(max_val_dec)) - 2
+
+            # Add column with new value for this bitField
+            bitFieldInfo.loc[bitFieldInfo.Name == bitField, 'Length'] = length
+
+        return bitFieldInfo
 
     def get_qa_definition(self, product, version):
         """
@@ -116,18 +194,22 @@ class Catalogue():
         the QA/QC definitions in a json file
         """
         LOG.info("Saving QA bit defs in %s" % self.datadir)
-        self.get_products()
+        products = self.get_products()
 
-        products = ['MOD13A2.006', 'MOD09GA.006']
-
-        #for product in self.products.Product:
-        for product in products:
+        #products = ['MOD13A2.006', 'MOD09GA.006']
+        #for product in products:
+        for product in products.ProductAndVersion:
             LOG.info("Getting QA/QC definitions for %s..." % product)
-            qa_layers = listQALayers(product)
+            qa_layers = self.__get_QA_layers(product)
+
+            if len(qa_layers) == 0:
+                LOG.info(f"No QA layer associated with product {product}")
+                continue
 
             for qa_layer in qa_layers:
-                LOG.info("Getting bit fields defs for %s..." % qa_layer)
-                qa_bit_fields = getQualityBitFieldsDef(product, qa_layer)
+                LOG.info(f"Getting bit fields defs for {qa_layer}...")
+                qa_bit_fields = self.__get_quality_bit_fields_def(product,
+                                                                  qa_layer)
 
                 if qa_bit_fields is None:
                     continue

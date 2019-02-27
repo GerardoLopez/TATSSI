@@ -39,6 +39,8 @@ def listQALayers(product):
     url_str = '{}/quality/{}?format=json'.format(SERVICES_URL, product)
     qaLayerInfo = requests.get(url_str).json()
 
+    from IPython import embed ; ipshell = embed()
+
     qaLayerList = []
     for i in qaLayerInfo:
         for k, l in i.items():
