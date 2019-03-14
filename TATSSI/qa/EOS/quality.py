@@ -1,7 +1,7 @@
 
 import os
 import gdal
-from gdal import gdalconst
+from glob import glob
 
 import json
 from collections import OrderedDict
@@ -13,6 +13,22 @@ import numpy as np
 # Import TATSSI utils
 from .catalogue import Catalogue
 from TATSSI.input_output.utils import save_to_file
+
+def extract_QA(src_dir, product, qualityLayer):
+    """
+    Function to extract the selected quality layer from
+    all existing data products in the source directory.
+    It will create a QA sub-directory (if it does not exist)
+    and will create a single GeoTiff file per product.
+    """
+    output_dir = os.path.joint(src_dir, 'QA')
+    if os.path.exists(output_dir) == False:
+        os.path.mkdir(output_dir)
+
+    product, version = product.split('.')
+    files = glob(os.path.joint(src_dir, '*'))
+
+    # For each file
 
 def outName(outputLocation, outputName, bitField):
     """
@@ -88,13 +104,20 @@ def createAttributeTable(bitField, qualityCache):
     qualityAttributes = [dict(y) for y in set(tuple(i[bitField].items()) \
                          for i in qualityCache.values())]
 
-    from IPython import embed ; ipshell = embed()
+    #TODO Sort values
+
+    gdal.UseExceptions()
 
     #https://www.gdal.org/gdal_8h.html#a810154ac91149d1a63c42717258fe16e
     rat = gdal.RasterAttributeTable()
     # Create fields
-    rat.CreateColumn("Value", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
-    rat.CreateColumn("Descr", gdalconst.GFT_String, gdalconst.GFU_Name)
+    rat.CreateColumn("Value", gdal.GFT_Integer, gdal.GFU_MinMax)
+    rat.CreateColumn("Descr", gdal.GFT_String, gdal.GFU_Name)
+    #rat.CreateColumn("Red", gdalconst.GFT_Integer, gdalconst.GFU_Red)
+    #rat.CreateColumn("Green", gdalconst.GFT_Integer, gdalconst.GFU_Blue)
+    #rat.CreateColumn("Blue", gdalconst.GFT_Integer, gdalconst.GFU_Red)
+
+    rat.SetRowCount(len(qualityAttributes))
 
     for i, q in enumerate(qualityAttributes):
         value = int(q['bits'][2:])
@@ -102,6 +125,9 @@ def createAttributeTable(bitField, qualityCache):
 
         rat.SetValueAsInt(i, 0, value)
         rat.SetValueAsString(i, 1, description)
+        #rat.SetValueAsInt(intValue, 2, redDict[stringValue])
+        #rat.SetValueAsInt(intValue, 3, greenDict[stringValue])
+        #rat.SetValueAsInt(intValue, 4, blueDict[stringValue])
 
     return rat
 

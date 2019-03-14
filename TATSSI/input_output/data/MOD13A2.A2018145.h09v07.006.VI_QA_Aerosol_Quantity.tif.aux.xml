@@ -65550,8 +65550,8 @@
         <Usage>2</Usage>
       </FieldDefn>
       <Row index="0">
-        <F>1</F>
-        <F>Low</F>
+        <F>11</F>
+        <F>High</F>
       </Row>
       <Row index="1">
         <F>0</F>
@@ -65562,8 +65562,8 @@
         <F>Average</F>
       </Row>
       <Row index="3">
-        <F>11</F>
-        <F>High</F>
+        <F>1</F>
+        <F>Low</F>
       </Row>
     </GDALRasterAttributeTable>
   </PAMRasterBand>

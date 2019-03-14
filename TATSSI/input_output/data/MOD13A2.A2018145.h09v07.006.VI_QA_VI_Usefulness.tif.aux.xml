@@ -65550,12 +65550,12 @@
         <Usage>2</Usage>
       </FieldDefn>
       <Row index="0">
-        <F>10</F>
-        <F>Decreasing quality (0010)</F>
+        <F>111</F>
+        <F>Decreasing quality (0111)</F>
       </Row>
       <Row index="1">
-        <F>11</F>
-        <F>Decreasing quality (0011)</F>
+        <F>100</F>
+        <F>Decreasing quality (0100)</F>
       </Row>
       <Row index="2">
         <F>1001</F>
@@ -65566,24 +65566,24 @@
         <F>Lower quality</F>
       </Row>
       <Row index="4">
-        <F>0</F>
-        <F>Highest quality</F>
+        <F>110</F>
+        <F>Decreasing quality (0110)</F>
       </Row>
       <Row index="5">
-        <F>111</F>
-        <F>Decreasing quality (0111)</F>
+        <F>10</F>
+        <F>Decreasing quality (0010)</F>
       </Row>
       <Row index="6">
         <F>1010</F>
         <F>Decreasing quality (1010)</F>
       </Row>
       <Row index="7">
-        <F>101</F>
-        <F>Decreasing quality (0101)</F>
+        <F>0</F>
+        <F>Highest quality</F>
       </Row>
       <Row index="8">
-        <F>110</F>
-        <F>Decreasing quality (0110)</F>
+        <F>11</F>
+        <F>Decreasing quality (0011)</F>
       </Row>
       <Row index="9">
         <F>1111</F>
@@ -65594,8 +65594,8 @@
         <F>Decreasing quality (1000)</F>
       </Row>
       <Row index="11">
-        <F>100</F>
-        <F>Decreasing quality (0100)</F>
+        <F>101</F>
+        <F>Decreasing quality (0101)</F>
       </Row>
     </GDALRasterAttributeTable>
   </PAMRasterBand>

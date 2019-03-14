@@ -97,12 +97,16 @@ def save_to_file(dst_img, data_array, proj, gt,
     # Write data
     for l in range(layers):
         dst_band = dst_ds.GetRasterBand(l + 1)
-        dst_band.WriteArray(data_array[l])
+
         # Fill value
         dst_band.SetMetadataItem('_FillValue', f'{fill_value}')
+
         # Raster attribute table
         if rat is not None:
             dst_band.SetDefaultRAT(rat)
+
+        # Write data
+        dst_band.WriteArray(data_array[l])
 
         # Create colour table
         start_color = 0
