@@ -7,7 +7,8 @@ sys.path.append ("/home/glopez/Projects/TATSSI")
 from TATSSI.input_output.translate import Translate
 from TATSSI.input_output.utils import *
 from TATSSI.qa import catalogue
-from TATSSI.download import modis_downloader
+from TATSSI.download.modis_downloader import get_modis_data
+from TATSSI.download.viirs_downloader import get_viirs_data
 
 from IPython.display import clear_output
 from IPython.display import display
@@ -21,14 +22,14 @@ import ipywidgets as widgets
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 
-import gdal
+import gdal, ogr
 import pandas as pd
 
 from beakerx import TableDisplay
 
 from datetime import datetime
 
-def OpenFileDialog(dialog_type = 'open',
+def open_file_dialog(dialog_type = 'open',
                    data_format = 'GeoTiff',
                    extension = 'tif'):
     """
@@ -52,6 +53,10 @@ def OpenFileDialog(dialog_type = 'open',
                     filter="%s Files (*.%s)" % \
                             (data_format, extension))
 
+    elif dialog_type == 'directory':
+        dirname = QFileDialog.getExistingDirectory(None)
+        return dirname
+
     return str(fname[0])
 
 class Download():
@@ -62,20 +67,53 @@ class Download():
         # Create TATSSI catalogue object
         self.catalogue = catalogue.Catalogue()
 
-        self.select_product_button = widgets.Button(
+        # Product and dates button
+        self.select_product_dates_button = widgets.Button(
                 layout = Layout(width='99.6%'),
-                description = 'Select product and dates',
-                tooltip = 'Select product to be downloaded ' + \
-                      'and required dates.')
+                description = 'Select tile, product and dates',
+                tooltip = 'Select MODIS/VIIRS tile, product to ' + \
+                          'be downloaded and required dates.')
+
+        # Output directory button
+        self.output_dir_button = widgets.Button(
+                layout = Layout(width='99.6%'),
+                description = 'Select output directory',
+                tooltip = 'Select output directory where to ' + \
+                          'store products for required dates.')
+
+        # Tiles list
+        tiles = self.get_tiles_list()
+        self.tiles = widgets.Dropdown(
+                options = tiles,
+                value = tiles[0],
+                description = 'Tiles:',
+                disable = False)
 
         self.product = None
         self.product_table = None
+        self.output = None
+        self.download_button = None
 
         self.download()
 
-    def __on_product_button_button_clicked(self, b):
+    def download(self):
         """
-        Shows table with available products
+        Downloads a product from the LPDAAC
+        """
+        # Set on click event behaviour for buttons
+        self.select_product_dates_button.on_click(
+                self.__on_product_dates_button_clicked)
+
+        self.output_dir_button.on_click(
+                self.__on_output_dir_button_clicked)
+
+        # Display button
+        display(self.select_product_dates_button)
+
+    def __on_product_dates_button_clicked(self, b):
+        """
+        Shows table with available products and enables
+        the download button.
         """
         def on_product_table_double_click(row, col, table):
             """Internal function to update product and dates"""
@@ -84,12 +122,13 @@ class Download():
             # Update dates
             start = self.__string_to_datetime(table.values[row][-5])
             self.start_date.value = start
-            end = self.__string_to_datetime(table.values[row][-6])
+            end = self.__string_to_datetime(table.values[row][-4])
             self.end_date.value = end
 
         self.__clear_cell()
-        # Display button
-        display(self.select_product_button)
+        # Display widgets
+        display(self.select_product_dates_button)
+        display(self.tiles)
 
         # Display products
         self.product_table = TableDisplay(self.catalogue.products)
@@ -109,6 +148,73 @@ class Download():
 
         display(self.product)
 
+        # Dates
+        self.__display_dates()
+
+        # Output dir button
+        display(self.output_dir_button)
+
+    def __on_output_dir_button_clicked(self, b):
+        """
+        Opens dialog to select output dir
+        """
+        output_dir = open_file_dialog('directory')
+        if len(output_dir) == 0:
+            if self.download_button is not None:
+                self.download_button.disable = True
+            # If there's no output file, do nothing...
+            return None
+
+        if self.output is None:
+            # Show input file in a text file
+            style = {'description_width': 'initial'}
+            self.output = widgets.HTML(
+                value = f"<b>{output_dir}</b>",
+                placeholder = "Output directory",
+                description = "Output directory:",
+                layout = Layout(width = '100%'),
+                style = style)
+
+            display(self.output)
+        else:
+            self.output.value = output_dir
+
+        if self.download_button is None:
+            # Download button
+            self.download_button = widgets.Button(
+                    layout = Layout(width='99.6%'),
+                    description = 'Download product for selected dates',
+                    tooltip = 'Download selected product for ' + \
+                              ' required date range.')
+
+            self.download_button.on_click(
+                    self.__on_download_button_clicked)
+
+            display(self.download_button)
+        else:
+            self.download_button.disable = False
+
+    def __on_download_button_clicked(self, b):
+        """
+        Launch the donwloader for user's selection of product and dates
+        """
+        if 'VNP' in self.product:
+            platform = 'VIIRS'
+            donwloader = eval(get_viirs_data)
+        else:
+            platform = self.get_modis_platform(self.product.value)
+            donwloader = eval(get_modis_data)
+
+        # Run the downloader
+        donwloader(username, password, platform,
+                   self.product.value, self.tiles.value,
+                   self.output.value, self.start_date.value,
+                   self.end_date.value)
+
+    def __display_dates(self):
+        """
+        Manage dates widgets
+        """
         # Dates to download
         start = self.catalogue.products.TemporalExtentStart.iloc[0]
         start= self.__string_to_datetime(start)
@@ -131,16 +237,8 @@ class Download():
         display(self.start_date)
         display(self.end_date)
 
-    def download(self):
-        """
-        Downloads a product from the LPDAAC
-        """
-        self.select_product_button.on_click(
-                self.__on_product_button_button_clicked)
-        # Display button
-        display(self.select_product_button)
-
     def __clear_cell(self):
+        """ Clear cell """
         clear_output()
 
     @staticmethod
@@ -159,6 +257,47 @@ class Download():
                 date = datetime.today()
 
         return date
+
+    @staticmethod
+    def get_tiles_list():
+        """
+        Gets a list of available MODIS/VIIRS tiles
+        """
+        current_dir = os.path.join(os.path.dirname(__file__))
+        fname = os.path.join(current_dir,
+                "../../../data/kmz/modis_sin.kmz")
+        d = ogr.Open(fname)
+
+        # Empty list of tiles
+        tiles = []
+
+        layer = d.GetLayer()
+        for feature in layer:
+            # e.g. h:4 v:7
+            feature = feature.GetField(0)
+            h, v = feature.split(' ')
+            h = int(h.split('h:')[1].strip())
+            v = int(v.split('v:')[1].strip())
+            tile = f'h{h:02}v{v:02}'
+
+            tiles.append(tile)
+
+        tiles.sort()
+        return tiles
+
+    @staticmethod
+    def get_modis_plattform(modis_product):
+        """
+        Get MODIS plattform: MOLT, MOLA or MOTA. This basically relates
+        to the sensor used (or if a combination of AQUA & TERRA is used)
+        """
+        product = modis_product.split('.')[0]
+        if 'MCD' in product:
+            return 'MOTA'
+        elif 'MOD' in product:
+            return 'MOLT'
+        else
+            return 'MOLA'
 
 class ImportExport():
 
@@ -185,7 +324,7 @@ class ImportExport():
         data_format = self.format.value.split('|')[0].strip()
         extension = self.format.value.split('|')[2].strip()
 
-        target_img = OpenFileDialog('save', data_format, extension)
+        target_img = open_file_dialog('save', data_format, extension)
         if len(target_img) == 0:
             # If there's no output file, do nothing...
             return None
@@ -248,7 +387,7 @@ class ImportExport():
         self.__clear_cell()
         display(self.input_button)
 
-        source_img = OpenFileDialog('open')
+        source_img = open_file_dialog('open')
         if len(source_img) == 0:
             # If there's no source file, do nothing...
             return None
