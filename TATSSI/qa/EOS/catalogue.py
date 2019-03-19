@@ -159,7 +159,9 @@ class Catalogue():
         qa_defs = []
         for fname in fnames:
             # Load qa defs
-            qa_defs.append(pd.read_pickle(fname))
+            tmp_df = pd.read_pickle(fname)
+            tmp_df.name = tmp_df.iloc[0].QualityLayer
+            qa_defs.append(tmp_df)
 
         return qa_defs
 
