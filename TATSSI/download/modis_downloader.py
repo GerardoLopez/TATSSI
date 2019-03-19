@@ -12,6 +12,7 @@ from functools import partial
 import os
 import datetime
 import time
+import json
 
 import requests
 from concurrent import futures
@@ -26,6 +27,21 @@ class WebError (RuntimeError):
     """An exception for web issues"""
     def __init__(self, arg):
         self.args = arg
+
+def read_config():
+    """
+    Read downloaders config file
+    """
+    downloaders_dir = os.path.dirname(__file__)
+    fname = os.path.join(downloaders_dir, 'config.json')
+    with open(fname) as f:
+        credentials = json.load(f)
+
+    url = credentials['url']
+    username = credentials['username']
+    password = credentials['password']
+
+    return url, username, password
 
 def get_available_dates(url, start_date, end_date=None):
     """
@@ -117,9 +133,10 @@ def required_files (url_list, output_dir):
 
     return to_download
     
-def get_modis_data(username, password, platform, product, tiles, 
+def get_modis_data(platform, product, tiles, 
                    output_dir, start_date,
-                   end_date=None, n_threads=5):
+                   end_date=None, n_threads=5,
+                   username=None, password=None):
     """The main workhorse of MODIS downloading. This function will grab
     products for a particular platform (MOLT, MOLA or MOTA). The products
     are specified by their MODIS code (e.g. MCD45A1.051 or MOD09GA.006).
@@ -153,6 +170,13 @@ def get_modis_data(username, password, platform, product, tiles,
         as to what a good number would be here...
 
     """
+    # Read config
+    BASE_URL, _username, _password = read_config()
+    if username is not None:
+        username = _username
+    if password is not None:
+        password = _password
+
     # Ensure the platform is OK
     assert platform.upper() in [ "MOLA", "MOLT", "MOTA"], \
         "%s is not a valid platform. Valid ones are MOLA, MOLT, MOTA" % \

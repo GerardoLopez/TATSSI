@@ -22,6 +22,7 @@ import ipywidgets as widgets
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 
+import json
 import gdal, ogr
 import pandas as pd
 
@@ -58,6 +59,19 @@ def open_file_dialog(dialog_type = 'open',
         return dirname
 
     return str(fname[0])
+
+def read_config():
+    """
+    Read downloaders config file
+    """
+    with open('config.json') as f:
+        credentials = json.load(f)
+
+    url = credentials['url']
+    username = credentials['username']
+    password = credentials['password']
+
+    return url, username, password
 
 class Download():
     def __init__(self):
@@ -141,7 +155,7 @@ class Download():
         value = self.catalogue.products.ProductAndVersion.iloc[0]
         self.product = widgets.HTML(
                 value = f"<b>{value}</b>",
-                placeholder = "Product to download",
+                placeholder = "Product and version:",
                 description = "Product and version:",
                 layout = Layout(width = '100%'),
                 style = style)
@@ -171,7 +185,7 @@ class Download():
             self.output = widgets.HTML(
                 value = f"<b>{output_dir}</b>",
                 placeholder = "Output directory",
-                description = "Output directory:",
+                description = "Output directory",
                 layout = Layout(width = '100%'),
                 style = style)
 
@@ -198,18 +212,35 @@ class Download():
         """
         Launch the donwloader for user's selection of product and dates
         """
-        if 'VNP' in self.product:
+        # Get output dir, rm <b> HTML tag
+        output = self.output.value[3:-4]
+
+        # Get platform, rm <b> HTML tag
+        product = self.product.value[3:-4]
+        if 'VNP' in product:
             platform = 'VIIRS'
-            donwloader = eval(get_viirs_data)
+            donwloader = get_viirs_data
         else:
-            platform = self.get_modis_platform(self.product.value)
-            donwloader = eval(get_modis_data)
+            platform = self.get_modis_platform(product)
+            donwloader = get_modis_data
+
+        url, username, password = read_config()        
+
+        # Dates needs to be datetime objects
+        start_date = datetime.combine(self.start_date.value,
+                datetime.min.time())
+        end_date = datetime.combine(self.end_date.value,
+                datetime.min.time())
 
         # Run the downloader
-        donwloader(username, password, platform,
-                   self.product.value, self.tiles.value,
-                   self.output.value, self.start_date.value,
-                   self.end_date.value)
+        donwloader(platform = platform,
+                   product = product,
+                   tiles = self.tiles.value,
+                   output_dir = output,
+                   start_date = start_date,
+                   end_date = end_date,
+                   username = username,
+                   password = password)
 
     def __display_dates(self):
         """
@@ -286,7 +317,7 @@ class Download():
         return tiles
 
     @staticmethod
-    def get_modis_plattform(modis_product):
+    def get_modis_platform(modis_product):
         """
         Get MODIS plattform: MOLT, MOLA or MOTA. This basically relates
         to the sensor used (or if a combination of AQUA & TERRA is used)
@@ -296,7 +327,7 @@ class Download():
             return 'MOTA'
         elif 'MOD' in product:
             return 'MOLT'
-        else
+        else:
             return 'MOLA'
 
 class ImportExport():

@@ -12,6 +12,7 @@ from functools import partial
 import os
 import datetime
 import time
+import json
 
 import requests
 from concurrent import futures
@@ -20,12 +21,26 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 LOG = logging.getLogger(__name__)
-BASE_URL = "http://e4ftl01.cr.usgs.gov/"
 
 class WebError (RuntimeError):
     """An exception for web issues"""
     def __init__(self, arg):
         self.args = arg
+
+def read_config():
+    """
+    Read downloaders config file
+    """
+    downloaders_dir = os.path.dirname(__file__)
+    fname = os.path.join(downloaders_dir, 'config.json')
+    with open(fname) as f:
+        credentials = json.load(f)
+
+    url = credentials['url']
+    username = credentials['username']
+    password = credentials['password']
+
+    return url, username, password
 
 def get_available_dates(url, start_date, end_date=None):
     """
@@ -117,9 +132,10 @@ def required_files (url_list, output_dir):
 
     return to_download
     
-def get_viirs_data(username, password, platform, product, tiles, 
+def get_viirs_data(platform, product, tiles, 
                    output_dir, start_date,
-                   end_date=None, n_threads=5):
+                   end_date=None, n_threads=5,
+                   username=None, password=None):
     """The main workhorse of VIIRS downloading. The products are specified
     by their VIIRS code (e.g. VNP13A1.001 or VNP09A1.001).
     You need to specify a tile (or a list of tiles), as well as a starting
@@ -152,6 +168,13 @@ def get_viirs_data(username, password, platform, product, tiles,
         as to what a good number would be here...
 
     """
+        # Read config
+    BASE_URL, _username, _password = read_config()
+    if username is not None:
+        username = _username
+    if password is not None:
+        password = _password
+
     # Ensure the platform is OK
     assert platform.upper() in ["VIIRS"], \
         "%s is not a valid platform. Valid one is VIIRS" % \
