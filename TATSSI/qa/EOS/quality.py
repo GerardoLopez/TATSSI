@@ -14,6 +14,11 @@ import numpy as np
 from .catalogue import Catalogue
 from TATSSI.input_output.utils import save_to_file
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
+LOG = logging.getLogger(__name__)
+
 def extract_QA(src_dir, product, qualityLayer):
     """
     Function to extract the selected quality layer from
@@ -135,6 +140,8 @@ def qualityDecoder(inRst, product, qualityLayer, bitField = 'ALL'):
     """
     Decode QA flags from specific product
     """
+    LOG.info(f"Decoding {product}...")
+
     # Setup catalogue
     catalogue = Catalogue()
 
@@ -165,6 +172,7 @@ def qualityDecoder(inRst, product, qualityLayer, bitField = 'ALL'):
     # Loop through all of the bit fields or execute on the specified
     # bit field.
     for f in bitFieldList:
+        LOG.info(f"Decoding QA layer {f}...")
         qualityDecoded = qualityDecodeArray(qa_layer_def,
                                             inArray, f, qualityCache)
 
@@ -176,3 +184,5 @@ def qualityDecoder(inRst, product, qualityLayer, bitField = 'ALL'):
         dst_img = outName(outDir, outFileName, f)
         save_to_file(dst_img, qualityDecoded, proj, gt,
                      fill_value, rat)
+
+    LOG.info(f"Decoding finished.")
