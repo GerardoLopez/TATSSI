@@ -79,6 +79,66 @@ def read_config():
 
     return url, username, password
 
+class PlotTimeSeries():
+    """
+    Class to plot a single time step and per-pixel time series
+    """
+    def __init__(self):
+        self.fig, (self.ax, self.bx) = plt.subplots(nrows = 2, ncols = 1,
+                                           figsize=(7.5, 9.0))
+
+        # Disable RasterIO logging, just show ERRORS
+        log = rio_logging.getLogger()
+        log.setLevel(rio_logging.ERROR)
+
+    def plot(self, fname):
+        """
+        Plot a variable and time series
+        :param fname: Full path file name of time series to plot
+        """
+        # Open dataset
+        self.ds = xr.open_rasterio(fname)
+
+        # Create plot
+        self._plot = self.ds[0].plot(cmap = 'YlGn',
+                                     ax = self.ax)
+
+        #self.ax.format_coord = format_coord
+        self.ax.set_aspect('equal')
+
+        # Connect the canvas with the event
+        cid = self.fig.canvas.mpl_connect('button_press_event',
+                                          self.on_click)
+
+        # Plot the centroid
+        _layers, _rows, _cols = self.ds.shape
+        # Get y-axis max and min
+        #y_min, y_max = self.ds.data.min(), self.ds.data.max()
+
+        plot_sd = self.ds.sel(x = int(_cols / 2),
+                              y = int(_rows / 2),
+                              method='nearest')
+
+        plot_sd.plot(ax = self.bx)
+        #self.bx.set_ylim([y_min, y_max])
+
+        plt.tight_layout()
+        plt.show()
+
+    def on_click(self, event):
+        """
+        Event handler
+        """
+        # Clear subplot
+        self.bx.clear()
+
+        plot_sd = self.ds.sel(x = event.xdata, y = event.ydata,
+                              method='nearest')
+
+        plot_sd.plot(ax = self.bx)
+        # Redraw plot
+        plt.draw()
+
 class PlotQA():
     """
     Class to handle QA (mainly) plotting within a Jupyter Notebook
@@ -126,7 +186,8 @@ class PlotQA():
         self._plot = qa[0].plot(levels = np.append(idx[0], idx[0][-1]),
                                 shading = 'flat',
                                 cmap = 'viridis_r',
-                                add_colorbar = False)
+                                add_colorbar = False,
+                                ax = self.ax)
 
         cbar = self._get_colorbar(idx[0], category_names[idx].tolist())
 
