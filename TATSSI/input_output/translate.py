@@ -15,10 +15,17 @@ class Translate():
     All GDAL supported formats are available:
         https://www.gdal.org/formats_list.html
     """
+    driver_options = ["COMPRESS=DEFLATE",
+                      "BIGTIFF=YES",
+                      "PREDICTOR=1",
+                      "TILED=YES",
+                      "BLOCKXSIZE=256",
+                      "BLOCKYSIZE=256",
+                      "INTERLEAVE=BAND"]
 
     def __init__(self, source_img, target_img,
                  output_format = 'GTiff',
-                 options = {}):
+                 options = None):
 
         # Check that GDAL can handle input dataset
         check_source_img(source_img)
@@ -30,6 +37,8 @@ class Translate():
         self.target_img = target_img
 
         self.output_format = output_format
+
+        self.options = options
 
         self.__translate()
 
@@ -45,8 +54,13 @@ class Translate():
         # Set output format
         driver = gdal.GetDriverByName(self.output_format)
         # Do translation
-        dst_dataset = driver.CreateCopy(self.target_img,
-                                        src_dataset, 0)
+        if self.options is None:
+            dst_dataset = driver.CreateCopy(self.target_img,
+                                            src_dataset, 0)
+        else:
+            dst_dataset = driver.CreateCopy(self.target_img,
+                                            src_dataset, 0,
+                                            options=self.options)
 
         # Flush dataset
         dst_dataset = None

@@ -136,7 +136,8 @@ def createAttributeTable(bitField, qualityCache):
 
     return rat
 
-def qualityDecoder(inRst, product, qualityLayer, bitField = 'ALL'):
+def qualityDecoder(inRst, product, qualityLayer,
+                   bitField = 'ALL', createDir = False):
     """
     Decode QA flags from specific product
     """
@@ -180,6 +181,13 @@ def qualityDecoder(inRst, product, qualityLayer, bitField = 'ALL'):
         rat = createAttributeTable(f, qualityCache)
         # Save file
         outDir = os.path.dirname(inRst)
+        if createDir == True:
+            # Replace bit field name spaces and diagonals with _
+            _f = f.replace(' ', '_').replace('/', '_')
+            outDir = os.path.join(outDir, _f)
+            if not os.path.exists(outDir):
+                os.mkdir(outDir)
+
         outFileName = os.path.splitext(os.path.basename(inRst))[0]
         dst_img = outName(outDir, outFileName, f)
         save_to_file(dst_img, qualityDecoded, proj, gt,

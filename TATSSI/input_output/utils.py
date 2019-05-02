@@ -8,6 +8,17 @@ from .helpers import Constants
 Utilities to handle data.
 """
 
+def get_image_dimensions(fname):
+    """
+    Get dimensions in rows, columns and number of bands of an image
+    :param fname: Full path of a GDAL compatible file
+    :return rows, cols, bands: Number of rows, columns and bands
+    """
+    d = gdal.Open(fname)
+    rows, cols, bands = d.RasterYSize, d.RasterXSize, d.RasterCount
+
+    return rows, cols, bands
+
 def get_array_size(rows, cols, bands, dtype):
     """
     Get array size in human readable units
