@@ -1,8 +1,6 @@
 
 import os
 import gdal
-import xarray as xr
-from rasterio import logging as rio_logging
 import subprocess
 
 from glob import glob
@@ -26,10 +24,6 @@ class Generator():
         """
         Constructor for Generator class
         """
-        # Disable RasterIO logging, just show ERRORS
-        log = rio_logging.getLogger()
-        log.setLevel(rio_logging.ERROR)
-
         # Set attributes
         self.datasets = None
         self.qa_datasets = None
@@ -122,13 +116,12 @@ class Generator():
         # corresponding bands or sub datasets
         self.__decode_qa()
 
-    def load_time_series(self):
+    def load_time_series():
         """
         Read all layer stack
         """
 
         datasets = None
-        times = None
 
         # Get all VRTs in the first subdirectory level
         vrt_dir = os.path.join(self.source_dir, '*', '*.vrt')
@@ -141,30 +134,7 @@ class Generator():
         for vrt in vrts:
             # Read each VRT file
             data_array = xr.open_rasterio(vrt)
-            data_array = data_array.rename(
-                             {'x': 'longitude',
-                              'y': 'latitude',
-                              'band': 'time'})
-
-            # Extract time from metadata
-            if times is None:
-                times = self.get_times(vrt)
-            data_array['time'] = times
-
-            dataset_name = os.path.basename(vrt)
-            dataset_name = os.path.splitext(dataset_name)[0]
-            dataset_name = f"_{dataset_name}"
-
-            if datasets is None:
-                # Create new dataset
-                datasets = data_array.to_dataset(name=dataset_name)
-            else:
-                # Merge with existing dataset
-                tmp_dataset = data_array.to_dataset(name=dataset_name)
-                datasets = datasets.merge(tmp_dataset)
-                tmp_dataset = None
-
-        return datasets
+        
 
     def __decode_qa(self):
         """
@@ -260,29 +230,6 @@ class Generator():
             raise(e)
 
         return sub_dir
-
-    @staticmethod
-    def get_times(vrt_fname):
-        """
-        Extract time info from metadata
-        """
-        d = gdal.Open(vrt_fname)
-        fnames = d.GetFileList()
-        # First file name is the VRT file name
-        fnames = fnames[1::]
-
-        # Empty times list
-        times = []
-        for fname in fnames:
-            d = gdal.Open(fname)
-            # Get metadata
-            md = d.GetMetadata()
-
-            # Get fields with date info
-            start_date = md['RANGEBEGINNINGDATE']
-            times.append(np.datetime64(start_date))
-
-        return times
 
     @staticmethod
     def generate_output_fname(output_dir, fname):

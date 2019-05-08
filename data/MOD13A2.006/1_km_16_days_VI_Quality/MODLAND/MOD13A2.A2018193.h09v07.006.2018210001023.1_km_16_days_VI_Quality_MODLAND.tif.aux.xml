@@ -65554,16 +65554,16 @@
         <F>VI produced, good quality</F>
       </Row>
       <Row index="1">
-        <F>10</F>
-        <F>Pixel produced, but most probably cloudy</F>
+        <F>1</F>
+        <F>VI produced, but check other QA</F>
       </Row>
       <Row index="2">
         <F>11</F>
         <F>Pixel not produced due to other reasons than clouds</F>
       </Row>
       <Row index="3">
-        <F>1</F>
-        <F>VI produced, but check other QA</F>
+        <F>10</F>
+        <F>Pixel produced, but most probably cloudy</F>
       </Row>
     </GDALRasterAttributeTable>
   </PAMRasterBand>

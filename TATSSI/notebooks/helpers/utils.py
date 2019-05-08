@@ -3,7 +3,10 @@ import os
 import sys
 
 # TATSSI modules
-sys.path.append ("/home/glopez/Projects/TATSSI")
+HomeDir = os.path.join(os.path.expanduser('~'))
+SrcDir = os.path.join(HomeDir, 'Projects', 'TATSSI')
+sys.path.append(SrcDir)
+
 from TATSSI.input_output.translate import Translate
 from TATSSI.input_output.utils import *
 from TATSSI.qa import catalogue
@@ -91,16 +94,18 @@ class PlotTimeSeries():
         log = rio_logging.getLogger()
         log.setLevel(rio_logging.ERROR)
 
-    def plot(self, fname):
+        self.ds = None
+
+    def plot(self, ds):
         """
         Plot a variable and time series
         :param fname: Full path file name of time series to plot
         """
         # Open dataset
-        self.ds = xr.open_rasterio(fname)
+        self.ds = ds
 
         # Create plot
-        self._plot = self.ds[0].plot(cmap = 'YlGn',
+        self._plot = self.ds[0].plot(cmap = 'Greys_r',
                                      ax = self.ax)
 
         #self.ax.format_coord = format_coord
@@ -115,8 +120,8 @@ class PlotTimeSeries():
         # Get y-axis max and min
         #y_min, y_max = self.ds.data.min(), self.ds.data.max()
 
-        plot_sd = self.ds.sel(x = int(_cols / 2),
-                              y = int(_rows / 2),
+        plot_sd = self.ds.sel(longitude = int(_cols / 2),
+                              latitude = int(_rows / 2),
                               method='nearest')
 
         plot_sd.plot(ax = self.bx)
@@ -132,7 +137,8 @@ class PlotTimeSeries():
         # Clear subplot
         self.bx.clear()
 
-        plot_sd = self.ds.sel(x = event.xdata, y = event.ydata,
+        plot_sd = self.ds.sel(longitude=event.xdata,
+                              latitude=event.ydata,
                               method='nearest')
 
         plot_sd.plot(ax = self.bx)
