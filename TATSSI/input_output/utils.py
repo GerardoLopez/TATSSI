@@ -78,7 +78,7 @@ def get_dst_dataset(dst_img, cols, rows, layers, dtype, proj, gt):
     gdal.DontUseExceptions()
     return dst_ds
 
-def save_to_file(dst_img, data_array, proj, gt,
+def save_to_file(dst_img, data_array, proj, gt, md,
                  fill_value = 255, rat = None):
     """
     Saves data into a selected file
@@ -88,6 +88,7 @@ def save_to_file(dst_img, data_array, proj, gt,
                        3D layers x rows x cols
     :param proj: Projection information in WKT format
     :param gt: GeoTransform tupple
+    :param md: Metadata
     :param fill_value: Raster fill value
     :param rat: Raster attribute table
     """
@@ -104,6 +105,9 @@ def save_to_file(dst_img, data_array, proj, gt,
     # Get dataset where to put the data
     dst_ds = get_dst_dataset(dst_img, cols, rows, layers,
                              dtype, proj, gt)
+
+    # Set metadata
+    dst_ds.SetMetadata(md)
 
     # Write data
     for l in range(layers):

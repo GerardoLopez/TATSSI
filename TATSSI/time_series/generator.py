@@ -1,9 +1,11 @@
 
 import os
+from pathlib import Path
 import gdal
 import xarray as xr
 from rasterio import logging as rio_logging
 import subprocess
+from collections import namedtuple
 
 from glob import glob
 
@@ -15,7 +17,6 @@ from TATSSI.input_output.translate import Translate
 
 import logging
 logging.basicConfig(level=logging.INFO)
-
 LOG = logging.getLogger(__name__)
 
 class Generator():
@@ -26,13 +27,11 @@ class Generator():
         """
         Constructor for Generator class
         """
-        # Disable RasterIO logging, just show ERRORS
-        log = rio_logging.getLogger()
-        log.setLevel(rio_logging.ERROR)
+        time_series = namedtuple('time_series', 'data qa')
 
-        # Set attributes
-        self.datasets = None
-        self.qa_datasets = None
+        # Set private attributes
+        self.__datasets = None
+        self.__qa_datasets = None
 
         # Check that source_dir exist and has some files
         if not os.path.exists(source_dir):
@@ -62,7 +61,7 @@ class Generator():
         Generate tile series using all files in source dir
         """
         # List of output datasets
-        self.datasets = []
+        self.__datasets = []
 
         for i, fname in enumerate(self.fnames):
             if has_subdatasets(fname) is True:
@@ -75,7 +74,7 @@ class Generator():
                     if i == 0:
                         # Create output dir
                         output_dir = self.__create_output_dir(sds_name)
-                        self.datasets.append(output_dir)
+                        self.__datasets.append(output_dir)
                     else:
                         output_dir = os.path.join(self.source_dir, sds_name)
 
@@ -98,7 +97,7 @@ class Generator():
                     if band == 0:
                         # Create output dir
                         output_dir = self.__create_output_dir(f"b{band+1}")
-                        self.datasets.append(output_dir)
+                        self.__datasets.append(output_dir)
                     else:
                         output_dir = os.path.join(self.source_dir,
                                                   f"b{band+1}")
@@ -115,7 +114,7 @@ class Generator():
 
         # Create layerstack of bands or subdatasets
         LOG.info(f"Generating {self.product} layer stacks...")
-        for dataset in self.datasets:
+        for dataset in self.__datasets:
             self.__generate_layerstack(dataset)
 
         # For the associated product layers, decode the 
@@ -124,21 +123,47 @@ class Generator():
 
     def load_time_series(self):
         """
-        Read all layer stack
+        Read all layer stacks
         """
+        # Get all VRTs in the first subdirectory level
+        vrt_dir = os.path.join(self.source_dir, '*', '*.vrt')
+        vrt_fnames = glob(vrt_dir)
+        vrt_fnames.sort()
+
+        if len(vrt_fnames) == 0:
+            raise Exception(f"VRTs dir {vrts} is empty.")
+
+        datasets = self.__get_datasets(vrt_fnames)
+
+        # Get all VRTs in the second subdirectory level - QAs
+        vrt_dir = os.path.join(self.source_dir, '*', '*', '*.vrt')
+        vrt_fnames = glob(vrt_dir)
+        vrt_fnames.sort()
+
+        if len(vrt_fnames) == 0:
+            raise Exception(f"VRTs dir {vrts} is empty.")
+
+        qa_datasets = self.__get_datasets(vrt_fnames, level=1)
+
+        # Return time series object
+        ts = time_series(data=datasets, qa=qa_datasets)
+
+        return ts
+
+    def __get_datasets(self, vrt_fnames, level=0):
+        """
+        Load all VRTs from vrt_fnames list into a xarray dataset
+        """
+        # Disable RasterIO logging, just show ERRORS
+        log = rio_logging.getLogger()
+        log.setLevel(rio_logging.ERROR)
 
         datasets = None
         times = None
 
-        # Get all VRTs in the first subdirectory level
-        vrt_dir = os.path.join(self.source_dir, '*', '*.vrt')
-        vrts = glob(vrt_dir)
-        vrts.sort()
+        from IPython import embed ; ipshell = embed()
 
-        if len(vrts) == 0:
-            raise Exception(f"VRTs dir {vrts} is empty.")
-
-        for vrt in vrts:
+        for vrt in vrt_fnames:
             # Read each VRT file
             data_array = xr.open_rasterio(vrt)
             data_array = data_array.rename(
@@ -151,9 +176,14 @@ class Generator():
                 times = self.get_times(vrt)
             data_array['time'] = times
 
-            dataset_name = os.path.basename(vrt)
-            dataset_name = os.path.splitext(dataset_name)[0]
-            dataset_name = f"_{dataset_name}"
+            if level == 0:
+                dataset_name = Path(vrt).parents[0].name
+                dataset_name = f"_{dataset_name}"
+            elif level == 2:
+                dataset_name = Path(vrt).parents[1].name
+                dataset_name = f"_{dataset_name}"
+                subdataset_name = Path(vrt).parents[0].name
+                subdataset_name = f"_{subdataset_name}"
 
             if datasets is None:
                 # Create new dataset
@@ -164,6 +194,9 @@ class Generator():
                 datasets = datasets.merge(tmp_dataset)
                 tmp_dataset = None
 
+        # Back to default logging settings
+        logging.basicConfig(level=logging.INFO)
+
         return datasets
 
     def __decode_qa(self):
@@ -173,7 +206,7 @@ class Generator():
         # TODO Comments for this method
 
         # List of output QA datasets
-        self.qa_datasets = []
+        self.__qa_datasets = []
 
         # Get QA layers for product
         qa_catalogue = catalogue.Catalogue()
@@ -196,11 +229,11 @@ class Generator():
             bit_fields_dirs = [x[0] for x in os.walk(qa_dataset_dir)][1:]
 
             for bit_fields_dir in bit_fields_dirs:
-                self.qa_datasets.append(bit_fields_dir)
+                self.__qa_datasets.append(bit_fields_dir)
 
         # Create layerstack of bands or subdatasets
         LOG.info(f"Generating {self.product} QA layer stacks...")
-        for qa_dataset in self.qa_datasets:
+        for qa_dataset in self.__qa_datasets:
             self.__generate_layerstack(qa_dataset)
 
     def __get_qa_files(self, qa_layer):
@@ -213,7 +246,7 @@ class Generator():
         _qa_layer = qa_layer[1:-1]
 
         # Get the dataset dir where QA files are
-        qa_dir = [s for s in self.datasets if _qa_layer in s]
+        qa_dir = [s for s in self.__datasets if _qa_layer in s]
         if len(qa_dir) > 1:
             raise Exception((f"QA layer {qa_layer} directory might "
                              f"be stored in more than one directory. "

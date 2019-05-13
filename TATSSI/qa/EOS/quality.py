@@ -142,6 +142,7 @@ def qualityDecoder(inRst, product, qualityLayer,
     Decode QA flags from specific product
     """
     LOG.info(f"Decoding {product}...")
+    LOG.info(f"File {inRst}")
 
     # Setup catalogue
     catalogue = Catalogue()
@@ -190,7 +191,7 @@ def qualityDecoder(inRst, product, qualityLayer,
 
         outFileName = os.path.splitext(os.path.basename(inRst))[0]
         dst_img = outName(outDir, outFileName, f)
-        save_to_file(dst_img, qualityDecoded, proj, gt,
+        save_to_file(dst_img, qualityDecoded, proj, gt, md,
                      fill_value, rat)
 
     LOG.info(f"Decoding finished.")
