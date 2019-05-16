@@ -27,7 +27,7 @@ class Generator():
         """
         Constructor for Generator class
         """
-        time_series = namedtuple('time_series', 'data qa')
+        self.time_series = namedtuple('time_series', 'data qa')
 
         # Set private attributes
         self.__datasets = None
@@ -124,8 +124,14 @@ class Generator():
     def load_time_series(self):
         """
         Read all layer stacks
+        :return: time series (ts) tupple with two elements:
+                     data - all products layers in a xarray dataset
+                       where each layers is a variable
+                     qa - all decoded QA layers in a named tuple
+                       where each QA is a named tuple field and each
+                       decoded QA is a xarray dataset variable
         """
-        # Get all VRTs in the first subdirectory level
+        # Get all datasets, including the non-decoded QA layers
         vrt_dir = os.path.join(self.source_dir, '*', '*.vrt')
         vrt_fnames = glob(vrt_dir)
         vrt_fnames.sort()
@@ -135,18 +141,32 @@ class Generator():
 
         datasets = self.__get_datasets(vrt_fnames)
 
-        # Get all VRTs in the second subdirectory level - QAs
-        vrt_dir = os.path.join(self.source_dir, '*', '*', '*.vrt')
-        vrt_fnames = glob(vrt_dir)
-        vrt_fnames.sort()
+        # Get all decoded QA layers
+        qa_layer_names = self.__get_qa_layers()
 
-        if len(vrt_fnames) == 0:
-            raise Exception(f"VRTs dir {vrts} is empty.")
+        # Insert a 'qa' prefix in case there is an invalid field name
+        qa_layer_names_prefix = ['qa' + s for s in qa_layer_names]
+        # Create named tupple where to store QAs
+        qa_datasets = namedtuple('qa', ' '.join(qa_layer_names_prefix))
 
-        qa_datasets = self.__get_datasets(vrt_fnames, level=1)
+        for i, qa_layer in enumerate(qa_layer_names):
+            # Get all VRTs in the second subdirectory level - QAs
+            qa_layer_wildcard = f"*{qa_layer[1:-1]}*"
+            vrt_dir = os.path.join(self.source_dir, qa_layer_wildcard,
+                                   '*', '*.vrt')
+            vrt_fnames = glob(vrt_dir)
+            vrt_fnames.sort()
+
+            if len(vrt_fnames) == 0:
+                raise Exception(f"VRTs dir {vrts} is empty.")
+
+            # Set the attribute of the QA layer with the
+            # corresponding dataset
+            setattr(qa_datasets, qa_layer_names_prefix[i],
+                    self.__get_datasets(vrt_fnames, level=1))
 
         # Return time series object
-        ts = time_series(data=datasets, qa=qa_datasets)
+        ts = self.time_series(data=datasets, qa=qa_datasets)
 
         return ts
 
@@ -159,9 +179,8 @@ class Generator():
         log.setLevel(rio_logging.ERROR)
 
         datasets = None
+        subdataset_name = None
         times = None
-
-        from IPython import embed ; ipshell = embed()
 
         for vrt in vrt_fnames:
             # Read each VRT file
@@ -176,14 +195,10 @@ class Generator():
                 times = self.get_times(vrt)
             data_array['time'] = times
 
+            dataset_name = Path(vrt).parents[0].name
             if level == 0:
-                dataset_name = Path(vrt).parents[0].name
+                # Standard layer has an _ prefix
                 dataset_name = f"_{dataset_name}"
-            elif level == 2:
-                dataset_name = Path(vrt).parents[1].name
-                dataset_name = f"_{dataset_name}"
-                subdataset_name = Path(vrt).parents[0].name
-                subdataset_name = f"_{subdataset_name}"
 
             if datasets is None:
                 # Create new dataset
@@ -191,13 +206,34 @@ class Generator():
             else:
                 # Merge with existing dataset
                 tmp_dataset = data_array.to_dataset(name=dataset_name)
+
                 datasets = datasets.merge(tmp_dataset)
                 tmp_dataset = None
+                subdataset_name = None
 
         # Back to default logging settings
         logging.basicConfig(level=logging.INFO)
 
         return datasets
+
+    def __get_qa_layers(self):
+        """
+        Get the QA layer names associated with a product
+        :return qa_layer_names: List of QA layer names
+        """
+        # Get QA layers for product
+        qa_catalogue = catalogue.Catalogue()
+        # Get product QA definition
+        qa_defs = qa_catalogue.get_qa_definition(self.product_name,
+                                                 self.version)
+
+        qa_layer_names = []
+        # Decode QA layers
+        for qa_def in qa_defs:
+            for qa_layer in qa_def.QualityLayer.unique():
+                qa_layer_names.append(qa_layer)
+
+        return qa_layer_names
 
     def __decode_qa(self):
         """
@@ -208,28 +244,23 @@ class Generator():
         # List of output QA datasets
         self.__qa_datasets = []
 
-        # Get QA layers for product
-        qa_catalogue = catalogue.Catalogue()
-        # Get product QA definition
-        qa_defs = qa_catalogue.get_qa_definition(self.product_name,
-                                                 self.version)
+        qa_layer_names = self.__get_qa_layers()
 
         # Decode QA layers
-        for qa_def in qa_defs:
-            for qa_layer in qa_def.QualityLayer.unique():
-                qa_fnames = self.__get_qa_files(qa_layer)
+        for qa_layer in qa_layer_names:
+            qa_fnames = self.__get_qa_files(qa_layer)
 
-                # Decode all files
-                for qa_fname in qa_fnames:
-                    qualityDecoder(qa_fname, self.product, qa_layer,
-                                   bitField='ALL', createDir=True)
+            # Decode all files
+            for qa_fname in qa_fnames:
+                qualityDecoder(qa_fname, self.product, qa_layer,
+                               bitField='ALL', createDir=True)
 
-            # Get all bit fields per QA layer sub directories
-            qa_dataset_dir = os.path.dirname(qa_fname)
-            bit_fields_dirs = [x[0] for x in os.walk(qa_dataset_dir)][1:]
+        # Get all bit fields per QA layer sub directories
+        qa_dataset_dir = os.path.dirname(qa_fname)
+        bit_fields_dirs = [x[0] for x in os.walk(qa_dataset_dir)][1:]
 
-            for bit_fields_dir in bit_fields_dirs:
-                self.__qa_datasets.append(bit_fields_dir)
+        for bit_fields_dir in bit_fields_dirs:
+            self.__qa_datasets.append(bit_fields_dir)
 
         # Create layerstack of bands or subdatasets
         LOG.info(f"Generating {self.product} QA layer stacks...")
@@ -247,6 +278,7 @@ class Generator():
 
         # Get the dataset dir where QA files are
         qa_dir = [s for s in self.__datasets if _qa_layer in s]
+
         if len(qa_dir) > 1:
             raise Exception((f"QA layer {qa_layer} directory might "
                              f"be stored in more than one directory. "
