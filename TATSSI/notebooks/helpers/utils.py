@@ -82,13 +82,40 @@ def read_config():
 
     return url, username, password
 
+class QAnalytics():
+    """
+    Class to provide QA analysis tools
+    """
+    def __init__(self, product, version):
+        # Create TATSSI catalogue object
+        self.catalogue = catalogue.Catalogue()
+
+        self.qa_select = None
+
+    def display_qa():
+        """
+        Display QA layers and fields
+        """
+        # Product and dates button
+        self.qa_select = widgets.Select(
+                layout = Layout(width='50%'),
+                description = 'Select QA',
+                tooltip = 'Select QA to analyse')
+
 class PlotTimeSeries():
     """
     Class to plot a single time step and per-pixel time series
     """
     def __init__(self):
-        self.fig, (self.ax, self.bx) = plt.subplots(nrows = 2, ncols = 1,
-                                           figsize=(7.5, 9.0))
+        self.fig = plt.figure(figsize=(9.0, 9.0))
+
+        # Data plot
+        self.data_p = plt.subplot2grid((2, 2), (0, 0), colspan=1)
+        # QA plot
+        self.qa_p = plt.subplot2grid((2, 2), (0, 1), colspan=1,
+                                   sharey=self.data_p)
+        # Time series plot
+        self.ts_p = plt.subplot2grid((2, 2), (1, 0), colspan=2)
 
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
@@ -96,20 +123,21 @@ class PlotTimeSeries():
 
         self.ds = None
 
-    def plot(self, ds):
+    def plot(self, ds, qa):
         """
         Plot a variable and time series
         :param fname: Full path file name of time series to plot
         """
         # Open dataset
         self.ds = ds
-
         # Create plot
-        self._plot = self.ds[0].plot(cmap = 'Greys_r',
-                                     ax = self.ax)
+        self.ds[0].plot(cmap='Greys_r', ax=self.data_p,
+                        add_colorbar=False)
+        # Turn off axis
+        self.data_p.axis('off')
+        self.data_p.set_aspect('equal')
 
-        #self.ax.format_coord = format_coord
-        self.ax.set_aspect('equal')
+        
 
         # Connect the canvas with the event
         cid = self.fig.canvas.mpl_connect('button_press_event',
@@ -124,7 +152,7 @@ class PlotTimeSeries():
                               latitude = int(_rows / 2),
                               method='nearest')
 
-        plot_sd.plot(ax = self.bx)
+        plot_sd.plot(ax = self.ts_p)
         #self.bx.set_ylim([y_min, y_max])
 
         plt.tight_layout()
