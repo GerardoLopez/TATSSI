@@ -137,8 +137,6 @@ class PlotTimeSeries():
         self.data_p.axis('off')
         self.data_p.set_aspect('equal')
 
-        
-
         # Connect the canvas with the event
         cid = self.fig.canvas.mpl_connect('button_press_event',
                                           self.on_click)
@@ -163,13 +161,13 @@ class PlotTimeSeries():
         Event handler
         """
         # Clear subplot
-        self.bx.clear()
+        self.ts_p.clear()
 
         plot_sd = self.ds.sel(longitude=event.xdata,
                               latitude=event.ydata,
                               method='nearest')
 
-        plot_sd.plot(ax = self.bx)
+        plot_sd.plot(ax = self.ts_p)
         # Redraw plot
         plt.draw()
 
