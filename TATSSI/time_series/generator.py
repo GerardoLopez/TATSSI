@@ -255,17 +255,20 @@ class Generator():
                 qualityDecoder(qa_fname, self.product, qa_layer,
                                bitField='ALL', createDir=True)
 
-        # Get all bit fields per QA layer sub directories
-        qa_dataset_dir = os.path.dirname(qa_fname)
-        bit_fields_dirs = [x[0] for x in os.walk(qa_dataset_dir)][1:]
+        for qa_layer in qa_layer_names:
+            LOG.info(f"Generating {self.product} QA layer stacks "
+                     f"for {qa_layer}...")
+            # Get all bit fields per QA layer sub directories
+            qa_dataset_dir = os.path.join(self.source_dir, qa_layer[1::])
 
-        for bit_fields_dir in bit_fields_dirs:
-            self.__qa_datasets.append(bit_fields_dir)
+            bit_fields_dirs = [x[0] for x in os.walk(qa_dataset_dir)][1:]
 
-        # Create layerstack of bands or subdatasets
-        LOG.info(f"Generating {self.product} QA layer stacks...")
-        for qa_dataset in self.__qa_datasets:
-            self.__generate_layerstack(qa_dataset)
+            for bit_fields_dir in bit_fields_dirs:
+                self.__qa_datasets.append(bit_fields_dir)
+
+            # Create layerstack of bands or subdatasets
+            for qa_dataset in self.__qa_datasets:
+                self.__generate_layerstack(qa_dataset)
 
     def __get_qa_files(self, qa_layer):
         """

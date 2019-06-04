@@ -65550,52 +65550,52 @@
         <Usage>2</Usage>
       </FieldDefn>
       <Row index="0">
-        <F>10</F>
-        <F>Decreasing quality (0010)</F>
+        <F>0</F>
+        <F>Highest quality</F>
       </Row>
       <Row index="1">
-        <F>110</F>
-        <F>Decreasing quality (0110)</F>
-      </Row>
-      <Row index="2">
         <F>100</F>
         <F>Decreasing quality (0100)</F>
       </Row>
-      <Row index="3">
-        <F>1010</F>
-        <F>Decreasing quality (1010)</F>
-      </Row>
-      <Row index="4">
-        <F>111</F>
-        <F>Decreasing quality (0111)</F>
-      </Row>
-      <Row index="5">
-        <F>101</F>
-        <F>Decreasing quality (0101)</F>
-      </Row>
-      <Row index="6">
+      <Row index="2">
         <F>1</F>
         <F>Lower quality</F>
       </Row>
-      <Row index="7">
-        <F>1001</F>
-        <F>Decreasing quality (1001)</F>
-      </Row>
-      <Row index="8">
-        <F>11</F>
-        <F>Decreasing quality (0011)</F>
-      </Row>
-      <Row index="9">
-        <F>1111</F>
-        <F>Not useful for any other reason/not processed</F>
-      </Row>
-      <Row index="10">
+      <Row index="3">
         <F>1000</F>
         <F>Decreasing quality (1000)</F>
       </Row>
+      <Row index="4">
+        <F>1111</F>
+        <F>Not useful for any other reason/not processed</F>
+      </Row>
+      <Row index="5">
+        <F>1001</F>
+        <F>Decreasing quality (1001)</F>
+      </Row>
+      <Row index="6">
+        <F>101</F>
+        <F>Decreasing quality (0101)</F>
+      </Row>
+      <Row index="7">
+        <F>1010</F>
+        <F>Decreasing quality (1010)</F>
+      </Row>
+      <Row index="8">
+        <F>10</F>
+        <F>Decreasing quality (0010)</F>
+      </Row>
+      <Row index="9">
+        <F>110</F>
+        <F>Decreasing quality (0110)</F>
+      </Row>
+      <Row index="10">
+        <F>11</F>
+        <F>Decreasing quality (0011)</F>
+      </Row>
       <Row index="11">
-        <F>0</F>
-        <F>Highest quality</F>
+        <F>111</F>
+        <F>Decreasing quality (0111)</F>
       </Row>
     </GDALRasterAttributeTable>
   </PAMRasterBand>

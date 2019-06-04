@@ -270,16 +270,16 @@
         <Usage>2</Usage>
       </FieldDefn>
       <Row index="0">
-        <F>11</F>
-        <F>Cloudy data, Target not visible, covered with cloud</F>
-      </Row>
-      <Row index="1">
         <F>1</F>
         <F>Marginal data, Useful, but look at other QA information</F>
       </Row>
-      <Row index="2">
+      <Row index="1">
         <F>0</F>
         <F>Good data, use with confidence</F>
+      </Row>
+      <Row index="2">
+        <F>11</F>
+        <F>Cloudy data, Target not visible, covered with cloud</F>
       </Row>
     </GDALRasterAttributeTable>
   </PAMRasterBand>

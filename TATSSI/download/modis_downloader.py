@@ -153,12 +153,16 @@ def get_modis_data(platform, product, tiles,
         The password required to download data from the MODIS archive.
     platform: str
         The platform, MOLT, MOLA or MOTA. This basically relates to the sensor
-        used (or if a combination of AQUA & TERRA is used)
+        used (or if a combination of AQUA & TERRA is used).
+        MOLT - Terra only products
+        MOLA - Aqua only products
+        MOTA - Combined TERRA & AQUA products
     product: str
         The MODIS product. The product name should be in MODIS format
         (MOD09Q1.006, so product acronym dot collection)
     tiles: str or iter
-        A string with a single tile (e.g. "h17v04") or a lits of such strings.
+        A string with a single tile (e.g. "h17v04") or a list of such strings
+        ["h17v03", "h17v04"].
     output_dir: str
         The output directory
     start_date: datetime
