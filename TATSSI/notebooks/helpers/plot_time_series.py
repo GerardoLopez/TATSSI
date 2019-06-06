@@ -45,21 +45,22 @@ class PlotTimeSeries():
     Class to plot a single time step and per-pixel time series
     """
     def __init__(self):
+        # Clear cell
+        clear_output()
+
         self.fig = plt.figure(figsize=(9.0, 9.0))
 
         # Left plot
         self.left_p = plt.subplot2grid((2, 2), (0, 0), colspan=1)
         # Right plot
         self.right_p = plt.subplot2grid((2, 2), (0, 1), colspan=1,
-                                   sharey=self.left_p)
+                                   sharex=self.left_p, sharey=self.left_p)
         # Time series plot
         self.ts_p = plt.subplot2grid((2, 2), (1, 0), colspan=2)
 
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
         log.setLevel(rio_logging.ERROR)
-
-        self.ds = None
 
     def plot(self, left_ds, right_ds, is_qa=False):
         """
@@ -115,11 +116,44 @@ class PlotTimeSeries():
                                         latitude=event.ydata,
                                         method='nearest')
 
-        right_plot_sd = self.left_ds.sel(longitude=event.xdata,
+        # Masked data
+        right_plot_sd = self.right_ds.sel(longitude=event.xdata,
                                          latitude=event.ydata,
                                          method='nearest')
+        # Interpolated data
+        right_plot_sd_masked = right_plot_sd.where(right_plot_sd != 0)
+        linear_interpol = right_plot_sd_masked.interpolate_na(dim='time')
+        #cubic_interpol = right_plot_sd_masked.interpolate_na(dim='time',
+        #                                          method='cubic')
+        #spline_interpol = right_plot_sd_masked.interpolate_na(dim='time',
+        #                                           method='spline')
 
-        left_plot_sd.plot(ax = self.ts_p, color='blue', linestyle = '--')
-        right_plot_sd.plot(ax = self.ts_p, color='black', marker='o')
+        # Plots
+        left_plot_sd.plot(ax = self.ts_p, color='black',
+                linestyle = '--', linewidth=1, label='Original data')
+
+        right_plot_sd_masked.plot(ax = self.ts_p, color='blue',
+                marker='o', linestyle='None', label='Masked by user QA selection')
+
+        linear_interpol.plot(ax = self.ts_p,
+                linestyle=':', label='Linear')
+        #cubic_interpol.plot(ax = self.ts_p,
+        #       linestyle='--', label='Cubic')
+        #spline_interpol.plot(ax = self.ts_p,
+        #        linestyle='-.', label='Spline')
+
+        # Change ylimits
+        max_val = right_plot_sd_masked.data.max()
+        min_val = right_plot_sd_masked.data.min()
+
+        data_range = max_val - min_val
+        max_val = max_val + (data_range * 0.2)
+        min_val = min_val - (data_range * 0.2)
+        self.ts_p.set_ylim([min_val, max_val])
+
+        # Legend
+        self.ts_p.legend(loc='best', fontsize='small',
+                         fancybox=True, framealpha=0.5)
+
         # Redraw plot
         plt.draw()

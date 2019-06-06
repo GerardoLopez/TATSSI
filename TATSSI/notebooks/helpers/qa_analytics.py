@@ -93,6 +93,30 @@ class Analytics():
         # All QA definitions
         self.qa_defs = self.__get_qa_defs()
 
+    def plot_analytics(self):
+        """
+        Plot the percentage of data available and the max gap length
+        """
+        # Clear cell
+        self.__clear_cell()
+        fig, (ax, bx) = plt.subplots(1, 2, figsize=(9,4),
+                                     sharex=True, sharey=True)
+
+        ax.axis('off')
+        bx.axis('off')
+
+        self.pct_data_available.plot(ax=ax)
+        self.max_gap_length.plot(ax=bx)
+
+        ax.set_aspect('equal')
+        ax.title.set_text('% of data available')
+
+        bx.set_aspect('equal')
+        bx.title.set_text('Max gap-length')
+
+        plt.tight_layout()
+        plt.show()
+
     def ui(self):
         """
         QA user interface
@@ -322,11 +346,11 @@ class Analytics():
 
         self.__temp_mask = mask
         mask = xr.DataArray(np.all(self.__temp_mask, axis=0),
-                            dims=('time', 'latitude', 'longitude'))
+                            coords=[v.time.data,
+                                    v.latitude.data,
+                                    v.longitude.data],
+                            dims=['time', 'latitude', 'longitude'])
 
-        mask.time.data = v.time.data
-        mask.latitude.data = v.latitude.data
-        mask.longitude.data = v.longitude.data
         mask.attrs = v.attrs
 
         self.mask = mask
@@ -334,6 +358,9 @@ class Analytics():
         # Create the percentage of data available mask
         # Get the per-pixel per-time step binary mask
         pct_data_available = (self.mask.sum(axis=0) * 100.0) / _time
+        pct_data_available.latitude.data = v.latitude.data
+        pct_data_available.longitude.data = v.longitude.data
+        # Set the pct_data_available object
         self.pct_data_available = pct_data_available
 
         # Using the computed mask get the max gap length
@@ -347,8 +374,7 @@ class Analytics():
         # This function should be paralelised! 
 
         bands, rows, cols = self.mask.shape
-        #max_gap_length = np.zeros((rows,cols), np.int16)
-        max_gap_length = xr.zeros_like(self.mask[0])
+        max_gap_length = np.zeros((rows, cols), np.int16)
 
         progress_bar = IntProgress(
                 value=0,
@@ -369,14 +395,22 @@ class Analytics():
                 for key, group in i_groupby(self.mask.data[:,i,j]):
                     if key == False:
                         _gap_lenght = len(list(group))
-                        if _gap_lenght > 0 and _gap_lenght > max_gap_length.data[i,j]:
-                            max_gap_length.data[i,j] = _gap_lenght
+                        if _gap_lenght > 0 and _gap_lenght > max_gap_length[i,j]:
+                            max_gap_length[i,j] = _gap_lenght
 
         # Remove progress bar
         progress_bar.close()
         del progress_bar
 
-        self.max_gap_length = max_gap_length
+        # Create xarray DataArray
+        _max_gap_length = xr.DataArray(max_gap_length,
+                            coords=[self.mask.latitude.data,
+                                    self.mask.longitude.data],
+                            dims=['latitude', 'longitude'])
+
+        max_gap_length = None
+
+        self.max_gap_length = _max_gap_length
 
     def __clear_cell(self):
         """ Clear cell """
