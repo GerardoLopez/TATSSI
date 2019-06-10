@@ -1,5 +1,5 @@
 from .qa_analytics import *
-from .plot_time_series import *
+from .time_series_analysis import *
 from .plot_qa import *
 from .download import *
 from .import_export import *

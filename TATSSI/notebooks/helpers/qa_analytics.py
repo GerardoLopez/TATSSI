@@ -99,14 +99,26 @@ class Analytics():
         """
         # Clear cell
         self.__clear_cell()
-        fig, (ax, bx) = plt.subplots(1, 2, figsize=(9,4),
+        fig, (ax, bx) = plt.subplots(1, 2, figsize=(9,5),
                                      sharex=True, sharey=True)
+
+        ax.set_frame_on(False)
+        bx.set_frame_on(False)
 
         ax.axis('off')
         bx.axis('off')
 
-        self.pct_data_available.plot(ax=ax)
-        self.max_gap_length.plot(ax=bx)
+        self.pct_data_available.plot(
+                ax=ax,
+                cbar_kwargs={'orientation':'horizontal',
+                             'pad' : 0.01},
+        )
+
+        self.max_gap_length.plot(
+                ax=bx,
+                cbar_kwargs={'orientation':'horizontal',
+                             'pad' : 0.01},
+        )
 
         ax.set_aspect('equal')
         ax.title.set_text('% of data available')
@@ -114,6 +126,7 @@ class Analytics():
         bx.set_aspect('equal')
         bx.title.set_text('Max gap-length')
 
+        plt.margins(tight=True)
         plt.tight_layout()
         plt.show()
 
@@ -235,7 +248,7 @@ class Analytics():
 
         analytics = Button(
             description = 'QA analytics',
-            layout={'width': '30%'}
+            layout={'width': '20%'}
         )
         analytics.on_click(self.__analytics)
 
