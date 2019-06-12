@@ -69,8 +69,12 @@ class Catalogue():
         products = json.loads(requests.get(url_str).text,
                               object_pairs_hook = OrderedDict)
 
+
         # Convert into a pandas DataFrame
         products = pd.DataFrame(products)
+        # Convert all fields to strings
+        all_columns = list(products)
+        products[all_columns] = products[all_columns].astype(str)
 
         # Filter to get only default products
         products = products[products.Platform.isin(self.default_products)]

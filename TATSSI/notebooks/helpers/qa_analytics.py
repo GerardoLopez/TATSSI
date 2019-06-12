@@ -38,7 +38,7 @@ from rasterio import logging as rio_logging
 from datetime import datetime
 
 import matplotlib
-matplotlib.use('nbagg')
+matplotlib.use('nbAgg')
 import matplotlib.pyplot as plt
 
 class Analytics():
