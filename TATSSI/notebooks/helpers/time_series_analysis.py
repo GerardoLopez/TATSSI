@@ -12,13 +12,10 @@ from TATSSI.input_output.translate import Translate
 from TATSSI.input_output.utils import *
 from TATSSI.qa.EOS.catalogue import Catalogue
 
-from TATSSI.download.modis_downloader import get_modis_data
-from TATSSI.download.viirs_downloader import get_viirs_data
-
 # Widgets
 import ipywidgets as widgets
 from ipywidgets import Layout
-from ipywidgets import Select, SelectMultiple
+from ipywidgets import Select, SelectMultiple, IntProgress
 from ipywidgets import Dropdown, Button, VBox, HBox
 from ipywidgets import interact, interactive, fixed, interact_manual
 
@@ -32,6 +29,8 @@ from PyQt5.QtWidgets import QFileDialog
 
 import json
 import gdal, ogr
+from osgeo import gdal_array
+from osgeo import osr
 import pandas as pd
 import xarray as xr
 from rasterio import logging as rio_logging
@@ -46,18 +45,23 @@ class TimeSeriesAnalysis():
     """
     Class to plot a single time step and per-pixel time series
     """
-    def __init__(self, ts, mask=None):
+    def __init__(self, qa_analytics):
         """
-        :param ts: TATSSI time series object
+        :param ts: TATSSI qa_analytics object
         """
         # Clear cell
         clear_output()
 
         # Time series object
-        self.ts = ts
+        self.ts = qa_analytics.ts
+        # Source dir
+        self.source_dir = qa_analytics.source_dir
+        # Product
+        self.product = qa_analytics.product
+        self.version = qa_analytics.version
 
         # Mask
-        self.mask = mask
+        self.mask = qa_analytics.mask
 
         # Data variables
         # set in __fill_data_variables
@@ -78,6 +82,130 @@ class TimeSeriesAnalysis():
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
         log.setLevel(rio_logging.ERROR)
+
+    def __save_to_file(self, data, data_var, method):
+        """
+        Saves to file am interpolated time series for a specific
+        data variable using a selected interpolation method
+        :param data: NumPy array with the interpolated time series
+        :param data_var: String with the data variable name
+        :param method: String with the interpolation method name
+        """
+        # Get temp dataset extract the metadata
+        tmp_ds = getattr(self.ts.data, data_var)
+        # GeoTransform
+        gt = tmp_ds.attrs['transform']
+        # Coordinate Reference System (CRS) in a PROJ4 string to a
+        # Spatial Reference System Well known Text (WKT)
+        crs = tmp_ds.attrs['crs']
+        srs = osr.SpatialReference()
+        srs.ImportFromProj4(crs)
+        proj = srs.ExportToWkt()
+
+        fname = f"{self.product}.{self.version}.{data_var}.{method}.tif"
+        output_dir = os.path.join(self.source_dir, data_var[1::],
+                                  'interpolated')
+
+        if os.path.exists(output_dir) is False:
+            os.mkdir(output_dir)
+
+        fname = os.path.join(output_dir, fname)
+
+        # Get GDAL datatype from NumPy datatype
+        dtype = gdal_array.NumericTypeCodeToGDALTypeCode(data.dtype)
+
+        # Dimensions
+        layers, rows, cols = data.shape
+
+        # Create destination dataset
+        dst_ds = get_dst_dataset(dst_img=fname, cols=cols, rows=rows,
+                layers=layers, dtype=dtype, proj=proj, gt=gt)
+        
+        for layer in range(layers):
+            dst_band = dst_ds.GetRasterBand(layer + 1)
+
+            # Fill value
+            dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
+            # Date
+            dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                                     tmp_ds.time.data[layer].astype(str))
+
+            # Data
+            dst_band.WriteArray(data[layer])
+
+        dst_ds = None
+
+    def interpolate(self):
+        """
+        Interpolates the data of a time series object using
+        the method or methods provided
+        :param method: list of interpolation methods
+        """
+        if self.mask is None:
+            pass
+
+        _items = len(self.ts.data.data_vars) * \
+                 len(self.interpolation_methods.value)
+
+        progress_bar = IntProgress(
+                value=0,
+                min=0,
+                max=_items,
+                step=1,
+                description='',
+                bar_style='', # 'success', 'info', 'warning', 'danger' or ''
+                orientation='horizontal',
+                style = {'description_width': 'initial'},
+                layout={'width': '75%'}
+        )
+        display(progress_bar)
+
+        # For every interpol method selected by the user
+        _item = 0
+        for data_var in self.ts.data.data_vars:
+            progress_bar.value = _item
+            # Get temp dataset to perform the interpolation
+            tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
+
+            # Get fill value and idx
+            fill_value = tmp_ds.attrs['nodatavals'][0]
+            idx_no_data = np.where(tmp_ds.data == fill_value)
+
+            # Store original data type
+            dtype = tmp_ds.data.dtype
+
+            # Apply mask
+            tmp_ds *= self.mask
+            tmp_ds = tmp_ds.where(tmp_ds != 0)
+            # Where there were fill values, set the value again to 
+            # fill value to avoid not having data to interpolate
+            tmp_ds.data[idx_no_data] = fill_value
+            # Where are less than two observations, use fill value
+            idx_lt_two_obs = np.where(self.mask.sum(axis=0) < 3)
+            tmp_ds.data[:, idx_lt_two_obs[0],
+                           idx_lt_two_obs[1]] = fill_value
+
+            for method in self.interpolation_methods.value:
+                progress_bar.value = _item
+                progress_bar.description = (f"Interpolation of {data_var}"
+                                            f" using {method}")
+
+                # Perform interpolation
+                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
+                                                        method=method)
+
+                # Set data type to match the original (non-interpolated)
+                tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
+
+                # Save to file
+                self.__save_to_file(tmp_interpol_ds.data, data_var,
+                                    method)
+
+                _item += 1
+
+        # Remove progress bar
+        progress_bar.close()
+        del progress_bar
 
     def __create_plot_objects(self):
         """

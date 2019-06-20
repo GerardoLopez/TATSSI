@@ -4,7 +4,20 @@ from PyQt5.QtWidgets import QFileDialog
 
 import json
 
-def open_file_dialog(dialog_type = 'open',
+def _open_file_dialog(dialog_type = 'open',
+                   data_format = 'GeoTiff',
+                   extension = 'tif'):
+    """
+    Creates a Open File dialog window
+    :param dialog_type: Dialog type, can be open or save. Default is
+                        open
+    :param data_format: Data format to Open/Save. Default is GeoTiff
+    :parm extension: Data format extension. Default is tif
+    :return: Full path of selected file
+    """
+ 
+
+def _open_file_dialog(dialog_type = 'open',
                    data_format = 'GeoTiff',
                    extension = 'tif'):
     """
@@ -16,9 +29,10 @@ def open_file_dialog(dialog_type = 'open',
     :return: Full path of selected file
     """
     app = QtWidgets.QApplication([dir])
+
     if dialog_type == 'open':
         fname = QFileDialog.getOpenFileName(None,
-                    "Select a file...", '.',
+                    "Select a file...", './',
                     filter="All files (*)")
 
     elif dialog_type == 'save':
