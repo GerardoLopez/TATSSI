@@ -1,23 +1,19 @@
 
+import os
+import sys
+
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 
 import json
 
-def _open_file_dialog(dialog_type = 'open',
-                   data_format = 'GeoTiff',
-                   extension = 'tif'):
-    """
-    Creates a Open File dialog window
-    :param dialog_type: Dialog type, can be open or save. Default is
-                        open
-    :param data_format: Data format to Open/Save. Default is GeoTiff
-    :parm extension: Data format extension. Default is tif
-    :return: Full path of selected file
-    """
- 
+# TATSSI modules
+from pathlib import Path
+current_dir = os.path.dirname(__file__)
+src_dir = Path(current_dir).parents[2]
+sys.path.append(str(src_dir.absolute()))
 
-def _open_file_dialog(dialog_type = 'open',
+def open_file_dialog(dialog_type = 'open',
                    data_format = 'GeoTiff',
                    extension = 'tif'):
     """

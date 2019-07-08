@@ -3,9 +3,10 @@ import os
 import sys
 
 # TATSSI modules
-HomeDir = os.path.join(os.path.expanduser('~'))
-SrcDir = os.path.join(HomeDir, 'Projects', 'TATSSI')
-sys.path.append(SrcDir)
+from pathlib import Path
+current_dir = os.path.dirname(__file__)
+src_dir = Path(current_dir).parents[2]
+sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.time_series.generator import Generator
 from TATSSI.input_output.translate import Translate
@@ -144,8 +145,11 @@ class TimeSeriesAnalysis():
         if self.mask is None:
             pass
 
-        _items = len(self.ts.data.data_vars) * \
-                 len(self.interpolation_methods.value)
+        # Get temp dataset to perform the interpolation
+        data_var = self.data_vars.value
+        tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
+
+        _items = len(self.interpolation_methods.value) 
 
         progress_bar = IntProgress(
                 value=0,
@@ -162,46 +166,46 @@ class TimeSeriesAnalysis():
 
         # For every interpol method selected by the user
         _item = 0
-        for data_var in self.ts.data.data_vars:
+
+        progress_bar.value = _item
+
+        # Get fill value and idx
+        fill_value = tmp_ds.attrs['nodatavals'][0]
+        idx_no_data = np.where(tmp_ds.data == fill_value)
+
+        # Store original data type
+        dtype = tmp_ds.data.dtype
+
+        # Apply mask
+        tmp_ds *= self.mask
+        tmp_ds = tmp_ds.where(tmp_ds != 0)
+
+        # Where there were fill values, set the value again to 
+        # fill value to avoid not having data to interpolate
+        tmp_ds.data[idx_no_data] = fill_value
+
+        # Where are less than 1/4 of observations, use fill value
+        min_n_obs = int(tmp_ds.shape[0] * 0.25)
+        idx_lt_two_obs = np.where(self.mask.sum(axis=0) < min_n_obs)
+        tmp_ds.data[:, idx_lt_two_obs[0],
+                    idx_lt_two_obs[1]] = fill_value
+
+        for method in self.interpolation_methods.value:
             progress_bar.value = _item
-            # Get temp dataset to perform the interpolation
-            tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
+            progress_bar.description = (f"Interpolation of {data_var}"
+                                        f" using {method}")
 
-            # Get fill value and idx
-            fill_value = tmp_ds.attrs['nodatavals'][0]
-            idx_no_data = np.where(tmp_ds.data == fill_value)
+            tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
+                                                    method=method)
 
-            # Store original data type
-            dtype = tmp_ds.data.dtype
+            # Set data type to match the original (non-interpolated)
+            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
 
-            # Apply mask
-            tmp_ds *= self.mask
-            tmp_ds = tmp_ds.where(tmp_ds != 0)
-            # Where there were fill values, set the value again to 
-            # fill value to avoid not having data to interpolate
-            tmp_ds.data[idx_no_data] = fill_value
-            # Where are less than two observations, use fill value
-            idx_lt_two_obs = np.where(self.mask.sum(axis=0) < 3)
-            tmp_ds.data[:, idx_lt_two_obs[0],
-                           idx_lt_two_obs[1]] = fill_value
+            # Save to file
+            self.__save_to_file(tmp_interpol_ds.data, data_var,
+                                method)
 
-            for method in self.interpolation_methods.value:
-                progress_bar.value = _item
-                progress_bar.description = (f"Interpolation of {data_var}"
-                                            f" using {method}")
-
-                # Perform interpolation
-                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                                                        method=method)
-
-                # Set data type to match the original (non-interpolated)
-                tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
-
-                # Save to file
-                self.__save_to_file(tmp_interpol_ds.data, data_var,
-                                    method)
-
-                _item += 1
+            _item += 1
 
         # Remove progress bar
         progress_bar.close()

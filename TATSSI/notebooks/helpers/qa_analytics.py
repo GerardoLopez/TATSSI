@@ -3,9 +3,10 @@ import os
 import sys
 
 # TATSSI modules
-HomeDir = os.path.join(os.path.expanduser('~'))
-SrcDir = os.path.join(HomeDir, 'Projects', 'TATSSI')
-sys.path.append(SrcDir)
+from pathlib import Path
+current_dir = os.path.dirname(__file__)
+src_dir = Path(current_dir).parents[2]
+sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.time_series.generator import Generator
 from TATSSI.input_output.utils import *
@@ -40,6 +41,11 @@ from datetime import datetime
 import matplotlib
 matplotlib.use('nbAgg')
 import matplotlib.pyplot as plt
+
+import logging
+logging.basicConfig(level=logging.INFO)
+
+LOG = logging.getLogger(__name__)
 
 class Analytics():
     """
@@ -215,7 +221,7 @@ class Analytics():
         # Select all button
         select_all = Button(
             description = 'Select ALL',
-            layout={'width': '20%'}
+            layout={'width': '19%'}
         )
 
         select_all.on_click(select_all_qa)
@@ -223,7 +229,7 @@ class Analytics():
         # Default selection
         select_default = Button(
             description = 'Default selection',
-            layout={'width': '20%'}
+            layout={'width': '19%'}
         )
 
         def select_default_qa(b):
@@ -248,14 +254,47 @@ class Analytics():
 
         analytics = Button(
             description = 'QA analytics',
-            layout={'width': '20%'}
+            layout={'width': '19%'}
         )
         analytics.on_click(self.__analytics)
+
+        analytics_settings_save = Button(
+            description = 'Save QA analytics',
+            layout={'width': '19%'}
+        )
+        analytics_settings_save.on_click(self.__analytics_settings_save)
+
+        # Load user-defined settings
+        analytics_settings_load = Button(
+            description = 'Load QA analytics',
+            layout={'width': '19%'}
+        )
+
+        def __analytics_settings_load(b):
+            # Load user-defined QA saved settings from a JSON file
+            fname = self.qa_def.QualityLayer.unique()[0]
+            fname = f"{fname}.json"
+            fname = os.path.join(self.source_dir, fname)
+
+            if os.path.exists(fname) is False:
+                pass
+
+            with open(fname, 'r') as f:
+                self.user_qa_selection = collections.OrderedDict(
+                        json.loads(f.read()))
+
+            qa_flag.value = qa_flags[0]
+            qa_description.value = self.user_qa_selection[qa_flags[0]]
+
+        analytics_settings_load.on_click(__analytics_settings_load)
 
         # Display QA HBox
         display(qa_layer_header, _HBox_qa)
         
-        _HBox_buttons = HBox([select_all, select_default, analytics])
+        _HBox_buttons = HBox([select_all, select_default, analytics,
+                              analytics_settings_save,
+                              analytics_settings_load])
+
         display(_HBox_buttons)
 
     def __load_time_series(self):
@@ -298,6 +337,34 @@ class Analytics():
             qa_def['Value'] = binary_vals_list
 
         return qa_defs
+
+    def __analytics_settings_save(self, b):
+        """
+        Save the current user-defined QA setting into a JSON file
+        """
+        fname = self.qa_def.QualityLayer.unique()[0]
+        fname = f"{fname}.json"
+        fname = os.path.join(self.source_dir, fname)
+
+        with open(fname, 'w') as f:
+            f.write(json.dumps(self.user_qa_selection))
+
+        LOG.info(f"QA settings file {fname} written to disk.")
+
+    def __analytics_settings_load(self, b):
+        """
+        Load user-defined QA saved settings from a JSON file
+        """
+        fname = self.qa_def.QualityLayer.unique()[0]
+        fname = f"{fname}.json"
+        fname = os.path.join(self.source_dir, fname)
+
+        if os.path.exists(fname) is False:
+            pass
+
+        with open(fname, 'r') as f:
+            self.user_qa_selection = collections.OrderedDict(
+                    json.loads(f.read()))
 
     def __analytics(self, b):
         """

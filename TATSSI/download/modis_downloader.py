@@ -147,7 +147,7 @@ def get_modis_data(platform, product, tiles,
 
     Parameters
     -----------
-    usearname: str
+    username: str
         The username that is required to download data from the MODIS archive.
     password: str
         The password required to download data from the MODIS archive.

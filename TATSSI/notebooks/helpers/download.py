@@ -3,9 +3,10 @@ import os
 import sys
 
 # TATSSI modules
-HomeDir = os.path.join(os.path.expanduser('~'))
-SrcDir = os.path.join(HomeDir, 'Projects', 'TATSSI')
-sys.path.append(SrcDir)
+from pathlib import Path
+current_dir = os.path.dirname(__file__)
+src_dir = Path(current_dir).parents[2]
+sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.input_output.utils import *
 from TATSSI.notebooks.helpers.utils import *
@@ -135,7 +136,15 @@ class Download():
         """
         Opens dialog to select output dir
         """
-        output_dir = open_file_dialog('directory')
+        # TODO make an intelligent way to detect if the Jupyter
+        # Notebook is running as a web service or locally to allow
+        # or not to use the PyQT5 file dialogs
+        # output_dir = open_file_dialog('directory')
+
+        # Get product, rm <b> HTML tag
+        product = self.product.value[3:-4]
+        output_dir = os.path.join(src_dir, 'data', product)
+
         if len(output_dir) == 0:
             if self.download_button is not None:
                 self.download_button.disable = True
@@ -154,7 +163,7 @@ class Download():
 
             display(self.output)
         else:
-            self.output.value = output_dir
+            self.output.value = f"<b>{output_dir}</b>"
 
         if self.download_button is None:
             # Download button
@@ -178,7 +187,7 @@ class Download():
         # Get output dir, rm <b> HTML tag
         output = self.output.value[3:-4]
 
-        # Get platform, rm <b> HTML tag
+        # Get product, rm <b> HTML tag
         product = self.product.value[3:-4]
         if 'VNP' in product:
             platform = 'VIIRS'
@@ -202,6 +211,7 @@ class Download():
                    output_dir = output,
                    start_date = start_date,
                    end_date = end_date,
+                   n_threads = 1,
                    username = username,
                    password = password)
 
@@ -215,7 +225,7 @@ class Download():
         style = {'description_width': 'initial'}
         self.start_date = widgets.DatePicker(
                 value = start,
-                description = 'Select start date',
+                description = 'Start date (dd/mm/yyyy)',
                 disabled = False,
                 style = {'description_width': 'initial'})
 
@@ -224,7 +234,7 @@ class Download():
         style = {'description_width': 'initial'}
         self.end_date = widgets.DatePicker(
                 value = end,
-                description = 'Select end date',
+                description = 'End date (dd/mm/yyyy)',
                 disabled = False,
                 style = {'description_width': 'initial'})
 

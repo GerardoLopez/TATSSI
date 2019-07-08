@@ -3,9 +3,10 @@ import os
 import sys
 
 # TATSSI modules
-HomeDir = os.path.join(os.path.expanduser('~'))
-SrcDir = os.path.join(HomeDir, 'Projects', 'TATSSI')
-sys.path.append(SrcDir)
+from pathlib import Path
+current_dir = os.path.dirname(__file__)
+src_dir = Path(current_dir).parents[2]
+sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.time_series.generator import Generator
 from TATSSI.input_output.translate import Translate
