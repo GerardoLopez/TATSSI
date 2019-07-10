@@ -23,7 +23,7 @@ class Generator():
     """
     Class to generate time series of a specific TATSSI product
     """
-    def __init__(self, source_dir, product):
+    def __init__(self, source_dir, product, version):
         """
         Constructor for Generator class
         """
@@ -41,16 +41,15 @@ class Generator():
 
         # Check that the source dir has the requested product
         # to create an annual time series
-        product_name, version = product.split('.')
         fnames = glob(os.path.join(self.source_dir,
-                                   f"*{product_name}*{version}*"))
+                                   f"*{product}*{version}*"))
         if len(fnames) == 0:
             err_msg = (f"There are no {product} files in "
                        f"{self.source_dir}")
             raise(IOError(err_msg))
         else:
-            self.product = product
-            self.product_name = product_name
+            self.product = f"{product}.{version}"
+            self.product_name = product
             self.version = version
             # Sort files
             fnames.sort()

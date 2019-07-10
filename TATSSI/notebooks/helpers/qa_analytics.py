@@ -305,9 +305,8 @@ class Analytics():
         :return time series TATSSI object
         """
         # Create time series generator object
-        product_and_version = f'{self.product}.{self.version}'
         tsg = Generator(source_dir=self.source_dir,
-                        product=product_and_version)
+                        product=self.product, version=self.version)
 
         # Load time series
         return tsg.load_time_series()
