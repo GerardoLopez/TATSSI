@@ -2,8 +2,8 @@
 import os
 import sys
 
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QFileDialog
+#from PyQt5 import QtWidgets
+#from PyQt5.QtWidgets import QFileDialog
 
 import json
 

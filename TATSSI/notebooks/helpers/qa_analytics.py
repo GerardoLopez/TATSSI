@@ -24,9 +24,6 @@ from beakerx import TableDisplay
 from IPython.display import clear_output
 from IPython.display import display
 
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QFileDialog
-
 import json
 import collections
 from itertools import groupby as i_groupby
