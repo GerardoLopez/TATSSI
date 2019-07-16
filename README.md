@@ -23,5 +23,9 @@ TATSSI is a set of software tools to analise Earth Observation (EO) data. It all
 
 There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, go to ```TATSSI/notebooks``` and enjoy!
 
-### Some plots...
+## Taller
+
+Si eres de los participantes al taller, da click [aquí](http://35.237.20.223/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2FGerardoLopez%2FTATSSI&app=notebook) e ingresa con tu usuario y contraseña.
+
+## Some plots...
 A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
