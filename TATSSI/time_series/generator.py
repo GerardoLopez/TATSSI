@@ -112,7 +112,8 @@ class Generator():
                               options=options)
 
         # Create layerstack of bands or subdatasets
-        LOG.info(f"Generating {self.product} layer stacks...")
+        # LOG.info(f"Generating {self.product} layer stacks...")
+
         for dataset in self.__datasets:
             self.__generate_layerstack(dataset)
 
@@ -255,8 +256,9 @@ class Generator():
                                bitField='ALL', createDir=True)
 
         for qa_layer in qa_layer_names:
-            LOG.info(f"Generating {self.product} QA layer stacks "
-                     f"for {qa_layer}...")
+            #LOG.info(f"Generating {self.product} QA layer stacks "
+            #         f"for {qa_layer}...")
+
             # Get all bit fields per QA layer sub directories
             qa_dataset_dir = os.path.join(self.source_dir, qa_layer[1::])
 
@@ -311,7 +313,7 @@ class Generator():
                    f"{fname} {output_fnames}")
 
         self.run_command(command)
-        LOG.info(f"Layer stack for {sds_name} created successfully.")
+        #LOG.info(f"Layer stack for {sds_name} created successfully.")
 
     def __create_output_dir(self, sub_dir):
         """
