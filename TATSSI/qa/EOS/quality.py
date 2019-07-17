@@ -141,8 +141,8 @@ def qualityDecoder(inRst, product, qualityLayer,
     """
     Decode QA flags from specific product
     """
-    LOG.info(f"Decoding {product}...")
-    LOG.info(f"File {inRst}")
+    # LOG.info(f"Decoding {product}...")
+    # LOG.info(f"File {inRst}")
 
     # Setup catalogue
     catalogue = Catalogue()
@@ -174,7 +174,7 @@ def qualityDecoder(inRst, product, qualityLayer,
     # Loop through all of the bit fields or execute on the specified
     # bit field.
     for f in bitFieldList:
-        LOG.info(f"Decoding QA layer {f}...")
+        # LOG.info(f"Decoding QA layer {f}...")
         qualityDecoded = qualityDecodeArray(qa_layer_def,
                                             inArray, f, qualityCache)
 
@@ -194,4 +194,4 @@ def qualityDecoder(inRst, product, qualityLayer,
         save_to_file(dst_img, qualityDecoded, proj, gt, md,
                      fill_value, rat)
 
-    LOG.info(f"Decoding finished.")
+    # LOG.info(f"Decoding finished.")
