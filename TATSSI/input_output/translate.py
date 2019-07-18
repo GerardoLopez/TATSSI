@@ -46,7 +46,7 @@ class Translate():
         """
         Performs the translation
         """
-        # LOG.info("Converting file %s..." % self.source_img)
+        LOG.info("Converting file %s..." % self.source_img)
 
         # Source dataset
         src_dataset = gdal.Open(self.source_img)
@@ -65,7 +65,7 @@ class Translate():
         # Flush dataset
         dst_dataset = None
 
-        # LOG.info("File %s saved" % self.target_img)
+        LOG.info("File %s saved" % self.target_img)
 
 if __name__ == '__main__':
     dataDir = '/home/glopez/Projects/TATSSI/TATSSI/input_output/data'
