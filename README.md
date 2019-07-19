@@ -10,6 +10,7 @@
 * Install the required libraries:
   * ```cd TATSSI```
   * ```conda install --file tatssi-package-list.txt```
+* Go to the ```TATSSI/notebooks``` directory and run ```jupyter notebook```
 
 ## Description
 
@@ -23,9 +24,11 @@ TATSSI is a set of software tools to analise Earth Observation (EO) data. It all
 
 There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, go to ```TATSSI/notebooks``` and enjoy!
 
-## Taller
-
-Si eres de los participantes al taller, da click [aquí](http://35.237.20.223/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2FGerardoLopez%2FTATSSI&app=notebook) e ingresa con tu usuario y contraseña.
+## Presentaciones del primer taller
+* [Introducción al manejo de calidad de datos](presentaciones/IntroduccionManejoCalidadDeDatos.pptx)
+* [Introducción a TATSSI](presentaciones/IntroduccionTATSSI.pptx)
+* [Aplicaciones del análisis de series de tiempo](presentaciones/AplicasionesSeriesTiempo.pdf)
+* [Análisis de algunos métodos de interpolación](presentaciones/AnalisisMetodosInterpolacion.pdf)
 
 ## Some plots...
 A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
