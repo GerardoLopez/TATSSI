@@ -1,6 +1,7 @@
 
 import os
 import sys
+from glob import glob
 
 # TATSSI modules
 from pathlib import Path
@@ -56,7 +57,20 @@ class ImportExport():
         data_format = self.format.value.split('|')[0].strip()
         extension = self.format.value.split('|')[2].strip()
 
-        target_img = open_file_dialog('save', data_format, extension)
+        try:
+            target_img = open_file_dialog('save', data_format, extension)
+        except NameError:
+            # QtWidgets not available
+            # Set target img from input filename
+            target_img = "../../data/MOD13A2.006/*hdf"
+            target_img = glob(target_img)
+            target_img.sort()
+            target_img = target_img[0]
+
+            # Get file name only
+            target_img = os.path.splitext(target_img)[0]
+            target_img = f"{target_img}.{extension}"
+
         if len(target_img) == 0:
             # If there's no output file, do nothing...
             return None
@@ -119,7 +133,16 @@ class ImportExport():
         self.__clear_cell()
         display(self.input_button)
 
-        source_img = open_file_dialog('open')
+        try:
+            source_img = open_file_dialog('open')
+        except NameError:
+            # QtWidgets not available
+            # Get first file in data dir
+            source_img = "../../data/MOD13A2.006/*hdf"
+            source_img = glob(source_img)
+            source_img.sort()
+            source_img = source_img[0]
+
         if len(source_img) == 0:
             # If there's no source file, do nothing...
             return None

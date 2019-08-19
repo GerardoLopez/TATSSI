@@ -113,6 +113,7 @@ class Generator():
 
         # Create layerstack of bands or subdatasets
         LOG.info(f"Generating {self.product} layer stacks...")
+
         for dataset in self.__datasets:
             self.__generate_layerstack(dataset)
 
@@ -150,7 +151,11 @@ class Generator():
 
         for i, qa_layer in enumerate(qa_layer_names):
             # Get all VRTs in the second subdirectory level - QAs
-            qa_layer_wildcard = f"*{qa_layer[1:-1]}*"
+            if qa_layer[0] == '_' or qa_layer[-1] == '_':
+                qa_layer_wildcard = f"*{qa_layer[1:-1]}*"
+            else:
+                qa_layer_wildcard = f"*{qa_layer}*"
+
             vrt_dir = os.path.join(self.source_dir, qa_layer_wildcard,
                                    '*', '*.vrt')
             vrt_fnames = glob(vrt_dir)
@@ -257,8 +262,14 @@ class Generator():
         for qa_layer in qa_layer_names:
             LOG.info(f"Generating {self.product} QA layer stacks "
                      f"for {qa_layer}...")
+
             # Get all bit fields per QA layer sub directories
-            qa_dataset_dir = os.path.join(self.source_dir, qa_layer[1::])
+            if qa_layer[0] == '_' :
+                tmp_qa_layer = qa_layer[1::]
+            else:
+                tmp_qa_layer = qa_layer
+
+            qa_dataset_dir = os.path.join(self.source_dir, tmp_qa_layer)
 
             bit_fields_dirs = [x[0] for x in os.walk(qa_dataset_dir)][1:]
 
@@ -276,7 +287,10 @@ class Generator():
         :return qa_fnames: Sorted list with QA files
         """
         # Trim qa_layer string, it might contain extra _
-        _qa_layer = qa_layer[1:-1]
+        if qa_layer[0] == '_' or qa_layer[-1] == '_' :
+            _qa_layer = qa_layer[1:-1]
+        else:
+            _qa_layer = qa_layer
 
         # Get the dataset dir where QA files are
         qa_dir = [s for s in self.__datasets if _qa_layer in s]

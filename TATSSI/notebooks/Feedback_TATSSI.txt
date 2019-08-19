@@ -1,0 +1,66 @@
+# Feedback TATSSI
+
+Por favor danos tu retroalimentacion de cada uno de los módulos que se están presentando. 
+
+# ========
+# Descarga
+# ========
+
+
+
+
+
+
+
+
+
+
+# =======================
+# Importación/Exportación
+# =======================
+
+
+
+
+
+
+
+
+
+# ===================
+# Análisis de Calidad
+# ===================
+
+
+
+
+
+
+
+
+
+
+# ==============================
+# Generación de series de tiempo
+# ==============================
+
+
+
+
+
+
+
+
+
+# =============
+# Interpolación
+# =============
+
+
+
+
+
+
+
+
+
