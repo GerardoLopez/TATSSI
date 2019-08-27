@@ -2,10 +2,89 @@
 import os
 import subprocess
 import gdal
+from osgeo import gdal_array
+from osgeo import osr
 import xarray as xr
 import numpy as np
 from glob import glob
 from datetime import datetime
+
+from TATSSI.input_output.utils import *
+
+import logging
+LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s %(message)s')
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+LOG.addHandler(ch)
+
+def save_to_file(data, fname, method):
+    """
+    Saves to file an interpolated time series for a specific
+    data variable using a selected interpolation method
+    :param data: NumPy array with the interpolated time series
+    :param method: String with the interpolation method name
+    """
+    # Get temp dataset extract the metadata
+    tmp_ds = data
+
+    # GeoTransform
+    # With rasterio >= 1.x 
+    # https://rasterio.readthedocs.io/en/stable/topics/migrating-to-v1.html
+    # affine.Affine(a, b, c,
+    #              d, e, f)
+    # and a GDAL geotransform looks like:
+    #
+    # (c, a, b, f, d, e)
+
+    x_res = data.longitude[1] - data.longitude[0]
+    y_res = data.latitude[1] - data.latitude[0]
+
+    gt = (data.longitude.data[0] - (x_res / 2.), x_res, 0.0,
+          data.latitude.data[0] - (y_res / 2.), 0.0, y_res)
+
+    # Coordinate Reference System (CRS) in a PROJ4 string to a
+    # Spatial Reference System Well known Text (WKT)
+    crs = tmp_ds.attrs['crs']
+    srs = osr.SpatialReference()
+    srs.ImportFromProj4(crs)
+    proj = srs.ExportToWkt()
+
+    fname = f"{fname}.{method}.img"
+
+    # Get GDAL datatype from NumPy datatype
+    dtype = gdal_array.NumericTypeCodeToGDALTypeCode(tmp_ds.dtype)
+
+    # Dimensions
+    layers, rows, cols = data.shape
+
+    # Create destination dataset
+    dst_ds = get_user_dst_dataset(dst_img=fname, cols=cols, rows=rows,
+                                  layers=layers, dtype=dtype, proj=proj,
+                                  gt=gt, driver_name='ENVI')
+
+    for layer in range(layers):
+        dst_band = dst_ds.GetRasterBand(layer + 1)
+
+        # Fill value
+        dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
+        # Date
+        dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                                 tmp_ds.time.data[layer].astype(str))
+
+        # Data
+        dst_band.WriteArray(data[layer].data)
+
+    dst_ds = None
 
 def run_command(cmd: str):
     """
@@ -65,7 +144,7 @@ def add_dates(data_dir):
         str_date = _date.strftime('%Y-%m-%d')
 
         add_date_to_metadata(fname, str_date)
-        print(f"Metadata added for {fname}")
+        LOG.info(f"Metadata added for {fname}")
 
 def add_date_to_metadata(fname, str_date):
     """
@@ -90,14 +169,16 @@ def add_date_to_metadata(fname, str_date):
     d = None
     del(d)
 
-def create_vrt(data_dir, output_fname='output.vrt'):
+def create_vrt(data_dir, year, output_fname='output.vrt'):
     """
     Creates a GDAL VRT file for all input GeoTif's in data dir
+    :param year: Year to be used to create the time series
     :param data_dir: Full path of the directory where input files are
     :param output_fname: VRT output filename
     """
-    input_files = os.path.join(data_dir, '*.tif')
-    cmd = f"gdalbuildvrt -separate {output_fname} {input_files}"
+    fnames = f"MCD43A4_{year}*.tif"
+    input_files = os.path.join(data_dir, fnames)
+    cmd = f"gdalbuildvrt -separate -overwrite {output_fname} {input_files}"
 
     run_command(cmd)
 
@@ -105,8 +186,12 @@ def get_dataset(vrt_fname):
     """
     Loads the vrt into an xarray
     """
+    bands = gdal.Open(vrt_fname).RasterCount
+
+    # 128 best so far
     data_array = xr.open_rasterio(vrt_fname,
-                        chunks={'x' : 255, 'y' : 255, 'band' : 6940})
+                        chunks={'x' : 128, 'y' : 128, 'band' : bands})
+
     data_array = data_array.rename(
                      {'x': 'longitude',
                       'y': 'latitude',
@@ -116,26 +201,68 @@ def get_dataset(vrt_fname):
     times = get_times(vrt_fname)
     data_array['time'] = times
 
+    # Set no data values to 32767
+    time_series_length = len(data_array.nodatavals)
+    data_array.attrs['nodatavals'] = tuple([32767] * time_series_length)
+
     return data_array
 
 if __name__ == "__main__":
 
     # Data directory
-    data_dir = '/home/series_tiempo/OCELOTL/Bandas_originales/B1_original'
+    #data_dir = '/home/series_tiempo/OCELOTL/Bandas_originales/B1_original'
+    data_dir = '/data/MODIS/MCD43A4/mosaic'
 
     # Add dates
     #add_dates(data_dir)
 
     # Create VRT -- default output file name is 'output.vrt'
-    #create_vrt(data_dir)
+    create_vrt(year=2018, data_dir=data_dir)
 
     # Load VRT
     data = get_dataset('output.vrt')
 
-    # Interpolate for one year
-    tmp = data.sel(time=slice('2015-01-01','2015-12-31')).interpolate_na(dim='time', method='linear')
+    # Spatial subset
+    #subset = data.sel(latitude=slice(2000000, 800000),
+    #                  longitude=slice(2000000, 3200000))
+    subset = data
+
+    # Mask
+    data_with_nan = subset.where(subset != 32767)
+
+    # Interpolate
+    method = 'linear'
+    data_interpolated = data_with_nan.interpolate_na(dim='time', method=method)
+    # Change dtype to the original one
+    data_interpolated.data = data_interpolated.data.astype(np.int16)
+
+    #tmp = data.sel(time=slice('2015-01-01','2015-12-31')).interpolate_na(dim='time', method='linear')
 
     from dask.distributed import Client
-    client = Client(n_workers=8, threads_per_worker=1, memory_limit='32GB')
+    client = Client()
+    #client = Client(n_workers=2, threads_per_worker=2, memory_limit='30GB')
 
-    computed_tmp = tmp.load()
+    LOG.info("Performing interpolation...")
+    #computed_data_interpolated = data_interpolated.compute(scheduler='processes', num_workers=3, memory_limit='20GB')
+    # Launched with default settings
+    computed_data_interpolated = data_interpolated.compute()
+
+    # Copy metadata
+    computed_data_interpolated.attrs = data.attrs
+
+    # Change dtype to the original one
+    #computed_data_interpolated.data = computed_data_interpolated.data.astype(data.data.dtype)
+
+    LOG.info("Interpolation finished...")
+    #exit()
+
+    # Save data
+    LOG.info("Saving data to file...")
+    fname = os.path.join(data_dir, 'output_interpolated')
+    save_to_file(computed_data_interpolated, fname, method)
+
+    # Close client
+    client.close()
+
+    LOG.info("Interpolation finished.")
+

@@ -83,7 +83,7 @@ class TimeSeriesAnalysis():
 
     def __save_to_file(self, data, data_var, method):
         """
-        Saves to file am interpolated time series for a specific
+        Saves to file an interpolated time series for a specific
         data variable using a selected interpolation method
         :param data: NumPy array with the interpolated time series
         :param data_var: String with the data variable name
