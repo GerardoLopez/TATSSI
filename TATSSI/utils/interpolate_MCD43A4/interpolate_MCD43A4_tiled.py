@@ -72,17 +72,31 @@ def save_to_file(data, fname, method):
                                   layers=layers, dtype=dtype, proj=proj,
                                   gt=gt, driver_name='ENVI')
 
-    for layer in range(layers):
-        dst_band = dst_ds.GetRasterBand(layer + 1)
+    block = 1000
+    for start_row in range(0, rows, block):
+        if start_row + block > rows:
+            end_row = rows
+        else:
+            end_row = start_row + block
 
-        # Fill value
-        dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
-        # Date
-        dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
-                                 tmp_ds.time.data[layer].astype(str))
+        LOG.info(f"Interpolating lines {start_row} to {end_row}...")
+        _data = data[:, start_row:end_row + 1, :]
+        _data = _data.compute()
 
-        # Data
-        dst_band.WriteArray(data[layer].data)
+        LOG.info("Writing data...")
+        for layer in range(layers):
+            dst_band = dst_ds.GetRasterBand(layer + 1)
+
+            # Fill value
+            dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
+            # Date
+            dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                                     tmp_ds.time.data[layer].astype(str))
+
+            # Data
+            #dst_band.WriteArray(data[layer].data)
+            dst_band.WriteArray(_data[layer].data,
+                                xoff=0, yoff=start_row)
 
     dst_ds = None
 
@@ -222,9 +236,9 @@ if __name__ == "__main__":
     data = get_dataset('output.vrt')
 
     # Spatial subset
-    subset = data.sel(latitude=slice(2000000, 800000),
-                      longitude=slice(2000000, 3200000))
-    #subset = data
+    #subset = data.sel(latitude=slice(2000000, 800000),
+    #                  longitude=slice(2000000, 3200000))
+    subset = data
 
     # Mask
     #data_with_nan = subset.where(subset != 32767)
@@ -241,26 +255,17 @@ if __name__ == "__main__":
     # Copy metadata
     data_interpolated.attrs = data.attrs
 
-    #tmp = data.sel(time=slice('2015-01-01','2015-12-31')).interpolate_na(dim='time', method='linear')
-
     from dask.distributed import Client
-    #client = Client()
     client = Client(n_workers=7, threads_per_worker=1, memory_limit='8GB')
 
     LOG.info("Performing interpolation...")
-    #computed_data_interpolated = data_interpolated.compute(scheduler='processes', num_workers=3, memory_limit='20GB')
-    # Launched with default settings
-    computed_data_interpolated = data_interpolated.compute()
-
-    # Change dtype to the original one
-    #computed_data_interpolated.data = computed_data_interpolated.data.astype(data.data.dtype)
-
-    #exit()
 
     # Save data
-    LOG.info("Saving data...")
     fname = os.path.join(data_dir, 'output_interpolated')
-    save_to_file(computed_data_interpolated, fname, method)
+    save_to_file(data_interpolated, fname, method)
+
+    data_interpolated = None
+    del(data_interpolated)
 
     # Close client
     client.close()

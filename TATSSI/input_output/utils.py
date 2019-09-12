@@ -37,6 +37,43 @@ def get_array_size(rows, cols, bands, dtype):
 
         array_size /= 1024.0
 
+def get_user_dst_dataset(dst_img, cols, rows, layers,
+                         dtype, proj, gt, driver_name='ENVI'):
+    """
+    Create a GDAL dataset using specified driver, default 
+    is a generic binary with ENVI header.
+    :param dst_img: Output filenane full path
+    :param cols: Number of columns
+    :param rows: Number of rows 
+    :param layers: Number of layers
+    :param dtype: GDAL type code
+    :param proj: Projection information in WKT format
+    :param gt: GeoTransform tupple
+    :param driver_name: GDAL driver
+    :return dst_ds: GDAL destination dataset object
+    """
+    gdal.UseExceptions()
+    try:
+        # Default driver options to create a COG
+        driver = gdal.GetDriverByName(driver_name)
+
+        # Create driver
+        dst_ds = driver.Create(dst_img, cols, rows, layers, dtype)
+
+        # Set cartographic projection
+        dst_ds.SetProjection(proj)
+        dst_ds.SetGeoTransform(gt)
+
+    except Exception as err:
+        if err.err_level >= gdal.CE_Warning:
+            print('Cannot write dataset: %s' % self.input.value)
+            # Stop using GDAL exceptions
+            gdal.DontUseExceptions()
+            raise RuntimeError(err.err_level, err.err_no, err.err_msg)
+
+    gdal.DontUseExceptions()
+    return dst_ds
+
 def get_dst_dataset(dst_img, cols, rows, layers, dtype, proj, gt):
     """
     Create a GDAL data set in TATSSI default format
@@ -79,7 +116,7 @@ def get_dst_dataset(dst_img, cols, rows, layers, dtype, proj, gt):
     return dst_ds
 
 def save_to_file(dst_img, data_array, proj, gt, md,
-                 fill_value = 255, rat = None):
+                 fill_value = 255, rat = None, driver='GTiff'):
     """
     Saves data into a selected file
     :param dst_img: Output filenane full path
@@ -103,8 +140,14 @@ def save_to_file(dst_img, data_array, proj, gt, md,
     dtype = gdal_array.NumericTypeCodeToGDALTypeCode(data_array.dtype)
 
     # Get dataset where to put the data
-    dst_ds = get_dst_dataset(dst_img, cols, rows, layers,
-                             dtype, proj, gt)
+    if driver == 'GTiff':
+        # Create a COG dataset
+        dst_ds = get_dst_dataset(dst_img, cols, rows, layers,
+                                 dtype, proj, gt)
+    else:
+        # Create a user defined dataset
+        dst_ds = get_user_dst_dataset(dst_img, cols, rows, layers,
+                                      dtype, proj, gt, driver)
 
     # Set metadata
     dst_ds.SetMetadata(md)
