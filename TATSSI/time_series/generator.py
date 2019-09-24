@@ -55,7 +55,7 @@ class Generator():
             fnames.sort()
             self.fnames = fnames
 
-    def generate_time_series(self):
+    def generate_time_series(self, overwrite=True):
         """
         Generate tile series using all files in source dir
         """
@@ -72,7 +72,8 @@ class Generator():
 
                     if i == 0:
                         # Create output dir
-                        output_dir = self.__create_output_dir(sds_name)
+                        output_dir = self.__create_output_dir(sds_name,
+                                              overwrite)
                         self.__datasets.append(output_dir)
                     else:
                         output_dir = os.path.join(self.source_dir, sds_name)
@@ -95,7 +96,8 @@ class Generator():
                 for band in range(bands):
                     if band == 0:
                         # Create output dir
-                        output_dir = self.__create_output_dir(f"b{band+1}")
+                        output_dir = self.__create_output_dir(f"b{band+1}",
+                                             overwrite)
                         self.__datasets.append(output_dir)
                     else:
                         output_dir = os.path.join(self.source_dir,
@@ -137,7 +139,12 @@ class Generator():
         vrt_fnames.sort()
 
         if len(vrt_fnames) == 0:
-            raise Exception(f"VRTs dir {vrts} is empty.")
+            msg = (f"Verify that {self.source_dir} has the "
+                   f"corresponding subdatasets for:\n"
+                   f"product - {self.product_name}\n"
+                   f"version - {self.version}\n"
+                   f"Has TimeSeriesGenerator been executed?")
+            raise Exception(msg)
 
         datasets = self.__get_datasets(vrt_fnames)
 
@@ -327,14 +334,14 @@ class Generator():
         self.run_command(command)
         LOG.info(f"Layer stack for {sds_name} created successfully.")
 
-    def __create_output_dir(self, sub_dir):
+    def __create_output_dir(self, sub_dir, overwrite=True):
         """
         Create output dir as a sub dir of source dir
         :return subdir: Full path of created sub dir
         """
         try:
             sub_dir = os.path.join(self.source_dir, sub_dir)
-            os.mkdir(sub_dir)
+            Path(sub_dir).mkdir(parents=True, exist_ok=overwrite)
         except FileExistsError as e:
             raise(e)
         except IOError:
