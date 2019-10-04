@@ -23,7 +23,7 @@ class Generator():
     """
     Class to generate time series of a specific TATSSI product
     """
-    def __init__(self, source_dir, product, version):
+    def __init__(self, source_dir, product, version, year=None):
         """
         Constructor for Generator class
         """
@@ -43,6 +43,7 @@ class Generator():
         # to create an annual time series
         fnames = glob(os.path.join(self.source_dir,
                                    f"*{product}*{version}*"))
+
         if len(fnames) == 0:
             err_msg = (f"There are no {product} files in "
                        f"{self.source_dir}")
@@ -54,6 +55,11 @@ class Generator():
             # Sort files
             fnames.sort()
             self.fnames = fnames
+            # Year
+            if year is None:
+                self.year = year
+            else:
+                self.year = int(year)
 
     def generate_time_series(self, overwrite=True):
         """
@@ -224,6 +230,12 @@ class Generator():
 
         # Back to default logging settings
         logging.basicConfig(level=logging.INFO)
+
+        # If a specific temporal subset is requested, create subset
+        if self.year is not None:
+            time_slice = slice(f'{self.year-1}-11-29',
+                               f'{self.year+1}-02-01')
+            datasets = datasets.sel(time=time_slice)
 
         return datasets
 

@@ -9,6 +9,7 @@ src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.time_series.generator import Generator
+from TATSSI.time_series.smoothn import smoothn
 from TATSSI.input_output.translate import Translate
 from TATSSI.input_output.utils import *
 from TATSSI.qa.EOS.catalogue import Catalogue
@@ -274,9 +275,10 @@ class TimeSeriesAnalysis():
         """
         Fill interpolation methods
         """
-        interpolation_methods = ['linear', 'nearest', 'zero', 'slinear',
+        interpolation_methods = ['linear', 'nearest', 'slinear',
                                  'quadratic', 'cubic', 'barycentric',
-                                 'krog', 'pchip', 'spline', 'akima']
+                                 'krog', 'pchip', 'spline', 'akima',
+                                 'smoothn']
 
         self.interpolation_methods = SelectMultiple(
                 options=tuple(interpolation_methods),
@@ -368,11 +370,20 @@ class TimeSeriesAnalysis():
         # Interpolate data
         right_plot_sd_masked = right_plot_sd.where(right_plot_sd != 0)
         right_plot_sd_masked.plot(ax = self.ts_p, color='blue',
-                marker='o', linestyle='None', label='Masked by user QA selection')
+                marker='o', linestyle='None',
+                label='Masked by user QA selection')
 
         # For every interpol method selected by the user
         for method in self.interpolation_methods.value:
-            tmp_ds = right_plot_sd_masked.interpolate_na(dim='time',
+            if method is 'smoothn':
+                smoothed_array = smoothn(
+                        y=right_plot_sd_masked.interpolate_na(dim='time').data,
+                        isrobust=True)[0]
+                print(smoothed_array)
+                tmp_ds = right_plot_sd_masked.copy(deep=True,
+                        data=smoothed_array)
+            else:
+                tmp_ds = right_plot_sd_masked.interpolate_na(dim='time',
                                               method=method)
             tmp_ds.plot(ax = self.ts_p, label=method,
                         linewidth=1)

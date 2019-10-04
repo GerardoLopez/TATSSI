@@ -48,7 +48,7 @@ class Analytics():
     """
     Class to provide QA analytics
     """
-    def __init__(self, source_dir, product, version):
+    def __init__(self, source_dir, product, version, year=None):
 
         # Check input parameters
         if os.path.exists(source_dir) is True:
@@ -91,6 +91,7 @@ class Analytics():
         self.catalogue = Catalogue()
 
         # Time series object
+        self.year = year
         self.ts = self.__load_time_series()
 
         # All QA definitions
@@ -306,7 +307,8 @@ class Analytics():
         """
         # Create time series generator object
         tsg = Generator(source_dir=self.source_dir,
-                        product=self.product, version=self.version)
+                        product=self.product, version=self.version,
+                        year=self.year)
 
         # Load time series
         return tsg.load_time_series()
