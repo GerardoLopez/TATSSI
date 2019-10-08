@@ -6,6 +6,7 @@ import xarray as xr
 from rasterio import logging as rio_logging
 import subprocess
 from collections import namedtuple
+from datetime import datetime as dt
 
 from glob import glob
 
@@ -23,7 +24,8 @@ class Generator():
     """
     Class to generate time series of a specific TATSSI product
     """
-    def __init__(self, source_dir, product, version, year=None):
+    def __init__(self, source_dir, product, version,
+            year=None, start=None, end=None):
         """
         Constructor for Generator class
         """
@@ -55,11 +57,84 @@ class Generator():
             # Sort files
             fnames.sort()
             self.fnames = fnames
+
             # Year
-            if year is None:
-                self.year = year
-            else:
-                self.year = int(year)
+            self.__set_year(year)
+            # Start and End dates
+            self.__set_start_end_dates(start, end)
+
+    def __get_product_dates_range(self):
+        """
+        Get temporalExtentStart and temporalExtentEnd for
+        a specific product (product.version)
+        :param product: product and version to get temporal extent
+        :return temporalExtentStart
+                temporalExtentEnd: datetime objects
+        """
+                # Get valid years for product
+        _catalogue = catalogue.Catalogue()
+        _products =_catalogue.products
+        _products = _products[_products.ProductAndVersion == self.product]
+
+        temporalExtentStart = self.string_to_date(
+                _products.TemporalExtentStart.values[0])
+
+        temporalExtentEnd = self.string_to_date(
+                _products.TemporalExtentEnd.values[0])
+
+        return temporalExtentStart, temporalExtentEnd
+
+    def __set_start_end_dates(self, start, end):
+        """
+        Set start and end dates in format:
+        YYYY-mm-dd same as: '%Y-%m-%d'
+        """
+        if start is None or end is None:
+            self.start, self.end = None, None
+            return
+
+        temporalExtentStart, temporalExtentEnd = \
+            self.__get_product_dates_range()
+
+        _start = self.string_to_date(start)
+        if _start >= temporalExtentStart:
+            self.start = _start.strftime('%Y-%m-%d')
+        else:
+            msg = (f"Start date {start} is not within "
+                   f"{self.prodct} temporal extent")
+            Exception(msg)
+            raise
+
+        _end = self.string_to_date(end)
+        if _end <= temporalExtentEnd:
+            self.end = _end.strftime('%Y-%m-%d')
+        else:
+            msg = (f"End date {start} is not within "
+                   f"{self.product} temporal extent")
+            raise Exception(msg)
+
+    def __set_year(self, year):
+        """
+        Sets year
+        """
+        if year is None:
+            self.year = None
+            return
+
+        try:
+            year = int(year)
+        except ValueError as e:
+            msg = f"Year {year} is not a valid calendar year"
+            raise Exception(msg)
+
+        temporalExtentStart, temporalExtentEnd = \
+            self.__get_product_dates_range()
+
+        if year >= temporalExtentStart.year:
+            self.year = year
+        else:
+            msg = f"Year {year} is not within product.version extent"
+            raise Exception(msg)
 
     def generate_time_series(self, overwrite=True):
         """
@@ -236,6 +311,10 @@ class Generator():
             time_slice = slice(f'{self.year-1}-11-29',
                                f'{self.year+1}-02-01')
             datasets = datasets.sel(time=time_slice)
+        elif self.start is not None and self.end is not None:
+            time_slice = slice(f'{self.start}',
+                               f'{self.end}')
+            datasets = datasets.sel(time=time_slice)
 
         return datasets
 
@@ -411,4 +490,31 @@ class Generator():
             err_msg = f"{cmd} \n Failed"
             raise Exception(err_msg)
 
+    @staticmethod
+    def string_to_date(str_date: str):
+        """
+        Converts a string in three possible layouts into a dt object
+        :param str_date: String in three different formats:
+                         2002-05-28 '%Y-%m-%d'
+                         January 1, 2001 '+%B%e, %Y'
+                         Present
+        :return _date: datetime object
+        """
+        # Remove upper cases and spaces
+        str_date = str_date.lower().replace(' ', '')
+        if str_date.lower() == 'present':
+            _date = dt.now()
+            return _date
+
+        try:
+            # Try default format YYYY-mm-dd
+            _date = dt.strptime(str_date, '%Y-%m-%d')
+        except ValueError as e:
+            try:
+                # Try alternative format, e.g. January 1, 2001
+                _date = dt.strptime(str_date, '+%B%e, %Y' )
+            except ValueError:
+                raise(e)
+
+        return _date
 

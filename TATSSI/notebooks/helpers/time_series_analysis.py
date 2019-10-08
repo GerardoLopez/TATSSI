@@ -18,7 +18,7 @@ from TATSSI.qa.EOS.catalogue import Catalogue
 import ipywidgets as widgets
 from ipywidgets import Layout
 from ipywidgets import Select, SelectMultiple, IntProgress
-from ipywidgets import Dropdown, Button, VBox, HBox
+from ipywidgets import Dropdown, Button, VBox, HBox, BoundedFloatText
 from ipywidgets import interact, interactive, fixed, interact_manual
 
 from beakerx import TableDisplay
@@ -32,6 +32,7 @@ from osgeo import gdal_array
 from osgeo import osr
 import pandas as pd
 import xarray as xr
+import numpy as np
 from rasterio import logging as rio_logging
 from datetime import datetime
 
@@ -193,8 +194,11 @@ class TimeSeriesAnalysis():
             progress_bar.description = (f"Interpolation of {data_var}"
                                         f" using {method}")
 
-            tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                                                    method=method)
+            if method == 'smoothn':
+                tmp_interpol_ds = smoothn
+            else:
+                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
+                        method=method)
 
             # Set data type to match the original (non-interpolated)
             tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
@@ -229,14 +233,32 @@ class TimeSeriesAnalysis():
         """
         self.__fill_data_variables()
         self.__fill_interpolation_method()
+        self.__fill_smooth_factor()
 
         left_box = VBox([self.data_vars])
-        right_box = VBox([self.interpolation_methods])
-        _HBox = HBox([left_box, right_box],
+        #right_box = VBox([self.interpolation_methods, self.smooth_factor])
+        center_box = VBox([self.interpolation_methods])
+        right_box = VBox([self.smooth_factor])
+        _HBox = HBox([left_box, center_box, right_box],
                       layout={'height': '200px',
                               'width' : '99%'}
         )
         display(_HBox)
+
+    def __fill_smooth_factor(self):
+        """
+        Fill smooth factor bounded float text
+        """
+        self.smooth_factor = widgets.BoundedFloatText(
+                value=0.75,
+                min=0.1,
+                max=10.0,
+                step=0.5,
+                description='Smooth factor:',
+                disabled=False,
+                style = {'description_width': 'initial'},
+                layout={'width': '200px'}
+        )
 
     def __fill_data_variables(self):
         """
@@ -302,8 +324,8 @@ class TimeSeriesAnalysis():
         #self.left_ds[0].plot(cmap='Greys_r', ax=self.left_p,
         #                     add_colorbar=False)
         #vmin, vmax = self.__enhance(self.left_ds[0].data)
-        self.left_imshow = self.left_ds[0].plot.imshow(cmap='Greys_r', ax=self.left_p,
-                             add_colorbar=False)
+        self.left_imshow = self.left_ds[0].plot.imshow(cmap='Greys_r',
+                ax=self.left_p, add_colorbar=False)
 
         # Turn off axis
         self.left_p.axis('off')
@@ -332,8 +354,8 @@ class TimeSeriesAnalysis():
         # Create plot
         #self.right_ds[0].plot(cmap='Greys_r', ax=self.right_p,
         #                      add_colorbar=False)
-        self.right_imshow = self.right_ds[0].plot.imshow(cmap='Greys_r', ax=self.right_p,
-                             add_colorbar=False)
+        self.right_imshow = self.right_ds[0].plot.imshow(cmap='Greys_r',
+                ax=self.right_p, add_colorbar=False)
 
         # Turn off axis
         self.right_p.axis('off')
@@ -352,6 +374,11 @@ class TimeSeriesAnalysis():
         """
         Event handler
         """
+        # Event does not apply for time series plot
+        # Check if the click was in a
+        if event.inaxes in [self.ts_p]:
+            return
+
         # Clear subplot
         self.ts_p.clear()
 
@@ -365,28 +392,36 @@ class TimeSeriesAnalysis():
 
         # Plots
         left_plot_sd.plot(ax=self.ts_p, color='black',
-                linestyle = '-', linewidth=2, label='Original data')
+                linestyle = '-', linewidth=1, label='Original data')
 
         # Interpolate data
         right_plot_sd_masked = right_plot_sd.where(right_plot_sd != 0)
         right_plot_sd_masked.plot(ax = self.ts_p, color='blue',
-                marker='o', linestyle='None',
+                marker='o', linestyle='None', alpha=0.7, markersize=4,
                 label='Masked by user QA selection')
 
         # For every interpol method selected by the user
         for method in self.interpolation_methods.value:
             if method is 'smoothn':
-                smoothed_array = smoothn(
-                        y=right_plot_sd_masked.interpolate_na(dim='time').data,
-                        isrobust=True)[0]
-                print(smoothed_array)
+                # Linear interpolation
+                y = right_plot_sd_masked.interpolate_na(dim='time').data
+                # Weigth obs
+                idx = np.nonzero(right_plot_sd.data)
+                w = right_plot_sd.copy(deep=True).data
+                w[idx] *= 2
+                # Smoothing
+                s = float(self.smooth_factor.value)
+                smoothed_array = smoothn(y, W=w, isrobust=True,
+                        s=s, TolZ=1e-6, axis=0)
+
                 tmp_ds = right_plot_sd_masked.copy(deep=True,
-                        data=smoothed_array)
+                        data=smoothed_array[0])
             else:
                 tmp_ds = right_plot_sd_masked.interpolate_na(dim='time',
                                               method=method)
-            tmp_ds.plot(ax = self.ts_p, label=method,
-                        linewidth=1)
+
+            # Plot
+            tmp_ds.plot(ax = self.ts_p, label=method, linewidth=2)
 
         # Change ylimits
         max_val = left_plot_sd.data.max()
@@ -400,6 +435,9 @@ class TimeSeriesAnalysis():
         # Legend
         self.ts_p.legend(loc='best', fontsize='small',
                          fancybox=True, framealpha=0.5)
+
+        # Grid
+        self.ts_p.grid(axis='both', alpha=.3)
 
         # Redraw plot
         plt.draw()
