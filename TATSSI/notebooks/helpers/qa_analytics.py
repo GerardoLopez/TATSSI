@@ -49,7 +49,8 @@ class Analytics():
     Class to provide QA analytics
     """
     def __init__(self, source_dir, product, version,
-                 year=None, start=None, end=None):
+                 year=None, start=None, end=None,
+                 chunked=False):
 
         # Check input parameters
         if os.path.exists(source_dir) is True:
@@ -94,46 +95,50 @@ class Analytics():
         # Time series object
         self.year = year
         self.start, self.end = start, end
+        # Use chunks or not for DASK
+        self.chunked = chunked
         self.ts = self.__load_time_series()
 
         # All QA definitions
         self.qa_defs = self.__get_qa_defs()
 
-    def plot_analytics(self):
+    def plot_analytics(self, cmap='viridis', dpi=72):
         """
         Plot the percentage of data available and the max gap length
         """
         # Clear cell
         self.__clear_cell()
+        # Clear plots
+        # self.__clear_plots()
+
         fig, (ax, bx) = plt.subplots(1, 2, figsize=(9,5),
-                                     sharex=True, sharey=True)
+                sharex=True, sharey=True, tight_layout=True, dpi=dpi)
+                # num='qa_analytics')
+
+        self.pct_data_available.plot.imshow(
+                ax=ax, cmap=cmap,
+                cbar_kwargs={'orientation':'horizontal',
+                             'pad' : 0.005},
+        )
 
         ax.set_frame_on(False)
-        bx.set_frame_on(False)
-
         ax.axis('off')
-        bx.axis('off')
-
-        self.pct_data_available.plot(
-                ax=ax,
-                cbar_kwargs={'orientation':'horizontal',
-                             'pad' : 0.01},
-        )
-
-        self.max_gap_length.plot(
-                ax=bx,
-                cbar_kwargs={'orientation':'horizontal',
-                             'pad' : 0.01},
-        )
-
         ax.set_aspect('equal')
         ax.title.set_text('% of data available')
+        ax.margins(tight=True)
 
+        self.max_gap_length.plot.imshow(
+                ax=bx, cmap=cmap,
+                cbar_kwargs={'orientation':'horizontal',
+                             'pad' : 0.005},
+        )
+
+        bx.set_frame_on(False)
+        bx.axis('off')
         bx.set_aspect('equal')
         bx.title.set_text('Max gap-length')
+        bx.margins(tight=True)
 
-        plt.margins(tight=True)
-        plt.tight_layout()
         plt.show()
 
     def ui(self):
@@ -304,7 +309,14 @@ class Analytics():
         :attr self.source_dir: root directory where GeoTiff's and VRTs
                            are stored
         :attr self.product: product name, e.g. 'MOD13A2'
-        :atte self.version: version of the product '006'
+        :attr self.version: version of the product '006'
+        Optional attributes
+        :attr self.year: Year to load 
+        :attr self.start: Starting point of the time series
+                          YYYY-mm-dd
+        :attr self.end: Ending point of the time series
+                        YYYY-mm-dd
+        :attr self.chunked: Boolean to use or not chunks for DASK
         :return time series TATSSI object
         """
         # Create time series generator object
@@ -313,7 +325,7 @@ class Analytics():
                 year=self.year, start=self.start, end=self.end)
 
         # Load time series
-        return tsg.load_time_series()
+        return tsg.load_time_series(chunked=self.chunked)
 
     def __get_qa_defs(self):
         """
@@ -404,9 +416,9 @@ class Analytics():
 
         for i, user_qa in enumerate(self.user_qa_selection):
             progress_bar.value = i
+            progress_bar.description = f"Masking by QA {user_qa}"
 
             user_qa_fieldname = user_qa.replace(" ", "_").replace("/", "_")
-            progress_bar.description = "Masking by user QA selection"
 
             for j, qa_value in enumerate(self.user_qa_selection[user_qa]):
                 qa_value_field_name = qa_value.replace(" ", "_")
@@ -418,14 +430,15 @@ class Analytics():
                     mask[i] = (_qa_layer[user_qa_fieldname] == qa_flag_val)
                 else:
                     mask[i] = np.logical_or(
-                                  mask[i], _qa_layer[user_qa_fieldname] == qa_flag_val)
+                            mask[i], _qa_layer[user_qa_fieldname] == qa_flag_val)
 
         # Remove progress bar
         progress_bar.close()
         del progress_bar
 
-        self.__temp_mask = mask
-        mask = xr.DataArray(np.all(self.__temp_mask, axis=0),
+        #self.__temp_mask = mask
+        #mask = xr.DataArray(np.all(self.__temp_mask, axis=0),
+        mask = xr.DataArray(np.all(mask, axis=0),
                             coords=[v.time.data,
                                     v.latitude.data,
                                     v.longitude.data],
@@ -434,6 +447,9 @@ class Analytics():
         mask.attrs = v.attrs
 
         self.mask = mask
+        # Remove local multi-layer mask variable
+        mask = None
+        del(mask)
 
         # Create the percentage of data available mask
         # Get the per-pixel per-time step binary mask
@@ -495,3 +511,24 @@ class Analytics():
     def __clear_cell(self):
         """ Clear cell """
         clear_output()
+
+    def __clear_plots(self):
+        """
+        Close all existing plots
+        """
+        #import pdb; pdb.set_trace()
+
+        allLabels = plt.get_figlabels()
+        for i in range(len(allLabels)):
+            try:
+                # Because of the NBagg backend we need to try to close
+                # each one, it'll fail but then we can close all
+                plt.close()
+            except ValueError:
+                pass
+
+        try:
+            plt.close('all')
+        except ValueError:
+            pass
+

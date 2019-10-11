@@ -204,7 +204,7 @@ class Generator():
         # corresponding bands or sub datasets
         self.__decode_qa()
 
-    def load_time_series(self):
+    def load_time_series(self, chunked=False):
         """
         Read all layer stacks
         :return: time series (ts) tupple with two elements:
@@ -227,7 +227,7 @@ class Generator():
                    f"Has TimeSeriesGenerator been executed?")
             raise Exception(msg)
 
-        datasets = self.__get_datasets(vrt_fnames)
+        datasets = self.__get_datasets(vrt_fnames, chunked=chunked)
 
         # Get all decoded QA layers
         qa_layer_names = self.__get_qa_layers()
@@ -255,14 +255,15 @@ class Generator():
             # Set the attribute of the QA layer with the
             # corresponding dataset
             setattr(qa_datasets, qa_layer_names_prefix[i],
-                    self.__get_datasets(vrt_fnames, level=1))
+                    self.__get_datasets(vrt_fnames, level=1,
+                        chunked=chunked))
 
         # Return time series object
         ts = self.time_series(data=datasets, qa=qa_datasets)
 
         return ts
 
-    def __get_datasets(self, vrt_fnames, level=0):
+    def __get_datasets(self, vrt_fnames, level=0, chunked=False):
         """
         Load all VRTs from vrt_fnames list into a xarray dataset
         """
@@ -276,7 +277,12 @@ class Generator():
 
         for vrt in vrt_fnames:
             # Read each VRT file
-            data_array = xr.open_rasterio(vrt)
+            if chunked == True:
+                chunks = self.get_chunk_size(vrt)
+                data_array = xr.open_rasterio(vrt, chunks=chunks)
+            else:
+                data_array = xr.open_rasterio(vrt)
+
             data_array = data_array.rename(
                              {'x': 'longitude',
                               'y': 'latitude',
@@ -517,4 +523,24 @@ class Generator():
                 raise(e)
 
         return _date
+
+    @staticmethod
+    def get_chunk_size(filename):
+        """
+        Extract the block size and raster count so that the
+        chunks tuple can be formed, a parameter needed to read
+        a dataset using xr.open_rasterio() using DASK.
+        :param filename: GDAL valid file.
+        :return: tuple raster count, x block size, y block size
+        """
+
+        # Extract raster count and block size from file
+        d = gdal.Open(filename)
+        raster_count = d.RasterCount
+        # Get internal block size from first band
+        b = d.GetRasterBand(1)
+        block_size = b.GetBlockSize()
+        chunks = (raster_count, block_size[0], block_size[1])
+
+        return chunks
 

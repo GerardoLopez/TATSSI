@@ -36,6 +36,8 @@ import numpy as np
 from rasterio import logging as rio_logging
 from datetime import datetime
 
+from dask.distributed import Client
+
 import matplotlib
 matplotlib.use('nbAgg')
 
@@ -83,18 +85,28 @@ class TimeSeriesAnalysis():
         log = rio_logging.getLogger()
         log.setLevel(rio_logging.ERROR)
 
-    def __save_to_file(self, data, data_var, method):
+    def __save_to_file(self, data, data_var, method, tile_size=256):
         """
         Saves to file an interpolated time series for a specific
         data variable using a selected interpolation method
         :param data: NumPy array with the interpolated time series
         :param data_var: String with the data variable name
         :param method: String with the interpolation method name
+        :tile size: Integer, number of lines to use as tile size
         """
+
+        client = Client(n_workers=3, threads_per_worker=4,
+                        memory_limit='4GB')
+
         # Get temp dataset extract the metadata
         tmp_ds = getattr(self.ts.data, data_var)
         # GeoTransform
         gt = tmp_ds.attrs['transform']
+
+        # For xarray 0.11.x or higher in order to make the
+        # GeoTransform GDAL like
+        gt = (gt[2], gt[0], gt[1], gt[5], gt[3], gt[4])
+
         # Coordinate Reference System (CRS) in a PROJ4 string to a
         # Spatial Reference System Well known Text (WKT)
         crs = tmp_ds.attrs['crs']
@@ -120,20 +132,34 @@ class TimeSeriesAnalysis():
         # Create destination dataset
         dst_ds = get_dst_dataset(dst_img=fname, cols=cols, rows=rows,
                 layers=layers, dtype=dtype, proj=proj, gt=gt)
-        
-        for layer in range(layers):
-            dst_band = dst_ds.GetRasterBand(layer + 1)
 
-            # Fill value
-            dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
-            # Date
-            dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
-                                     tmp_ds.time.data[layer].astype(str))
+        block = tile_size
+        for start_row in range(0, rows, block):
+            if start_row + block > rows:
+                end_row = rows
+            else:
+                end_row = start_row + block
 
-            # Data
-            dst_band.WriteArray(data[layer])
+            _data = data[:, start_row:end_row + 1, :]
+            _data = _data.compute()
+
+            for layer in range(layers):
+                dst_band = dst_ds.GetRasterBand(layer + 1)
+
+                # Fill value
+                dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
+                # Date
+                dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                                         tmp_ds.time.data[layer].astype(str))
+
+                # Data
+                dst_band.WriteArray(_data[layer].data,
+                        xoff=0, yoff=start_row)
 
         dst_ds = None
+
+        # Close client
+        client.close()
 
     def interpolate(self):
         """
@@ -144,12 +170,10 @@ class TimeSeriesAnalysis():
         if self.mask is None:
             pass
 
-        # Get temp dataset to perform the interpolation
-        data_var = self.data_vars.value
-        tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
-
-        _items = len(self.interpolation_methods.value) 
-
+        # Set up progress bar
+        _items = len(self.interpolation_methods.value)
+        # For every interpol method selected by the user
+        _item = 0
         progress_bar = IntProgress(
                 value=0,
                 min=0,
@@ -162,32 +186,41 @@ class TimeSeriesAnalysis():
                 layout={'width': '75%'}
         )
         display(progress_bar)
-
-        # For every interpol method selected by the user
-        _item = 0
-
         progress_bar.value = _item
 
-        # Get fill value and idx
-        fill_value = tmp_ds.attrs['nodatavals'][0]
-        idx_no_data = np.where(tmp_ds.data == fill_value)
+        # Get temp dataset to perform the interpolation
+        data_var = self.data_vars.value
+        tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
 
         # Store original data type
         dtype = tmp_ds.data.dtype
 
+        # Get fill value and idx
+        fill_value = tmp_ds.attrs['nodatavals'][0]
+        mask_fill_value = (tmp_ds == fill_value)
+        mask_fill_value = (mask_fill_value * fill_value).astype(dtype)
+        #idx_no_data = np.where(tmp_ds.data == fill_value)
+
         # Apply mask
         tmp_ds *= self.mask
+        # Set NaN where there are zeros
         tmp_ds = tmp_ds.where(tmp_ds != 0)
 
         # Where there were fill values, set the value again to 
         # fill value to avoid not having data to interpolate
-        tmp_ds.data[idx_no_data] = fill_value
+        #tmp_ds.data[idx_no_data] = fill_value
+        tmp_ds += mask_fill_value
 
-        # Where are less than 1/4 of observations, use fill value
-        min_n_obs = int(tmp_ds.shape[0] * 0.25)
-        idx_lt_two_obs = np.where(self.mask.sum(axis=0) < min_n_obs)
-        tmp_ds.data[:, idx_lt_two_obs[0],
-                    idx_lt_two_obs[1]] = fill_value
+        #tmp_ds[idx_no_data] = fill_value
+
+        # Where are less than 20% of observations, use fill value
+        min_n_obs = int(tmp_ds.shape[0] * 0.2)
+        #idx_lt_two_obs = np.where(self.mask.sum(axis=0) < min_n_obs)
+        tmp_ds = tmp_ds.where(self.mask.sum(axis=0) > min_n_obs, fill_value)
+
+        #tmp_ds.data[:, idx_lt_two_obs[0],
+        #            idx_lt_two_obs[1]] = fill_value
+        #tmp_ds[:, idx_lt_two_obs[0], idx_lt_two_obs[1]] = fill_value
 
         for method in self.interpolation_methods.value:
             progress_bar.value = _item
@@ -195,16 +228,37 @@ class TimeSeriesAnalysis():
                                         f" using {method}")
 
             if method == 'smoothn':
-                tmp_interpol_ds = smoothn
+                # First, we need a linear interpolation
+                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
+                    method='linear')
+
+                # Weigth obs
+                #idx = np.nonzero(tmp_interpol_ds.data)
+                #w = tmp_ds.copy(deep=True).data
+                #w[idx] *= 2
+                # Smoothing
+                s = float(self.smooth_factor.value)
+                tmp_masked = np.ma.masked_equal(
+                        tmp_interpol_ds.data * self.mask, 0)
+
+                tmp_smoothed = smoothn(tmp_masked,
+                        #W=tmp_masked * 2, isrobust=True,
+                        isrobust=True,
+                        s=s, TolZ=1e-6, axis=0)[0]
+
+                tmp_masked = None ; del(tmp_masked)
+                # Overwrite data
+                tmp_interpol_ds.data = tmp_smoothed
+
             else:
                 tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                        method=method)
+                    method=method)
 
             # Set data type to match the original (non-interpolated)
             tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
 
             # Save to file
-            self.__save_to_file(tmp_interpol_ds.data, data_var,
+            self.__save_to_file(tmp_interpol_ds, data_var,
                                 method)
 
             _item += 1
@@ -253,7 +307,7 @@ class TimeSeriesAnalysis():
                 value=0.75,
                 min=0.1,
                 max=10.0,
-                step=0.5,
+                step=0.05,
                 description='Smooth factor:',
                 disabled=False,
                 style = {'description_width': 'initial'},
@@ -330,6 +384,7 @@ class TimeSeriesAnalysis():
         # Turn off axis
         self.left_p.axis('off')
         self.left_p.set_aspect('equal')
+        self.fig.canvas.draw_idle()
 
         # Connect the canvas with the event
         cid = self.fig.canvas.mpl_connect('button_press_event',
@@ -382,13 +437,30 @@ class TimeSeriesAnalysis():
         # Clear subplot
         self.ts_p.clear()
 
+        # Delete last reference point
+        if len(self.left_p.lines) > 0:
+            del self.left_p.lines[0]
+            del self.right_p.lines[0]
+
+        # Draw a point as a reference
+        self.left_p.plot(event.xdata, event.ydata,
+                marker='o', color='red', markersize=3)
+        self.right_p.plot(event.xdata, event.ydata,
+                marker='o', color='red', markersize=3)
+
+        # Non-masked data
         left_plot_sd = self.left_ds.sel(longitude=event.xdata,
                                         latitude=event.ydata,
                                         method='nearest')
+        if left_plot_sd.chunks is not None:
+            left_plot_sd = left_plot_sd.compute()
+
         # Masked data
         right_plot_sd = self.right_ds.sel(longitude=event.xdata,
                                           latitude=event.ydata,
                                           method='nearest')
+        if right_plot_sd.chunks is not None:
+            right_plot_sd = right_plot_sd.compute()
 
         # Plots
         left_plot_sd.plot(ax=self.ts_p, color='black',
