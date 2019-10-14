@@ -151,6 +151,8 @@ class TimeSeriesAnalysis():
                 # Date
                 dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
                                          tmp_ds.time.data[layer].astype(str))
+                # Data variable name
+                dst_band.SetMetadataItem('data_var', data_var)
 
                 # Data
                 dst_band.WriteArray(_data[layer].data,

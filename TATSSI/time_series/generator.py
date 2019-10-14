@@ -12,6 +12,7 @@ from glob import glob
 
 # Import TATSSI utils
 from TATSSI.input_output.utils import *
+from .ts_utils import *
 from TATSSI.qa.EOS import catalogue
 from TATSSI.qa.EOS.quality import qualityDecoder
 from TATSSI.input_output.translate import Translate
@@ -76,10 +77,10 @@ class Generator():
         _products =_catalogue.products
         _products = _products[_products.ProductAndVersion == self.product]
 
-        temporalExtentStart = self.string_to_date(
+        temporalExtentStart = string_to_date(
                 _products.TemporalExtentStart.values[0])
 
-        temporalExtentEnd = self.string_to_date(
+        temporalExtentEnd = string_to_date(
                 _products.TemporalExtentEnd.values[0])
 
         return temporalExtentStart, temporalExtentEnd
@@ -96,7 +97,7 @@ class Generator():
         temporalExtentStart, temporalExtentEnd = \
             self.__get_product_dates_range()
 
-        _start = self.string_to_date(start)
+        _start = string_to_date(start)
         if _start >= temporalExtentStart:
             self.start = _start.strftime('%Y-%m-%d')
         else:
@@ -105,7 +106,7 @@ class Generator():
             Exception(msg)
             raise
 
-        _end = self.string_to_date(end)
+        _end = string_to_date(end)
         if _end <= temporalExtentEnd:
             self.end = _end.strftime('%Y-%m-%d')
         else:
@@ -160,7 +161,7 @@ class Generator():
                         output_dir = os.path.join(self.source_dir, sds_name)
 
                     # Generate output fname
-                    output_fname = self.generate_output_fname(
+                    output_fname = generate_output_fname(
                             output_dir, fname)
 
                     # Translate to TATTSI format (GTiff)
@@ -185,7 +186,7 @@ class Generator():
                                                   f"b{band+1}")
 
                     # Generate output fname
-                    output_fname = self.generate_output_fname(
+                    output_fname = generate_output_fname(
                             output_dir, fname)
 
                     # Translate to TATTSI format (GTiff)
@@ -278,7 +279,7 @@ class Generator():
         for vrt in vrt_fnames:
             # Read each VRT file
             if chunked == True:
-                chunks = self.get_chunk_size(vrt)
+                chunks = get_chunk_size(vrt)
                 data_array = xr.open_rasterio(vrt, chunks=chunks)
             else:
                 data_array = xr.open_rasterio(vrt)
@@ -290,7 +291,7 @@ class Generator():
 
             # Extract time from metadata
             if times is None:
-                times = self.get_times(vrt)
+                times = get_times(vrt)
             data_array['time'] = times
 
             dataset_name = Path(vrt).parents[0].name
@@ -428,7 +429,7 @@ class Generator():
         command = (f"gdalbuildvrt -separate -overwrite "
                    f"{fname} {output_fnames}")
 
-        self.run_command(command)
+        run_command(command)
         LOG.info(f"Layer stack for {sds_name} created successfully.")
 
     def __create_output_dir(self, sub_dir, overwrite=True):
@@ -445,102 +446,4 @@ class Generator():
             raise(e)
 
         return sub_dir
-
-    @staticmethod
-    def get_times(vrt_fname):
-        """
-        Extract time info from metadata
-        """
-        d = gdal.Open(vrt_fname)
-        fnames = d.GetFileList()
-        # First file name is the VRT file name
-        fnames = fnames[1::]
-
-        # Empty times list
-        times = []
-        for fname in fnames:
-            d = gdal.Open(fname)
-            # Get metadata
-            md = d.GetMetadata()
-
-            # Get fields with date info
-            start_date = md['RANGEBEGINNINGDATE']
-            times.append(np.datetime64(start_date))
-
-        return times
-
-    @staticmethod
-    def generate_output_fname(output_dir, fname):
-        """
-        Generate an output file name
-        """
-        postfix = os.path.basename(output_dir)
-
-        fname = os.path.basename(fname)
-        fname = os.path.splitext(fname)[0]
-        fname = os.path.join(output_dir,
-                             f"{fname}.{postfix}.tif")
-
-        return fname
-
-    @staticmethod
-    def run_command(cmd: str):
-        """
-        Executes a command in the OS shell
-        :param cmd: command to execute
-        :return:
-        """
-        status = subprocess.call([cmd], shell=True)
-
-        if status != 0:
-            err_msg = f"{cmd} \n Failed"
-            raise Exception(err_msg)
-
-    @staticmethod
-    def string_to_date(str_date: str):
-        """
-        Converts a string in three possible layouts into a dt object
-        :param str_date: String in three different formats:
-                         2002-05-28 '%Y-%m-%d'
-                         January 1, 2001 '+%B%e, %Y'
-                         Present
-        :return _date: datetime object
-        """
-        # Remove upper cases and spaces
-        str_date = str_date.lower().replace(' ', '')
-        if str_date.lower() == 'present':
-            _date = dt.now()
-            return _date
-
-        try:
-            # Try default format YYYY-mm-dd
-            _date = dt.strptime(str_date, '%Y-%m-%d')
-        except ValueError as e:
-            try:
-                # Try alternative format, e.g. January 1, 2001
-                _date = dt.strptime(str_date, '+%B%e, %Y' )
-            except ValueError:
-                raise(e)
-
-        return _date
-
-    @staticmethod
-    def get_chunk_size(filename):
-        """
-        Extract the block size and raster count so that the
-        chunks tuple can be formed, a parameter needed to read
-        a dataset using xr.open_rasterio() using DASK.
-        :param filename: GDAL valid file.
-        :return: tuple raster count, x block size, y block size
-        """
-
-        # Extract raster count and block size from file
-        d = gdal.Open(filename)
-        raster_count = d.RasterCount
-        # Get internal block size from first band
-        b = d.GetRasterBand(1)
-        block_size = b.GetBlockSize()
-        chunks = (raster_count, block_size[0], block_size[1])
-
-        return chunks
 
