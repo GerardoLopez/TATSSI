@@ -8,11 +8,11 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.generator import Generator
-from TATSSI.time_series.smoothn import smoothn
 from TATSSI.input_output.translate import Translate
 from TATSSI.input_output.utils import *
-from TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.time_series.analysis import Analysis
+
+from statsmodels.tsa.seasonal import seasonal_decompose
 
 # Widgets
 import ipywidgets as widgets
@@ -39,7 +39,9 @@ from datetime import datetime
 from dask.distributed import Client
 
 import matplotlib
+import matplotlib.dates as mdates
 matplotlib.use('nbAgg')
+import seaborn as sbn
 
 import matplotlib.pyplot as plt
 
@@ -47,31 +49,19 @@ class TimeSeriesAnalysis():
     """
     Class to plot a single time step and per-pixel time series
     """
-    def __init__(self, qa_analytics):
+    def __init__(self, fname):
         """
-        :param ts: TATSSI qa_analytics object
+        :param ts: TATSSI file time series
         """
         # Clear cell
         clear_output()
 
         # Time series object
-        self.ts = qa_analytics.ts
-        # Source dir
-        self.source_dir = qa_analytics.source_dir
-        # Product
-        self.product = qa_analytics.product
-        self.version = qa_analytics.version
-
-        # Mask
-        self.mask = qa_analytics.mask
+        self.ts = Analysis(fname=fname)
 
         # Data variables
         # set in __fill_data_variables
         self.data_vars = None
-
-        # Interpolation methods
-        # set in __fill_interpolation_method
-        self.interpolation_methods = None
 
         # Display controls
         self.__display_controls()
@@ -163,157 +153,60 @@ class TimeSeriesAnalysis():
         # Close client
         client.close()
 
-    def interpolate(self):
-        """
-        Interpolates the data of a time series object using
-        the method or methods provided
-        :param method: list of interpolation methods
-        """
-        if self.mask is None:
-            pass
-
-        # Set up progress bar
-        _items = len(self.interpolation_methods.value)
-        # For every interpol method selected by the user
-        _item = 0
-        progress_bar = IntProgress(
-                value=0,
-                min=0,
-                max=_items,
-                step=1,
-                description='',
-                bar_style='', # 'success', 'info', 'warning', 'danger' or ''
-                orientation='horizontal',
-                style = {'description_width': 'initial'},
-                layout={'width': '75%'}
-        )
-        display(progress_bar)
-        progress_bar.value = _item
-
-        # Get temp dataset to perform the interpolation
-        data_var = self.data_vars.value
-        tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
-
-        # Store original data type
-        dtype = tmp_ds.data.dtype
-
-        # Get fill value and idx
-        fill_value = tmp_ds.attrs['nodatavals'][0]
-        mask_fill_value = (tmp_ds == fill_value)
-        mask_fill_value = (mask_fill_value * fill_value).astype(dtype)
-        #idx_no_data = np.where(tmp_ds.data == fill_value)
-
-        # Apply mask
-        tmp_ds *= self.mask
-        # Set NaN where there are zeros
-        tmp_ds = tmp_ds.where(tmp_ds != 0)
-
-        # Where there were fill values, set the value again to 
-        # fill value to avoid not having data to interpolate
-        #tmp_ds.data[idx_no_data] = fill_value
-        tmp_ds += mask_fill_value
-
-        #tmp_ds[idx_no_data] = fill_value
-
-        # Where are less than 20% of observations, use fill value
-        min_n_obs = int(tmp_ds.shape[0] * 0.2)
-        #idx_lt_two_obs = np.where(self.mask.sum(axis=0) < min_n_obs)
-        tmp_ds = tmp_ds.where(self.mask.sum(axis=0) > min_n_obs, fill_value)
-
-        #tmp_ds.data[:, idx_lt_two_obs[0],
-        #            idx_lt_two_obs[1]] = fill_value
-        #tmp_ds[:, idx_lt_two_obs[0], idx_lt_two_obs[1]] = fill_value
-
-        for method in self.interpolation_methods.value:
-            progress_bar.value = _item
-            progress_bar.description = (f"Interpolation of {data_var}"
-                                        f" using {method}")
-
-            if method == 'smoothn':
-                # First, we need a linear interpolation
-                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                    method='linear')
-
-                # Weigth obs
-                #idx = np.nonzero(tmp_interpol_ds.data)
-                #w = tmp_ds.copy(deep=True).data
-                #w[idx] *= 2
-                # Smoothing
-                s = float(self.smooth_factor.value)
-                tmp_masked = np.ma.masked_equal(
-                        tmp_interpol_ds.data * self.mask, 0)
-
-                tmp_smoothed = smoothn(tmp_masked,
-                        #W=tmp_masked * 2, isrobust=True,
-                        isrobust=True,
-                        s=s, TolZ=1e-6, axis=0)[0]
-
-                tmp_masked = None ; del(tmp_masked)
-                # Overwrite data
-                tmp_interpol_ds.data = tmp_smoothed
-
-            else:
-                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                    method=method)
-
-            # Set data type to match the original (non-interpolated)
-            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
-
-            # Save to file
-            self.__save_to_file(tmp_interpol_ds, data_var,
-                                method)
-
-            _item += 1
-
-        # Remove progress bar
-        progress_bar.close()
-        del progress_bar
-
     def __create_plot_objects(self):
         """
         Create plot objects
         """
-        self.fig = plt.figure(figsize=(9.0, 9.0))
+        years_fmt = mdates.DateFormatter('%Y')
 
+        self.fig = plt.figure(figsize=(11.0, 6.0))
+
+        # subplot2grid((rows,cols), (row,col)
         # Left plot
-        self.left_p = plt.subplot2grid((2, 2), (0, 0), colspan=1)
-        # Right plot
-        self.right_p = plt.subplot2grid((2, 2), (0, 1), colspan=1,
-                                   sharex=self.left_p, sharey=self.left_p)
+        self.left_p = plt.subplot2grid((4, 2), (0, 0), rowspan=3)
+        self.climatology = plt.subplot2grid((4, 2), (3, 0), rowspan=1)
+
         # Time series plot
-        self.ts_p = plt.subplot2grid((2, 2), (1, 0), colspan=2)
+        self.observed = plt.subplot2grid((4, 2), (0, 1), colspan=1)
+        self.observed.xaxis.set_major_formatter(years_fmt)
+
+        self.trend = plt.subplot2grid((4, 2), (1, 1), colspan=1,
+                sharex=self.observed)
+        self.seasonal = plt.subplot2grid((4, 2), (2, 1), colspan=1,
+                sharex=self.observed)
+        self.resid = plt.subplot2grid((4, 2), (3, 1), colspan=1,
+                sharex=self.observed)
 
     def __display_controls(self):
         """
         Display widgets in an horizontal box
         """
         self.__fill_data_variables()
-        self.__fill_interpolation_method()
-        self.__fill_smooth_factor()
+        #self.__fill_interpolation_method()
+        self.__fill_model()
 
         left_box = VBox([self.data_vars])
-        #right_box = VBox([self.interpolation_methods, self.smooth_factor])
-        center_box = VBox([self.interpolation_methods])
-        right_box = VBox([self.smooth_factor])
-        _HBox = HBox([left_box, center_box, right_box],
-                      layout={'height': '200px',
-                              'width' : '99%'}
-        )
+        #center_box = VBox([self.interpolation_methods])
+        right_box = VBox([self.model])
+        #_HBox = HBox([left_box, center_box, right_box],
+        #              layout={'height': '200px',
+        #                      'width' : '99%'}
+        #)
+        _HBox = HBox([left_box, right_box],
+                     layout={'width' : '99%'})
         display(_HBox)
 
-    def __fill_smooth_factor(self):
+    def __fill_model(self):
         """
-        Fill smooth factor bounded float text
+        Fill time series decompostion model
         """
-        self.smooth_factor = widgets.BoundedFloatText(
-                value=0.75,
-                min=0.1,
-                max=10.0,
-                step=0.05,
-                description='Smooth factor:',
+        self.model = widgets.Dropdown(
+                options=['multiplicative', 'additive'],
+                value='multiplicative',
+                description='Decompostion model:',
                 disabled=False,
                 style = {'description_width': 'initial'},
-                layout={'width': '200px'}
+                layout={'width': '300px'}
         )
 
     def __fill_data_variables(self):
@@ -349,25 +242,6 @@ class TimeSeriesAnalysis():
             self.left_imshow.set_data(self.left_ds.data[0])
             self.right_imshow.set_data(self.right_ds.data[0])
 
-    def __fill_interpolation_method(self):
-        """
-        Fill interpolation methods
-        """
-        interpolation_methods = ['linear', 'nearest', 'slinear',
-                                 'quadratic', 'cubic', 'barycentric',
-                                 'krog', 'pchip', 'spline', 'akima',
-                                 'smoothn']
-
-        self.interpolation_methods = SelectMultiple(
-                options=tuple(interpolation_methods),
-                value=tuple([interpolation_methods[0]]),
-                rows=len(interpolation_methods),
-                description='Interpolation methods',
-                disabled=False,
-                style = {'description_width': 'initial'},
-                layout={'width': '220px'},
-        )
-
     def __plot(self, is_qa=False):
         """
         Plot a variable and time series
@@ -379,7 +253,7 @@ class TimeSeriesAnalysis():
         # Create plot
         #self.left_ds[0].plot(cmap='Greys_r', ax=self.left_p,
         #                     add_colorbar=False)
-        #vmin, vmax = self.__enhance(self.left_ds[0].data)
+        #vmin, vmax = self.__enhance(np.copy(self.left_ds[0].data))
         self.left_imshow = self.left_ds[0].plot.imshow(cmap='Greys_r',
                 ax=self.left_p, add_colorbar=False)
 
@@ -394,36 +268,37 @@ class TimeSeriesAnalysis():
 
         # Plot the centroid
         _layers, _rows, _cols = self.left_ds.shape
-        # Get y-axis max and min
-        #y_min, y_max = self.ds.data.min(), self.ds.data.max()
 
-        plot_sd = self.left_ds[:, int(_cols / 2), int(_rows / 2)]
-        plot_sd.plot(ax = self.ts_p, color='black',
-                linestyle = '--', linewidth=1, label='Original data')
+        # Seasonal decompose
+        left_plot_sd = self.left_ds[:, int(_cols / 2), int(_rows / 2)]
+        ts_df = left_plot_sd.to_dataframe()
+        self.seasonal_decompose = seasonal_decompose(
+                ts_df[self.data_vars.value],
+                model=self.model.value, freq=23,
+                extrapolate_trend='freq')
 
+        # Plot seasonal decompose
+        self.seasonal_decompose.observed.plot(ax=self.observed)
+        self.seasonal_decompose.trend.plot(ax=self.trend)
+        self.seasonal_decompose.seasonal.plot(ax=self.seasonal)
+        self.seasonal_decompose.resid.plot(ax=self.resid)
 
-        # Right panel
-        if self.mask is None:
-            self.right_ds = self.left_ds.copy(deep=True)
-        else:
-            self.right_ds = self.left_ds * self.mask
+        # Climatology
+        sbn.boxplot(ts_df.index.dayofyear,
+                ts_df[self.data_vars.value],
+                ax=self.climatology)
+        self.climatology.tick_params(axis='x', rotation=70)
 
-        # Create plot
-        #self.right_ds[0].plot(cmap='Greys_r', ax=self.right_p,
-        #                      add_colorbar=False)
-        self.right_imshow = self.right_ds[0].plot.imshow(cmap='Greys_r',
-                ax=self.right_p, add_colorbar=False)
-
-        # Turn off axis
-        self.right_p.axis('off')
-        self.right_p.set_aspect('equal')
+        #plot_sd = self.left_ds[:, int(_cols / 2), int(_rows / 2)]
+        #plot_sd.plot(ax = self.ts_p, color='black',
+        #        linestyle = '--', linewidth=1, label='Original data')
 
         plt.margins(tight=True)
         plt.tight_layout()
 
         # Legend
-        self.ts_p.legend(loc='best', fontsize='small',
-                         fancybox=True, framealpha=0.5)
+        #self.ts_p.legend(loc='best', fontsize='small',
+        #                 fancybox=True, framealpha=0.5)
 
         plt.show()
 
@@ -433,21 +308,22 @@ class TimeSeriesAnalysis():
         """
         # Event does not apply for time series plot
         # Check if the click was in a
-        if event.inaxes in [self.ts_p]:
+        if event.inaxes not in [self.left_p]:
             return
 
-        # Clear subplot
-        self.ts_p.clear()
+        # Clear subplots
+        self.observed.clear()
+        self.trend.clear()
+        self.seasonal.clear()
+        self.resid.clear()
+        self.climatology.clear()
 
         # Delete last reference point
         if len(self.left_p.lines) > 0:
             del self.left_p.lines[0]
-            del self.right_p.lines[0]
 
         # Draw a point as a reference
         self.left_p.plot(event.xdata, event.ydata,
-                marker='o', color='red', markersize=3)
-        self.right_p.plot(event.xdata, event.ydata,
                 marker='o', color='red', markersize=3)
 
         # Non-masked data
@@ -457,61 +333,55 @@ class TimeSeriesAnalysis():
         if left_plot_sd.chunks is not None:
             left_plot_sd = left_plot_sd.compute()
 
-        # Masked data
-        right_plot_sd = self.right_ds.sel(longitude=event.xdata,
-                                          latitude=event.ydata,
-                                          method='nearest')
-        if right_plot_sd.chunks is not None:
-            right_plot_sd = right_plot_sd.compute()
+        # Seasonal decompose
+        ts_df = left_plot_sd.to_dataframe()
+        self.seasonal_decompose = seasonal_decompose(
+                ts_df[self.data_vars.value],
+                model=self.model.value, freq=23,
+                extrapolate_trend='freq')
 
-        # Plots
-        left_plot_sd.plot(ax=self.ts_p, color='black',
-                linestyle = '-', linewidth=1, label='Original data')
+        # Plot seasonal decompose
+        self.observed.plot(self.seasonal_decompose.observed.index,
+                self.seasonal_decompose.observed.values,
+                label='Observed')
+        self.trend.plot(self.seasonal_decompose.trend.index,
+                self.seasonal_decompose.trend.values,
+                label='Trend')
 
-        # Interpolate data
-        right_plot_sd_masked = right_plot_sd.where(right_plot_sd != 0)
-        right_plot_sd_masked.plot(ax = self.ts_p, color='blue',
-                marker='o', linestyle='None', alpha=0.7, markersize=4,
-                label='Masked by user QA selection')
+        # Set the same y limits from observed data
+        self.trend.set_ylim(self.observed.get_ylim())
 
-        # For every interpol method selected by the user
-        for method in self.interpolation_methods.value:
-            if method is 'smoothn':
-                # Linear interpolation
-                y = right_plot_sd_masked.interpolate_na(dim='time').data
-                # Weigth obs
-                idx = np.nonzero(right_plot_sd.data)
-                w = right_plot_sd.copy(deep=True).data
-                w[idx] *= 2
-                # Smoothing
-                s = float(self.smooth_factor.value)
-                smoothed_array = smoothn(y, W=w, isrobust=True,
-                        s=s, TolZ=1e-6, axis=0)
+        self.seasonal.plot(self.seasonal_decompose.seasonal.index,
+                self.seasonal_decompose.seasonal.values,
+                label='Seasonality')
+        self.resid.plot(self.seasonal_decompose.resid.index,
+                self.seasonal_decompose.resid.values,
+                label='Residuals')
 
-                tmp_ds = right_plot_sd_masked.copy(deep=True,
-                        data=smoothed_array[0])
-            else:
-                tmp_ds = right_plot_sd_masked.interpolate_na(dim='time',
-                                              method=method)
-
-            # Plot
-            tmp_ds.plot(ax = self.ts_p, label=method, linewidth=2)
-
-        # Change ylimits
-        max_val = left_plot_sd.data.max()
-        min_val = left_plot_sd.data.min()
-
-        data_range = max_val - min_val
-        max_val = max_val + (data_range * 0.2)
-        min_val = min_val - (data_range * 0.2)
-        self.ts_p.set_ylim([min_val, max_val])
+        # Climatology
+        sbn.boxplot(ts_df.index.dayofyear,
+                #left_plot_sd, ax=self.climatology)
+                ts_df[self.data_vars.value], ax=self.climatology)
+        self.climatology.tick_params(axis='x', rotation=70)
 
         # Legend
-        self.ts_p.legend(loc='best', fontsize='small',
-                         fancybox=True, framealpha=0.5)
+        self.observed.legend(loc='best', fontsize='small',
+                fancybox=True, framealpha=0.5)
+        self.trend.legend(loc='best', fontsize='small',
+                fancybox=True, framealpha=0.5)
+        self.seasonal.legend(loc='best', fontsize='small',
+                fancybox=True, framealpha=0.5)
+        self.resid.legend(loc='best', fontsize='small',
+                fancybox=True, framealpha=0.5)
+        self.climatology.legend(loc='best', fontsize='small',
+                fancybox=True, framealpha=0.5)
 
         # Grid
-        self.ts_p.grid(axis='both', alpha=.3)
+        self.observed.grid(axis='both', alpha=.3)
+        self.trend.grid(axis='both', alpha=.3)
+        self.seasonal.grid(axis='both', alpha=.3)
+        self.resid.grid(axis='both', alpha=.3)
+        self.climatology.grid(axis='both', alpha=.3)
 
         # Redraw plot
         plt.draw()
