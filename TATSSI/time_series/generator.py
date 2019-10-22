@@ -43,7 +43,7 @@ class Generator():
         self.source_dir = source_dir
 
         # Check that the source dir has the requested product
-        # to create an annual time series
+        # to create time series
         fnames = glob(os.path.join(self.source_dir,
                                    f"*{product}*{version}*"))
 
@@ -137,12 +137,31 @@ class Generator():
             msg = f"Year {year} is not within product.version extent"
             raise Exception(msg)
 
-    def generate_time_series(self, overwrite=True):
+    def generate_time_series(self, overwrite=True, vrt=False):
         """
         Generate tile series using all files in source dir
+        for the corresponding product and version.
+        Time series will be generated as follows:
+            - Parameter
+              - Files for every time step
+            - QA parameter
+              - Files for every time step
+        :param overwrite: Boolean. Overwrite output files
+        :param vrt: Boolean. Whether or not to use GDAL VRT files
         """
         # List of output datasets
         self.__datasets = []
+
+        # Translate to TATTSI format (Cloud Optimized GTiff)
+        # or a GDAL VRT if requested
+        if vrt == True:
+            output_format = 'VRT'
+            options = None
+            extension = 'vrt'
+        else:
+            output_format = 'GTiff'
+            options = Translate.driver_options
+            extension = 'tif'
 
         for i, fname in enumerate(self.fnames):
             if has_subdatasets(fname) is True:
@@ -162,12 +181,13 @@ class Generator():
 
                     # Generate output fname
                     output_fname = generate_output_fname(
-                            output_dir, fname)
+                            output_dir, fname, extension)
 
-                    # Translate to TATTSI format (GTiff)
+                    # Translate to selected format
                     options = Translate.driver_options
                     Translate(source_img=sds[0],
                               target_img=output_fname,
+                              output_format=output_format,
                               options=options)
 
             else:
@@ -187,27 +207,61 @@ class Generator():
 
                     # Generate output fname
                     output_fname = generate_output_fname(
-                            output_dir, fname)
+                            output_dir, fname, extension)
 
-                    # Translate to TATTSI format (GTiff)
+                    # Translate to selected format
                     options = Translate.driver_options
                     Translate(source_img=fname,
                               target_img=output_fname,
+                              output_format=output_format,
                               options=options)
 
         # Create layerstack of bands or subdatasets
         LOG.info(f"Generating {self.product} layer stacks...")
 
         for dataset in self.__datasets:
-            self.__generate_layerstack(dataset)
+            self.__generate_layerstack(dataset, extension)
 
         # For the associated product layers, decode the 
         # corresponding bands or sub datasets
-        self.__decode_qa()
+        self.__decode_qa(extension)
+
+    def __get_layerstacks(self):
+        """
+        For every variable or band, get its associated VRT
+        layerstack.
+        :return vrt_fnames: List with all VRTs in the time series
+        """
+        subdirs = next(os.walk(self.source_dir))[1]
+        subdirs.sort()
+
+        vrt_fnames = []
+        for subdir in subdirs:
+            vrt_fname = os.path.join(self.source_dir,
+                                     subdir, f'{subdir}.vrt')
+
+            if len(vrt_fname) == 0:
+                msg = (f"Verify that {self.source_dir} has the "
+                       f"corresponding subdatasets for:\n"
+                       f"product - {self.product_name}\n"
+                       f"version - {self.version}\n"
+                       f"dataset - {subdir}\n"
+                       f"Has TimeSeriesGenerator been executed?")
+                raise Exception(msg)
+
+            # If vrt exists add it to vrt_fnames
+            vrt_fnames.append(vrt_fname)
+
+        vrt_fnames.sort()
+
+        return vrt_fnames
 
     def load_time_series(self, chunked=False):
         """
         Read all layer stacks
+        :param chunked: Boolean. Whether or not the time series
+                        will be splited to load and process
+                        per chunk.
         :return: time series (ts) tupple with two elements:
                      data - all products layers in a xarray dataset
                        where each layers is a variable
@@ -216,18 +270,7 @@ class Generator():
                        decoded QA is a xarray dataset variable
         """
         # Get all datasets, including the non-decoded QA layers
-        vrt_dir = os.path.join(self.source_dir, '*', '*.vrt')
-        vrt_fnames = glob(vrt_dir)
-        vrt_fnames.sort()
-
-        if len(vrt_fnames) == 0:
-            msg = (f"Verify that {self.source_dir} has the "
-                   f"corresponding subdatasets for:\n"
-                   f"product - {self.product_name}\n"
-                   f"version - {self.version}\n"
-                   f"Has TimeSeriesGenerator been executed?")
-            raise Exception(msg)
-
+        vrt_fnames = self.__get_layerstacks()
         datasets = self.__get_datasets(vrt_fnames, chunked=chunked)
 
         # Get all decoded QA layers
@@ -342,11 +385,14 @@ class Generator():
             for qa_layer in qa_def.QualityLayer.unique():
                 qa_layer_names.append(qa_layer)
 
+        qa_layer_names.sort()
+
         return qa_layer_names
 
-    def __decode_qa(self):
+    def __decode_qa(self, extension):
         """
         Decode QA layers
+        :param extension: Format used to create the QA time series
         """
         # TODO Comments for this method
 
@@ -357,7 +403,7 @@ class Generator():
 
         # Decode QA layers
         for qa_layer in qa_layer_names:
-            qa_fnames = self.__get_qa_files(qa_layer)
+            qa_fnames = self.__get_qa_files(qa_layer, extension)
 
             # Decode all files
             for qa_fname in qa_fnames:
@@ -383,12 +429,13 @@ class Generator():
 
             # Create layerstack of bands or subdatasets
             for qa_dataset in self.__qa_datasets:
-                self.__generate_layerstack(qa_dataset)
+                self.__generate_layerstack(qa_dataset, extension='tif')
 
-    def __get_qa_files(self, qa_layer):
+    def __get_qa_files(self, qa_layer, extension):
         """
         Get associated files for QA layer
         :param qa_layer: QA to get files from
+        :param extension of files, either tif or vrt
         :return qa_fnames: Sorted list with QA files
         """
         # Trim qa_layer string, it might contain extra _
@@ -406,7 +453,8 @@ class Generator():
                              f"Verify QA catalogue or QA layer dir."))
 
         # Get files
-        qa_fnames = glob(os.path.join(qa_dir[0], '*.tif'))
+        qa_fnames = f'{self.product_name}*{self.version}*.{extension}'
+        qa_fnames = glob(os.path.join(qa_dir[0], qa_fnames))
         qa_fnames.sort()
 
         if len(qa_fnames) == 0:
@@ -414,17 +462,18 @@ class Generator():
 
         return qa_fnames
 
-    def __generate_layerstack(self, dataset):
+    def __generate_layerstack(self, dataset, extension):
         """
         Generate VRT layerstack for all files within a directory
         :param dataset: Full path directory of the dataset where to
                         create a layerstack of all files within it
+        :param extension: File extension.
         """
         sds_name = os.path.basename(dataset)
         fname = f"{sds_name}.vrt"
         fname = os.path.join(dataset, fname)
 
-        output_fnames = os.path.join(dataset, '*.tif')
+        output_fnames = os.path.join(dataset, f'*.{extension}')
 
         command = (f"gdalbuildvrt -separate -overwrite "
                    f"{fname} {output_fnames}")

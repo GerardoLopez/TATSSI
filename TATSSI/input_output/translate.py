@@ -77,10 +77,10 @@ if __name__ == '__main__':
     target_img = os.path.join(dataDir, target_img)
 
     # HDF to GeoTiff (default output format)
-    translate(source_img, target_img)
+    Translate(source_img, target_img)
 
     # HDF to ENVI (img)
     target_img = 'MOD13A2.A2018145.h09v07.006.1km_16_days_EVI.img'
     target_img = os.path.join(dataDir, target_img)
-    translate(source_img, target_img, output_format = 'ENVI')
+    Translate(source_img, target_img, output_format = 'ENVI')
 

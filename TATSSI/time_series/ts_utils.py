@@ -50,7 +50,7 @@ def get_times_from_file_band(fname):
 
     return times
 
-def generate_output_fname(output_dir, fname):
+def generate_output_fname(output_dir, fname, extension='tif'):
     """
     Generate an output file name
     """
@@ -59,7 +59,7 @@ def generate_output_fname(output_dir, fname):
     fname = os.path.basename(fname)
     fname = os.path.splitext(fname)[0]
     fname = os.path.join(output_dir,
-                         f"{fname}.{postfix}.tif")
+                         f"{fname}.{postfix}.{extension}")
 
     return fname
 
