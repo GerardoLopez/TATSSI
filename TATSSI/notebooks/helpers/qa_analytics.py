@@ -9,6 +9,7 @@ src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.time_series.generator import Generator
+from TATSSI.time_series.parmap import parmap
 from TATSSI.input_output.utils import *
 from TATSSI.qa.EOS.catalogue import Catalogue
 
@@ -27,10 +28,14 @@ from IPython.display import display
 import json
 import collections
 from itertools import groupby as i_groupby
+from itertools import product as i_product
 import gdal, ogr
 import pandas as pd
 import xarray as xr
 import numpy as np
+
+from multiprocessing import Pool, cpu_count
+from multiprocessing import sharedctypes
 
 from rasterio import logging as rio_logging
 from datetime import datetime
@@ -50,7 +55,7 @@ class Analytics():
     """
     def __init__(self, source_dir, product, version,
                  year=None, start=None, end=None,
-                 chunked=False):
+                 chunked=False, processes=1):
 
         # Check input parameters
         if os.path.exists(source_dir) is True:
@@ -62,12 +67,17 @@ class Analytics():
         if isinstance(product, str) and len(product) > 3:
             self.product = product
         else:
+            print(f"Invalid product: {product}!")
             return None
 
         if isinstance(version, str) and len(version) == 3:
             self.version = version
         else:
+            print(f"Invalid version: {version}!")
             return None
+
+        # Set number of CPUs to use
+        self.__set_n_processes(processes)
 
         # QA definition to analise
         # set on qa_ui
@@ -101,6 +111,18 @@ class Analytics():
 
         # All QA definitions
         self.qa_defs = self.__get_qa_defs()
+
+    def __set_n_processes(self, processes):
+        """
+        Sets the number of CPUs to use
+        """
+        if isinstance(processes, int) and processes < cpu_count():
+            self.processes = processes
+        else:
+            msg = f("Processes has been set to 1. Is not advisable "
+                    "to use all CPUs available. Use CPUs - 1.")
+            print(msg)
+            self.processes = 1
 
     def plot_analytics(self, cmap='viridis', dpi=72):
         """
@@ -461,6 +483,67 @@ class Analytics():
 
         # Using the computed mask get the max gap length
         self.__get_max_gap_length()
+
+    #def __get_max_gap_length(self):
+    #    """
+    #    Compute the max gep length of a masked time series
+    #    """
+    #    bands, rows, cols = self.mask.shape
+    #    ctypes_array = np.ctypeslib.as_ctypes(np.zeros((rows, cols)))
+    #    # Create shared array
+    #    shared_array = sharedctypes.RawArray(ctypes_array._type_,
+    #            ctypes_array)
+
+    #    # Get chunck size from first data_var
+    #    data_var = next(iter(self.ts.data.data_vars.keys()))
+    #    chunk_size = getattr(self.ts.data, data_var).chunks[1][0]
+
+    #    chunk_idxs = [(i, j) for i, j in
+    #           i_product(range(0, rows, chunk_size),
+    #                     range(0, cols, chunk_size))]
+
+    #    def get_max_gap_length(args):
+    #        """
+    #        Internal function to compute the max gap length per chunk
+    #        :param args: start_x, start_y
+    #                     Indices to create a window
+    #        """
+    #        start_x, start_y = args
+    #        tmp = np.ctypeslib.as_array(shared_array)
+
+    #        if start_x + chunk_size > cols - 1:
+    #            end_x = cols
+    #        else:
+    #            end_x = start_x + chunk_size
+
+    #        if start_y + chunk_size > rows - 1:
+    #            end_y = rows
+    #        else:
+    #            end_y = start_y + chunk_size
+
+    #        for i in range(start_x, end_x):
+    #            for j in range(start_y, end_y):
+    #                for key, group in i_groupby(self.mask.data[:,i,j]):
+    #                    if key == False:
+    #                        _gap_length = len(list(group))
+    #                        if _gap_length > 0 and _gap_length > tmp[i,j]:
+    #                            tmp[i, j] = _gap_length
+
+    #    from IPython import embed ; ipshell = embed()
+
+    #    p = Pool(1)
+    #    processing = p.map(get_max_gap_length, chunk_idxs)
+
+    #    # Create xarray DataArray
+    #    _max_gap_length = xr.DataArray(
+    #            np.ctypeslib.as_array(shared_array),
+    #            coords=[self.mask.latitude.data,
+    #                    self.mask.longitude.data],
+    #            dims=['latitude', 'longitude'])
+
+    #    shared_array = None
+
+    #    self.max_gap_length = _max_gap_length
 
     def __get_max_gap_length(self):
         """

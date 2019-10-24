@@ -1,8 +1,11 @@
 
 import os
 import gdal
+from osgeo import osr
 import numpy as np
+import xarray as xr
 from osgeo import gdal_array
+from dask.distributed import Client
 from .helpers import Constants
 """
 Utilities to handle data.
@@ -241,3 +244,82 @@ def check_source_img(source_img):
     del(d)
 
     return 0
+
+def save_dask_array(fname, data, data_var, method, tile_size,
+                   n_workers, threads_per_worker, memory_limit):
+    """
+    Saves to file an interpolated time series for a specific
+    data variable using a selected interpolation method
+    :param fname: Full path of file where to save the data
+    :param data: xarray Dataset/DataArray with the interpolated data
+    :param data_var: String with the data variable name
+    :param method: String with the interpolation method name
+    :tile size: Integer, number of lines to use as tile size
+    # TODO Document DASK variables
+    """
+
+    client = Client(n_workers=n_workers,
+                    threads_per_worker=threads_per_worker,
+                    memory_limit=memory_limit)
+
+    # Get temp dataset extract the metadata
+    if type(data) == xr.core.dataset.Dataset:
+        tmp_ds = getattr(data, data_var)
+    else:
+        # It should be a xr.core.dataarray.DataArray
+        tmp_ds = data
+
+    # GeoTransform
+    gt = tmp_ds.attrs['transform']
+
+    # For xarray 0.11.x or higher in order to make the
+    # GeoTransform GDAL like
+    gt = (gt[2], gt[0], gt[1], gt[5], gt[3], gt[4])
+
+    # Coordinate Reference System (CRS) in a PROJ4 string to a
+    # Spatial Reference System Well known Text (WKT)
+    crs = tmp_ds.attrs['crs']
+    srs = osr.SpatialReference()
+    srs.ImportFromProj4(crs)
+    proj = srs.ExportToWkt()
+
+    # Get GDAL datatype from NumPy datatype
+    dtype = gdal_array.NumericTypeCodeToGDALTypeCode(data.dtype)
+
+    # Dimensions
+    layers, rows, cols = data.shape
+
+    # Create destination dataset
+    dst_ds = get_dst_dataset(dst_img=fname, cols=cols, rows=rows,
+            layers=layers, dtype=dtype, proj=proj, gt=gt)
+
+    block = tile_size
+    for start_row in range(0, rows, block):
+        if start_row + block > rows:
+            end_row = rows
+        else:
+            end_row = start_row + block
+
+        _data = data[:, start_row:end_row + 1, :]
+        _data = _data.compute()
+
+        for layer in range(layers):
+            dst_band = dst_ds.GetRasterBand(layer + 1)
+
+            # Fill value
+            dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
+            # Date
+            dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                                         tmp_ds.time.data[layer].astype(str))
+            # Data variable name
+            dst_band.SetMetadataItem('data_var', data_var)
+
+            # Data
+            dst_band.WriteArray(_data[layer].data,
+                    xoff=0, yoff=start_row)
+
+    dst_ds = None
+
+    # Close client
+    client.close()
+

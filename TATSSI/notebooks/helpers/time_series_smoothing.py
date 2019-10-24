@@ -8,11 +8,14 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.generator import Generator
 from TATSSI.time_series.smoothn import smoothn
 from TATSSI.input_output.translate import Translate
 from TATSSI.input_output.utils import *
-from TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.time_series.analysis import Analysis
+
+# Smoothing methods
+from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing
+from statsmodels.tsa.api import Holt
 
 # Widgets
 import ipywidgets as widgets
@@ -41,11 +44,11 @@ matplotlib.use('nbAgg')
 
 import matplotlib.pyplot as plt
 
-class TimeSeriesInterpolation():
+class TimeSeriesSmoothing():
     """
     Class to plot a single time step and per-pixel time series
     """
-    def __init__(self, qa_analytics):
+    def __init__(self, fname):
         """
         :param ts: TATSSI qa_analytics object
         """
@@ -53,23 +56,11 @@ class TimeSeriesInterpolation():
         clear_output()
 
         # Time series object
-        self.ts = qa_analytics.ts
-        # Source dir
-        self.source_dir = qa_analytics.source_dir
-        # Product
-        self.product = qa_analytics.product
-        self.version = qa_analytics.version
+        self.ts = Analysis(fname=fname)
 
-        # Mask
-        self.mask = qa_analytics.mask
-
-        # Data variables
-        # set in __fill_data_variables
-        self.data_vars = None
-
-        # Interpolation methods
-        # set in __fill_interpolation_method
-        self.interpolation_methods = None
+        # Smoothing methods
+        # set in __fill_smoothing_method
+        self.smoothing_methods = None
 
         # Display controls
         self.__display_controls()
@@ -82,126 +73,6 @@ class TimeSeriesInterpolation():
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
         log.setLevel(rio_logging.ERROR)
-
-    def interpolate(self, tile_size=256, n_workers=1,
-                    threads_per_worker=8, memory_limit='14GB'):
-        """
-        Interpolates the data of a time series object using
-        the method or methods provided
-        :param method: list of interpolation methods
-        """
-        if self.mask is None:
-            pass
-
-        # Set up progress bar
-        _items = len(self.interpolation_methods.value)
-        # For every interpol method selected by the user
-        _item = 0
-        progress_bar = IntProgress(
-                value=0,
-                min=0,
-                max=_items,
-                step=1,
-                description='',
-                bar_style='', # 'success', 'info', 'warning', 'danger' or ''
-                orientation='horizontal',
-                style = {'description_width': 'initial'},
-                layout={'width': '75%'}
-        )
-        display(progress_bar)
-        progress_bar.value = _item
-
-        # Get temp dataset to perform the interpolation
-        data_var = self.data_vars.value
-        tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
-
-        # Store original data type
-        dtype = tmp_ds.data.dtype
-
-        # Get fill value and idx
-        fill_value = tmp_ds.attrs['nodatavals'][0]
-        mask_fill_value = (tmp_ds == fill_value)
-        mask_fill_value = (mask_fill_value * fill_value).astype(dtype)
-        #idx_no_data = np.where(tmp_ds.data == fill_value)
-
-        # Apply mask
-        tmp_ds *= self.mask
-        # Set NaN where there are zeros
-        tmp_ds = tmp_ds.where(tmp_ds != 0)
-
-        # Where there were fill values, set the value again to 
-        # fill value to avoid not having data to interpolate
-        #tmp_ds.data[idx_no_data] = fill_value
-        tmp_ds += mask_fill_value
-
-        #tmp_ds[idx_no_data] = fill_value
-
-        # Where are less than 20% of observations, use fill value
-        min_n_obs = int(tmp_ds.shape[0] * 0.2)
-        #idx_lt_two_obs = np.where(self.mask.sum(axis=0) < min_n_obs)
-        tmp_ds = tmp_ds.where(self.mask.sum(axis=0) > min_n_obs, fill_value)
-
-        #tmp_ds.data[:, idx_lt_two_obs[0],
-        #            idx_lt_two_obs[1]] = fill_value
-        #tmp_ds[:, idx_lt_two_obs[0], idx_lt_two_obs[1]] = fill_value
-
-        for method in self.interpolation_methods.value:
-            progress_bar.value = _item
-            progress_bar.description = (f"Interpolation of {data_var}"
-                                        f" using {method}")
-
-            if method == 'smoothn':
-                # First, we need a linear interpolation
-                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                    method='linear')
-
-                # Weigth obs
-                #idx = np.nonzero(tmp_interpol_ds.data)
-                #w = tmp_ds.copy(deep=True).data
-                #w[idx] *= 2
-                # Smoothing
-                s = float(self.smooth_factor.value)
-                tmp_masked = np.ma.masked_equal(
-                        tmp_interpol_ds.data * self.mask, 0)
-
-                tmp_smoothed = smoothn(tmp_masked,
-                        #W=tmp_masked * 2, isrobust=True,
-                        isrobust=True,
-                        s=s, TolZ=1e-6, axis=0)[0]
-
-                tmp_masked = None ; del(tmp_masked)
-                # Overwrite data
-                tmp_interpol_ds.data = tmp_smoothed
-
-            else:
-                tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
-                    method=method)
-
-            # Set data type to match the original (non-interpolated)
-            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
-            # Copy metadata attributes
-            tmp_interpol_ds.attrs = tmp_ds.attrs
-
-            # Save to file
-            fname = f"{self.product}.{self.version}.{data_var}.{method}.tif"
-            output_dir = os.path.join(self.source_dir, data_var[1::],
-                              'interpolated')
-
-            if os.path.exists(output_dir) is False:
-                os.mkdir(output_dir)
-            fname = os.path.join(output_dir, fname)
-
-            save_dask_array(fname=fname, data=tmp_interpol_ds,
-                            data_var=data_var, method=method,
-                            tile_size=tile_size, n_workers=n_workers,
-                            threads_per_worker=threads_per_worker,
-                            memory_limit=memory_limit)
-
-            _item += 1
-
-        # Remove progress bar
-        progress_bar.close()
-        del progress_bar
 
     def __create_plot_objects(self):
         """
@@ -222,19 +93,32 @@ class TimeSeriesInterpolation():
         Display widgets in an horizontal box
         """
         self.__fill_data_variables()
-        self.__fill_interpolation_method()
+        self.__fill_smooth_method()
+        self.__fill_smooth_factor()
 
         left_box = VBox([self.data_vars])
-        #right_box = VBox([self.interpolation_methods, self.smooth_factor])
-        #center_box = VBox([self.interpolation_methods])
-        #right_box = VBox([self.smooth_factor])
-        right_box = VBox([self.interpolation_methods])
+        right_box = VBox([self.smooth_methods, self.smooth_factor])
         #_HBox = HBox([left_box, center_box, right_box],
         _HBox = HBox([left_box, right_box],
                       layout={'height': '180px',
                               'width' : '99%'}
         )
         display(_HBox)
+
+    def __fill_smooth_factor(self):
+        """
+        Fill smooth factor bounded float text
+        """
+        self.smooth_factor = widgets.BoundedFloatText(
+                value=0.75,
+                min=0.1,
+                max=10.0,
+                step=0.05,
+                description='Smooth factor:',
+                disabled=False,
+                style = {'description_width': 'initial'},
+                layout={'width': '200px'}
+        )
 
     def __fill_data_variables(self):
         """
@@ -269,13 +153,12 @@ class TimeSeriesInterpolation():
             self.left_imshow.set_data(self.left_ds.data[0])
             self.right_imshow.set_data(self.right_ds.data[0])
 
-    def __fill_interpolation_method(self):
+    def __fill_smooth_method(self):
         """
-        Fill interpolation methods
+        Fill smooth methods
         """
-        interpolation_methods = ['linear', 'nearest', 'slinear',
-                                 'quadratic', 'cubic', 'krog',
-                                 'pchip', 'spline', 'akima']
+        interpolation_methods = ['smoothn', 'ExponentialSmoothing',
+                                 'SimpleExpSmoothing', 'Holt']
 
         self.interpolation_methods = SelectMultiple(
                 options=tuple(interpolation_methods),

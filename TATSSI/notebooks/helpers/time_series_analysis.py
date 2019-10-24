@@ -9,7 +9,7 @@ src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.input_output.translate import Translate
-from TATSSI.input_output.utils import *
+from .utils import *
 from TATSSI.time_series.analysis import Analysis
 
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -40,7 +40,7 @@ from dask.distributed import Client
 
 import matplotlib
 import matplotlib.dates as mdates
-matplotlib.use('nbAgg')
+#matplotlib.use('nbAgg')
 import seaborn as sbn
 
 import matplotlib.pyplot as plt
@@ -74,84 +74,6 @@ class TimeSeriesAnalysis():
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
         log.setLevel(rio_logging.ERROR)
-
-    def __save_to_file(self, data, data_var, method, tile_size=256):
-        """
-        Saves to file an interpolated time series for a specific
-        data variable using a selected interpolation method
-        :param data: NumPy array with the interpolated time series
-        :param data_var: String with the data variable name
-        :param method: String with the interpolation method name
-        :tile size: Integer, number of lines to use as tile size
-        """
-
-        client = Client(n_workers=3, threads_per_worker=4,
-                        memory_limit='4GB')
-
-        # Get temp dataset extract the metadata
-        tmp_ds = getattr(self.ts.data, data_var)
-        # GeoTransform
-        gt = tmp_ds.attrs['transform']
-
-        # For xarray 0.11.x or higher in order to make the
-        # GeoTransform GDAL like
-        gt = (gt[2], gt[0], gt[1], gt[5], gt[3], gt[4])
-
-        # Coordinate Reference System (CRS) in a PROJ4 string to a
-        # Spatial Reference System Well known Text (WKT)
-        crs = tmp_ds.attrs['crs']
-        srs = osr.SpatialReference()
-        srs.ImportFromProj4(crs)
-        proj = srs.ExportToWkt()
-
-        fname = f"{self.product}.{self.version}.{data_var}.{method}.tif"
-        output_dir = os.path.join(self.source_dir, data_var[1::],
-                                  'interpolated')
-
-        if os.path.exists(output_dir) is False:
-            os.mkdir(output_dir)
-
-        fname = os.path.join(output_dir, fname)
-
-        # Get GDAL datatype from NumPy datatype
-        dtype = gdal_array.NumericTypeCodeToGDALTypeCode(data.dtype)
-
-        # Dimensions
-        layers, rows, cols = data.shape
-
-        # Create destination dataset
-        dst_ds = get_dst_dataset(dst_img=fname, cols=cols, rows=rows,
-                layers=layers, dtype=dtype, proj=proj, gt=gt)
-
-        block = tile_size
-        for start_row in range(0, rows, block):
-            if start_row + block > rows:
-                end_row = rows
-            else:
-                end_row = start_row + block
-
-            _data = data[:, start_row:end_row + 1, :]
-            _data = _data.compute()
-
-            for layer in range(layers):
-                dst_band = dst_ds.GetRasterBand(layer + 1)
-
-                # Fill value
-                dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
-                # Date
-                dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
-                                         tmp_ds.time.data[layer].astype(str))
-                # Data variable name
-                dst_band.SetMetadataItem('data_var', data_var)
-
-                # Data
-                dst_band.WriteArray(_data[layer].data,
-                        xoff=0, yoff=start_row)
-
-        dst_ds = None
-
-        # Close client
-        client.close()
 
     def __create_plot_objects(self):
         """

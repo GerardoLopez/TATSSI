@@ -34,6 +34,8 @@ def get_times_from_file_band(fname):
     Extract time info from band metadata
     """
     d = gdal.Open(fname)
+    # Get dataset metadata
+    dmd = d.GetMetadata()
     bands = d.RasterCount
 
     # Empty times list
@@ -45,7 +47,15 @@ def get_times_from_file_band(fname):
         md = b.GetMetadata()
 
         # Get fields with date info
-        start_date = md['RANGEBEGINNINGDATE']
+        key = 'RANGEBEGINNINGDATE'
+        if key in md:
+            start_date = md['RANGEBEGINNINGDATE']
+        elif key in dmd:
+            start_date = dmd['RANGEBEGINNINGDATE']
+        else:
+            err_msg = f"File {fname} does not have date information"
+            raise Exception(err_msg)
+
         times.append(np.datetime64(start_date))
 
     return times

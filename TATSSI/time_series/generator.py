@@ -26,7 +26,7 @@ class Generator():
     Class to generate time series of a specific TATSSI product
     """
     def __init__(self, source_dir, product, version,
-            year=None, start=None, end=None):
+            year=None, start=None, end=None, data_format='hdf'):
         """
         Constructor for Generator class
         """
@@ -40,12 +40,13 @@ class Generator():
         if not os.path.exists(source_dir):
             raise(IOError("Source directory does not exist!"))
 
-        self.source_dir = source_dir
+        # Set as source dir the absolute path
+        self.source_dir = os.path.abspath(source_dir)
 
         # Check that the source dir has the requested product
         # to create time series
         fnames = glob(os.path.join(self.source_dir,
-                                   f"*{product}*{version}*"))
+            f"*{product}*{version}*.{data_format}"))
 
         if len(fnames) == 0:
             err_msg = (f"There are no {product} files in "
@@ -475,6 +476,8 @@ class Generator():
 
         output_fnames = os.path.join(dataset, f'*.{extension}')
 
+        # TODO Create a text file with input files instead of wildcards
+        # -input_file_list my_list.txt
         command = (f"gdalbuildvrt -separate -overwrite "
                    f"{fname} {output_fnames}")
 

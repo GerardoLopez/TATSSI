@@ -1,4 +1,5 @@
 
+import os
 import gdal
 import pandas as pd
 import rasterio as rio
@@ -13,7 +14,7 @@ class Analysis():
     """
     Class to perform a time series analysis
     """
-    def __init__(self, data=None, interpolation_methods=['linear'], fname=None):
+    def __init__(self, data=None, smooth_methods=['smoothn'], fname=None):
         """
         Constructor to Analysis class
         """
@@ -25,8 +26,8 @@ class Analysis():
             self.fname = fname
             self.__get_dataset()
 
-        if type(interpolation_methods) == list:
-            self.interpolation_methods = interpolation_methods
+        if type(smooth_methods) == list:
+            self.smooth_methods = smooth_methods
 
     def decompose(self):
         """
@@ -74,7 +75,12 @@ class Analysis():
                  'y': 'latitude',
                  'band': 'time'})
 
-        times = get_times_from_file_band(self.fname)
+        # Check if file is a VRT
+        name, extension = os.path.splitext(self.fname)
+        if extension.lower() == '.vrt':
+            times = get_times(self.fname)
+        else:
+            times = get_times_from_file_band(self.fname)
         data_array['time'] = times
 
         # Create new dataset
