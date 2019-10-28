@@ -56,10 +56,15 @@ class Smoothing():
         # Copy attributes
         smoothed_data.attrs = getattr(self.data, self.dataset_name).attrs
 
+        from dask.diagnostics import ProgressBar
+        with ProgressBar():
+            smoothed_data.compute()
+
         save_dask_array(fname='test_smoothed.tif', data=smoothed_data,
                         data_var=self.dataset_name, method='smoothn',
-                        tile_size=64, n_workers=1,
-                        threads_per_worker=6, memory_limit='14GB')
+                        dask=False)
+                        #tile_size=256, n_workers=3,
+                        #threads_per_worker=1, memory_limit='7GB')
 
     def __get_dataset(self):
         """

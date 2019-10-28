@@ -162,6 +162,9 @@ def save_to_file(dst_img, data_array, proj, gt, md,
         # Fill value
         dst_band.SetMetadataItem('_FillValue', f'{fill_value}')
 
+        # Write data
+        dst_band.WriteArray(data_array[l])
+
         # Raster attribute table
         if rat is not None:
             dst_band.SetDefaultRAT(rat)
@@ -246,7 +249,8 @@ def check_source_img(source_img):
     return 0
 
 def save_dask_array(fname, data, data_var, method, tile_size,
-                   n_workers, threads_per_worker, memory_limit):
+                   n_workers, threads_per_worker, memory_limit,
+                   dask=True):
     """
     Saves to file an interpolated time series for a specific
     data variable using a selected interpolation method
@@ -258,9 +262,10 @@ def save_dask_array(fname, data, data_var, method, tile_size,
     # TODO Document DASK variables
     """
 
-    client = Client(n_workers=n_workers,
-                    threads_per_worker=threads_per_worker,
-                    memory_limit=memory_limit)
+    if dask == True:
+        client = Client(n_workers=n_workers,
+                threads_per_worker=threads_per_worker,
+                memory_limit=memory_limit)
 
     # Get temp dataset extract the metadata
     if type(data) == xr.core.dataset.Dataset:
@@ -301,7 +306,8 @@ def save_dask_array(fname, data, data_var, method, tile_size,
             end_row = start_row + block
 
         _data = data[:, start_row:end_row + 1, :]
-        _data = _data.compute()
+        if dask == True:
+            _data = _data.compute()
 
         for layer in range(layers):
             dst_band = dst_ds.GetRasterBand(layer + 1)
@@ -320,6 +326,7 @@ def save_dask_array(fname, data, data_var, method, tile_size,
 
     dst_ds = None
 
-    # Close client
-    client.close()
+    if dask == True:
+        # Close client
+        client.close()
 
