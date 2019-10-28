@@ -36,10 +36,6 @@ class Smoothing():
     def smooth(self):
         """
         """
-        # Setup DASK client
-        #client = Client(n_workers=3, threads_per_worker=1,
-        #                memory_limit='4GB')
-
         def __smoothn(_data):
             # Create output array
             _smoothed_data = smoothn(_data, isrobust=True, s=0.75,

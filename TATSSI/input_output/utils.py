@@ -11,6 +11,10 @@ from .helpers import Constants
 Utilities to handle data.
 """
 
+import logging
+logging.basicConfig(level=logging.INFO)
+LOG = logging.getLogger(__name__)
+
 def get_image_dimensions(fname):
     """
     Get dimensions in rows, columns and number of bands of an image
@@ -248,8 +252,8 @@ def check_source_img(source_img):
 
     return 0
 
-def save_dask_array(fname, data, data_var, method, tile_size,
-                   n_workers, threads_per_worker, memory_limit,
+def save_dask_array(fname, data, data_var, method, tile_size=256,
+                   n_workers=1, threads_per_worker=1, memory_limit='4GB',
                    dask=True):
     """
     Saves to file an interpolated time series for a specific
@@ -329,4 +333,7 @@ def save_dask_array(fname, data, data_var, method, tile_size,
     if dask == True:
         # Close client
         client.close()
+
+    LOG.info(f"File {fname} saved")
+
 

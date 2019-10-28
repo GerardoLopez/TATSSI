@@ -14,8 +14,7 @@ from TATSSI.input_output.utils import *
 from TATSSI.time_series.analysis import Analysis
 
 # Smoothing methods
-from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing
-from statsmodels.tsa.api import Holt
+import statsmodels.tsa.api as tsa
 
 # Widgets
 import ipywidgets as widgets
@@ -48,7 +47,9 @@ class TimeSeriesSmoothing():
     """
     Class to plot a single time step and per-pixel time series
     """
-    def __init__(self, fname):
+    debug_view = widgets.Output(layout={'border': '1px solid black'})
+
+    def __init__(self, fname, band=1):
         """
         :param ts: TATSSI qa_analytics object
         """
@@ -68,7 +69,7 @@ class TimeSeriesSmoothing():
         # Create plot objects
         self.__create_plot_objects()
         # Create plot
-        self.__plot()
+        self.__plot(band)
 
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
@@ -78,29 +79,28 @@ class TimeSeriesSmoothing():
         """
         Create plot objects
         """
-        self.fig = plt.figure(figsize=(8.0, 7.0))
+        self.fig = plt.figure(figsize=(10.0, 3.0))
 
-        # Left plot
-        self.left_p = plt.subplot2grid((2, 2), (0, 0), colspan=1)
-        # Right plot
-        self.right_p = plt.subplot2grid((2, 2), (0, 1), colspan=1,
-                                   sharex=self.left_p, sharey=self.left_p)
+        # Image plot
+        # subplot2grid((rows,cols), (row,col)
+        self.img_p = plt.subplot2grid((1, 4), (0, 0), colspan=1)
         # Time series plot
-        self.ts_p = plt.subplot2grid((2, 2), (1, 0), colspan=2)
+        self.ts_p = plt.subplot2grid((1, 4), (0, 1), colspan=3)
 
     def __display_controls(self):
         """
         Display widgets in an horizontal box
         """
         self.__fill_data_variables()
-        self.__fill_smooth_method()
+        self.__fill_smoothing_method()
         self.__fill_smooth_factor()
 
         left_box = VBox([self.data_vars])
-        right_box = VBox([self.smooth_methods, self.smooth_factor])
+        center_box = VBox([self.smoothing_methods])
+        right_box = VBox([self.smooth_factor])
         #_HBox = HBox([left_box, center_box, right_box],
-        _HBox = HBox([left_box, right_box],
-                      layout={'height': '180px',
+        _HBox = HBox([left_box, center_box, right_box],
+                      layout={'height': '80px',
                               'width' : '99%'}
         )
         display(_HBox)
@@ -117,7 +117,7 @@ class TimeSeriesSmoothing():
                 description='Smooth factor:',
                 disabled=False,
                 style = {'description_width': 'initial'},
-                layout={'width': '200px'}
+                layout={'width': '150px'}
         )
 
     def __fill_data_variables(self):
@@ -153,41 +153,38 @@ class TimeSeriesSmoothing():
             self.left_imshow.set_data(self.left_ds.data[0])
             self.right_imshow.set_data(self.right_ds.data[0])
 
-    def __fill_smooth_method(self):
+    def __fill_smoothing_method(self):
         """
         Fill smooth methods
         """
-        interpolation_methods = ['smoothn', 'ExponentialSmoothing',
-                                 'SimpleExpSmoothing', 'Holt']
+        smoothing_methods = ['smoothn',
+                             'ExponentialSmoothing',
+                             'SimpleExpSmoothing',
+                             'Holt']
 
-        self.interpolation_methods = SelectMultiple(
-                options=tuple(interpolation_methods),
-                value=tuple([interpolation_methods[0]]),
-                rows=len(interpolation_methods),
-                description='Interpolation methods',
+        self.smoothing_methods = SelectMultiple(
+                options=tuple(smoothing_methods),
+                value=tuple([smoothing_methods[0]]),
+                rows=len(smoothing_methods),
+                description='Smoothing methods',
                 disabled=False,
                 style = {'description_width': 'initial'},
-                layout={'width': '220px'},
+                layout={'width': '330px'},
         )
 
-    def __plot(self, is_qa=False):
+    def __plot(self, band, is_qa=False):
         """
         Plot a variable and time series
-        :param left_ds: xarray to plot on the left panel
-        :param right_ds: xarray to plot on the right panel
         """
 
-        self.left_ds = getattr(self.ts.data, self.data_vars.value)
+        self.img_ds = getattr(self.ts.data, self.data_vars.value)
         # Create plot
-        #self.left_ds[0].plot(cmap='Greys_r', ax=self.left_p,
-        #                     add_colorbar=False)
-        #vmin, vmax = self.__enhance(self.left_ds[0].data)
-        self.left_imshow = self.left_ds[0].plot.imshow(cmap='Greys_r',
-                ax=self.left_p, add_colorbar=False)
+        self.img_imshow = self.img_ds[band].plot.imshow(cmap='Greys_r',
+                ax=self.img_p, add_colorbar=False)
 
         # Turn off axis
-        self.left_p.axis('off')
-        self.left_p.set_aspect('equal')
+        self.img_p.axis('off')
+        self.img_p.set_aspect('equal')
         self.fig.canvas.draw_idle()
 
         # Connect the canvas with the event
@@ -195,30 +192,14 @@ class TimeSeriesSmoothing():
                                           self.on_click)
 
         # Plot the centroid
-        _layers, _rows, _cols = self.left_ds.shape
+        _layers, _rows, _cols = self.img_ds.shape
         # Get y-axis max and min
         #y_min, y_max = self.ds.data.min(), self.ds.data.max()
 
-        plot_sd = self.left_ds[:, int(_cols / 2), int(_rows / 2)]
+        plot_sd = self.img_ds[:, int(_cols / 2), int(_rows / 2)]
         plot_sd.plot(ax = self.ts_p, color='black',
-                linestyle = '--', linewidth=1, label='Original data')
+                linestyle = '-', linewidth=1, label='Original data')
 
-
-        # Right panel
-        if self.mask is None:
-            self.right_ds = self.left_ds.copy(deep=True)
-        else:
-            self.right_ds = self.left_ds * self.mask
-
-        # Create plot
-        #self.right_ds[0].plot(cmap='Greys_r', ax=self.right_p,
-        #                      add_colorbar=False)
-        self.right_imshow = self.right_ds[0].plot.imshow(cmap='Greys_r',
-                ax=self.right_p, add_colorbar=False)
-
-        # Turn off axis
-        self.right_p.axis('off')
-        self.right_p.set_aspect('equal')
 
         plt.margins(tight=True)
         plt.tight_layout()
@@ -227,8 +208,12 @@ class TimeSeriesSmoothing():
         self.ts_p.legend(loc='best', fontsize='small',
                          fancybox=True, framealpha=0.5)
 
+        # Grid
+        self.ts_p.grid(axis='both', alpha=.3)
+
         plt.show()
 
+    @debug_view.capture(clear_output=True)
     def on_click(self, event):
         """
         Event handler
@@ -242,66 +227,52 @@ class TimeSeriesSmoothing():
         self.ts_p.clear()
 
         # Delete last reference point
-        if len(self.left_p.lines) > 0:
-            del self.left_p.lines[0]
-            del self.right_p.lines[0]
+        if len(self.img_p.lines) > 0:
+            del self.img_p.lines[0]
 
         # Draw a point as a reference
-        self.left_p.plot(event.xdata, event.ydata,
-                marker='o', color='red', markersize=3)
-        self.right_p.plot(event.xdata, event.ydata,
+        self.img_p.plot(event.xdata, event.ydata,
                 marker='o', color='red', markersize=3)
 
-        # Non-masked data
-        left_plot_sd = self.left_ds.sel(longitude=event.xdata,
+        # Interpolated data to smooth
+        img_plot_sd = self.img_ds.sel(longitude=event.xdata,
                                         latitude=event.ydata,
                                         method='nearest')
-        if left_plot_sd.chunks is not None:
-            left_plot_sd = left_plot_sd.compute()
-
-        # Masked data
-        right_plot_sd = self.right_ds.sel(longitude=event.xdata,
-                                          latitude=event.ydata,
-                                          method='nearest')
-        if right_plot_sd.chunks is not None:
-            right_plot_sd = right_plot_sd.compute()
+        if img_plot_sd.chunks is not None:
+            img_plot_sd = img_plot_sd.compute()
 
         # Plots
-        left_plot_sd.plot(ax=self.ts_p, color='black',
+        img_plot_sd.plot(ax=self.ts_p, color='black',
                 linestyle = '-', linewidth=1, label='Original data')
 
-        # Interpolate data
-        right_plot_sd_masked = right_plot_sd.where(right_plot_sd != 0)
-        right_plot_sd_masked.plot(ax = self.ts_p, color='blue',
-                marker='o', linestyle='None', alpha=0.7, markersize=4,
-                label='Masked by user QA selection')
-
         # For every interpol method selected by the user
-        for method in self.interpolation_methods.value:
-            if method is 'smoothn':
-                # Linear interpolation
-                y = right_plot_sd_masked.interpolate_na(dim='time').data
-                # Weigth obs
-                idx = np.nonzero(right_plot_sd.data)
-                w = right_plot_sd.copy(deep=True).data
-                w[idx] *= 2
-                # Smoothing
-                s = float(self.smooth_factor.value)
-                smoothed_array = smoothn(y, W=w, isrobust=True,
-                        s=s, TolZ=1e-6, axis=0)
+        for method in self.smoothing_methods.value:
+            y = img_plot_sd.data
+            s = float(self.smooth_factor.value)
 
-                tmp_ds = right_plot_sd_masked.copy(deep=True,
-                        data=smoothed_array[0])
+            if method is 'smoothn':
+                # Smoothing
+                fittedvalues = smoothn(y, isrobust=True,
+                        s=s, TolZ=1e-6, axis=0)[0]
+
             else:
-                tmp_ds = right_plot_sd_masked.interpolate_na(dim='time',
-                                              method=method)
+                _method = getattr(tsa, method)
+                # Smoothing
+                #fit = _method(y).fit(smoothing_level=s, optimized=False)
+                fit = _method(y.astype(float)).fit(smoothing_level=s)
+                # Re-cast to original data type
+                fittedvalues = np.zeros_like(fit.fittedvalues)
+                fittedvalues[0:-1] = fit.fittedvalues[1::]
+                fittedvalues[-1] = y[-1]
 
             # Plot
+            tmp_ds = img_plot_sd.copy(deep=True,
+                        data=fittedvalues)
             tmp_ds.plot(ax = self.ts_p, label=method, linewidth=2)
 
         # Change ylimits
-        max_val = left_plot_sd.data.max()
-        min_val = left_plot_sd.data.min()
+        max_val = img_plot_sd.data.max()
+        min_val = img_plot_sd.data.min()
 
         data_range = max_val - min_val
         max_val = max_val + (data_range * 0.2)
