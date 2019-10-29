@@ -39,22 +39,22 @@ class Smoothing():
         def __smoothn(_data):
             # Create output array
             _smoothed_data = smoothn(_data, isrobust=True, s=0.75,
-                     TolZ=1e-6, axis=0)[0]
+                     TolZ=1e-6, axis=0)[0].astype(_data.dtype)
 
             return _smoothed_data
 
         # Create output array
         # Smooth data like a porco!
-        smoothed_data = xr.apply_ufunc(__smoothn,
-                getattr(self.data, self.dataset_name),
-                dask='parallelized', output_dtypes=[np.float32])
+        y = getattr(self.data, self.dataset_name)
+        smoothed_data = xr.apply_ufunc(__smoothn, y,
+                dask='parallelized', output_dtypes=[y.data.dtype])
 
         # Copy attributes
         smoothed_data.attrs = getattr(self.data, self.dataset_name).attrs
 
         from dask.diagnostics import ProgressBar
         with ProgressBar():
-            smoothed_data.compute()
+            smoothed_data = smoothed_data.compute()
 
         save_dask_array(fname='test_smoothed.tif', data=smoothed_data,
                         data_var=self.dataset_name, method='smoothn',
