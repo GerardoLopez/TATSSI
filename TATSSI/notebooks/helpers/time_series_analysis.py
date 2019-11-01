@@ -37,6 +37,7 @@ from rasterio import logging as rio_logging
 from datetime import datetime
 
 from dask.distributed import Client
+from dask.diagnostics import ProgressBar
 
 import matplotlib
 import matplotlib.dates as mdates
@@ -405,6 +406,17 @@ class TimeSeriesAnalysis():
 
         # Redraw plot
         plt.draw()
+
+    def get_climatology(self, tile_size=256, n_workers=1,
+                    threads_per_worker=8, memory_limit='14GB'):
+        """
+        Derives a climatology dataset
+        """
+        self.ts.climatology()
+
+        with ProgressBar():
+            self.ts.climatology_mean = self.ts.climatology_mean.compute()
+            self.ts.climatology_std = self.ts.climatology_std.compute()
 
     @staticmethod
     def __enhance(data):

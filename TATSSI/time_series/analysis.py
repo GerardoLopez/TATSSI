@@ -29,6 +29,10 @@ class Analysis():
         if type(smooth_methods) == list:
             self.smooth_methods = smooth_methods
 
+        # Climatology attributes
+        self.climatology_mean = None
+        self.climatology_std = None
+
     def decompose(self):
         """
         """
@@ -51,6 +55,24 @@ class Analysis():
         # seaborn.boxplot(df.index.dayofyear, ts, ax=ax)
 
         pass
+
+    def climatology(self):
+        """
+        Derives a climatology dataset
+        """
+        tmp_ds = getattr(self.data, self.dataset_name)
+
+        # Compute mean and std
+        _mean = tmp_ds.groupby('time.dayofyear').mean('time')
+        _std = tmp_ds.groupby('time.dayofyear').std('time')
+
+        # Copy attributes
+        _mean.attrs = tmp_ds.attrs
+        _std.attrs = tmp_ds.attrs
+
+        # Set as class attributes
+        self.climatology_mean = _mean
+        self.climatology_std = _std
 
     def __get_dataset(self):
         """
@@ -84,8 +106,8 @@ class Analysis():
         data_array['time'] = times
 
         # Create new dataset
-        dataset_name = self.__get_dataset_name()
-        dataset = data_array.to_dataset(name=dataset_name)
+        self.dataset_name = self.__get_dataset_name()
+        dataset = data_array.to_dataset(name=self.dataset_name)
 
         # Back to default logging settings
         logging.basicConfig(level=logging.INFO)

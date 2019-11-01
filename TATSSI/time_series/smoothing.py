@@ -3,6 +3,7 @@ import os
 import gdal
 import xarray as xr
 from dask.distributed import Client
+from dask.diagnostics import ProgressBar
 import rasterio as rio
 import logging
 from rasterio import logging as rio_logging
@@ -52,7 +53,6 @@ class Smoothing():
         # Copy attributes
         smoothed_data.attrs = getattr(self.data, self.dataset_name).attrs
 
-        from dask.diagnostics import ProgressBar
         with ProgressBar():
             smoothed_data = smoothed_data.compute()
 
