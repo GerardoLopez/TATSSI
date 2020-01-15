@@ -48,7 +48,9 @@ def read_config():
     """
     Read downloaders config file
     """
-    with open('config.json') as f:
+    fname = os.path.join(str(src_dir.absolute()), 'TATSSI',
+            'download', 'config.json')
+    with open(fname) as f:
         credentials = json.load(f)
 
     url = credentials['url']

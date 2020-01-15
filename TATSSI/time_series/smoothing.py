@@ -18,9 +18,19 @@ class Smoothing():
     Class to perform a time series analysis
     """
     def __init__(self, data=None, fname=None,
+                 output_fname=None,
                  smoothing_methods=['smoothn']):
         """
-        Constructor to Analysis class
+        TATSSI smoother. Can receive either:
+        - an xarray with dimensions time, latitude and longitude
+        - a file name full path with a valid TATSSI file that includes
+          metadata to set the dates/time steps
+        The results of smoother will be saved in output_fname for all
+        valid smoothing methods
+        :param data: xarray with dimensions time, latitude and longitude
+        :param fname: Input filename full path
+        :param output_fname: Output filename full path
+        :param smoothing_methods: A valid TATSSI smoothing method
         """
         # Set self.data
         if data is not None:
@@ -31,11 +41,15 @@ class Smoothing():
             self.dataset_name = None # set in self.__get_dataset
             self.__get_dataset()
 
+        # Output filename
+        self.output_fname = output_fname
+
         if type(smoothing_methods) == list:
             self.smoothing_methods = smoothing_methods
 
     def smooth(self):
         """
+        Method to perform a smoothing on a time series
         """
         def __smoothn(_data):
             # Create output array
@@ -56,7 +70,7 @@ class Smoothing():
         with ProgressBar():
             smoothed_data = smoothed_data.compute()
 
-        save_dask_array(fname='test_smoothed.tif', data=smoothed_data,
+        save_dask_array(fname=self.output_fname, data=smoothed_data,
                         data_var=self.dataset_name, method='smoothn',
                         dask=False)
                         #tile_size=256, n_workers=3,

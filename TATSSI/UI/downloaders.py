@@ -16,8 +16,12 @@ from TATSSI.download.modis_downloader import get_modis_data
 from TATSSI.download.viirs_downloader import get_viirs_data
 
 import ogr
+from datetime import datetime
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5.QtCore import pyqtSlot
+
+from TATSSI.UI.helpers.utils import *
 
 class Ui(QtWidgets.QDialog):
     def __init__(self):
@@ -33,6 +37,14 @@ class Ui(QtWidgets.QDialog):
         catalogue = Catalogue()
         self.fill_products_table(catalogue)
 
+        # Connect methods with events
+        self.pbOutputDirectory.clicked.connect(
+                self.on_pbOutputDirectory_click)
+        self.tvProducts.clicked.connect(
+                self.on_tvProducts_click)
+        self.pbDownload.clicked.connect(
+                self.on_pbDownload_click)
+
         self.show()
 
     def fill_products_table(self, catalogue):
@@ -41,14 +53,81 @@ class Ui(QtWidgets.QDialog):
         """
         rows, cols = catalogue.products.shape
         # Set number of entries
-        self.products.setRowCount(rows)
-        self.products.setColumnCount(cols)
+        self.tvProducts.setRowCount(rows)
+        self.tvProducts.setColumnCount(cols)
 
         for row in range(rows):
             for col in range(cols):
-                # Insert item
+                # Insert item on products TableView
                 item = catalogue.products.iloc[row, col]
-                self.products.setItem(row, col, QtWidgets.QTableWidgetItem(item))
+                self.tvProducts.setItem(row, col,
+                        QtWidgets.QTableWidgetItem(item))
+
+        # Set first product as default
+        default_product = self.tvProducts.item(0, cols-1).text()
+        self.lblProductVersion.setText(default_product)
+
+    @pyqtSlot()
+    def on_pbDownload_click(self):
+        """
+        Downloads data based on user selection
+        """
+        # Get output dir
+        output = self.lblOutputDirectory.text()
+
+        # Get product
+        product = self.lblProductVersion.text()
+        if 'VNP' in product:
+            platform = 'VIIRS'
+            donwloader = get_viirs_data
+        else:
+            platform = self.get_modis_platform(product)
+            donwloader = get_modis_data
+
+        url, username, password = read_config()
+
+        from IPython import embed ; ipshell = embed()
+
+        # Tile
+        tile = self.tiles.currentText()
+
+        # Dates needs to be datetime objects
+        start_date = datetime.strptime(self.start_date.text(), '%d/%m/%Y')
+        end_date = datetime.strptime(self.end_date.text(), '%d/%m/%Y')
+
+        # Run the downloader
+        donwloader(platform = platform,
+                   product = product,
+                   tiles = tile,
+                   output_dir = output,
+                   start_date = start_date,
+                   end_date = end_date,
+                   n_threads = 1,
+                   username = username,
+                   password = password)
+
+    @pyqtSlot()
+    def on_tvProducts_click(self):
+        """
+        Sets the lblProductVersion text according to the user's
+        selection
+        """
+        # Get current row
+        row = self.tvProducts.currentRow()
+        # Get number of columns
+        col = self.tvProducts.columnCount() - 1
+
+        product_version = self.tvProducts.item(row, col).text()
+        self.lblProductVersion.setText(product_version)
+
+    @pyqtSlot()
+    def on_pbOutputDirectory_click(self):
+        """
+        Opens dialog to select output dir and sets the
+        OutputDirectory label text
+        """
+        output_dir = open_file_dialog('directory')
+        self.lblOutputDirectory.setText(output_dir)
 
     @staticmethod
     def get_tiles_list():
@@ -76,6 +155,20 @@ class Ui(QtWidgets.QDialog):
 
         tiles.sort()
         return tiles
+
+    @staticmethod
+    def get_modis_platform(modis_product):
+        """
+        Get MODIS plattform: MOLT, MOLA or MOTA. This basically relates
+        to the sensor used (or if a combination of AQUA & TERRA is used)
+        """
+        product = modis_product.split('.')[0]
+        if 'MCD' in product:
+            return 'MOTA'
+        elif 'MOD' in product:
+            return 'MOLT'
+        else:
+            return 'MOLA'
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()
