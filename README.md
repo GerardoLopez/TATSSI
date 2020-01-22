@@ -6,8 +6,7 @@
   * ```wget wget https://repo.continuum.io/archive/Anaconda3-2019.07-Linux-x86_64.sh```
     * Install conda ```bash ./Anaconda3-2019.07-Linux-x86_64.sh```
       * Accept the default settings. When asked:
-        ```Do you wish the installer to initialize Anaconda3
-           by running conda init? [yes|no]``
+        ```Do you wish the installer to initialize Anaconda3 by running conda init? [yes|no]```
         Say: ```yes```
     * Close that shell and open a new one
 * Clone this repo
