@@ -147,7 +147,8 @@ class ImportExport():
             # If there's no source file, do nothing...
             return None
 
-        if has_subdatasets(source_img):
+        _has_subdatasets, diver_name = has_subdatasets(source_img)
+        if _has_subdatasets is True:
             # Get SubDatasets
             sds = get_subdatasets(source_img)
             sds_df = pd.DataFrame(list(sds))

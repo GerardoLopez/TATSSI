@@ -165,6 +165,7 @@ def save_to_file(dst_img, data_array, proj, gt, md,
 
         # Fill value
         dst_band.SetMetadataItem('_FillValue', f'{fill_value}')
+        dst_band.SetMetadataItem('NoData Value', f'{fill_value}')
 
         # Write data
         dst_band.WriteArray(data_array[l])
@@ -176,33 +177,33 @@ def save_to_file(dst_img, data_array, proj, gt, md,
         # Write data
         dst_band.WriteArray(data_array[l])
 
-        # Create colour table
-        start_color = 0
-        rows = rat.GetRowCount()
-        colors = np.floor(np.linspace(0, 255, rows)).astype(np.uint8)
-        ct = gdal.ColorTable()
+        ## Create colour table
+        #start_color = 0
+        #rows = rat.GetRowCount()
+        #colors = np.floor(np.linspace(0, 255, rows)).astype(np.uint8)
+        #ct = gdal.ColorTable()
 
-        # Empty list for category names
-        #descriptions = []
-        descriptions = [''] * (fill_value + 1)
-        #descriptions = [None] * (fill_value + 1)
+        ## Empty list for category names
+        ##descriptions = []
+        #descriptions = [''] * (fill_value + 1)
+        ##descriptions = [None] * (fill_value + 1)
 
-        for row in range(rows):
-            # Column 0 is QA human readable value
-            value = rat.GetValueAsInt(row, 0)
-            # Set color table value
-            ct.SetColorEntry(value, (colors[row],
-                                     colors[row],
-                                     colors[row], 255))
+        #for row in range(rows):
+        #    # Column 0 is QA human readable value
+        #    value = rat.GetValueAsInt(row, 0)
+        #    # Set color table value
+        #    ct.SetColorEntry(value, (colors[row],
+        #                             colors[row],
+        #                             colors[row], 255))
 
-            # Column 1 is the description
-            descriptions[value] = rat.GetValueAsString(row,1)
-            #descriptions.append(rat.GetValueAsString(row,1))
+        #    # Column 1 is the description
+        #    descriptions[value] = rat.GetValueAsString(row,1)
+        #    #descriptions.append(rat.GetValueAsString(row,1))
 
-        # Set colour table
-        dst_band.SetRasterColorTable(ct)
-        # Set category names
-        dst_band.SetRasterCategoryNames(descriptions)
+        ## Set colour table
+        #dst_band.SetRasterColorTable(ct)
+        ## Set category names
+        #dst_band.SetRasterCategoryNames(descriptions)
 
     # Flush to disk
     dst_ds = None
@@ -220,14 +221,16 @@ def has_subdatasets(source_img):
     Check if file has subdatasets
     :param source_img: Path of the file to open
     :return: True if source_img has subdatasets
+             Driver description, e.g. HDF5
     """
     d = gdal.Open(source_img)
     if len(d.GetSubDatasets()) == 0:
         # No SubDatasets
-        return False
+        return False, None
     else:
         # Has SubDatasets
-        return True
+        driver = d.GetDriver()
+        return True, driver.GetDescription()
 
 def get_subdatasets(source_img):
     """

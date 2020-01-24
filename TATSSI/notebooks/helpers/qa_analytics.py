@@ -55,7 +55,7 @@ class Analytics():
     """
     def __init__(self, source_dir, product, version,
                  year=None, start=None, end=None,
-                 chunked=False, processes=1):
+                 chunked=False, processes=1, data_format='hdf'):
 
         # Check input parameters
         if os.path.exists(source_dir) is True:
@@ -78,6 +78,9 @@ class Analytics():
 
         # Set number of CPUs to use
         self.__set_n_processes(processes)
+
+        # Set data format
+        self.data_format = data_format
 
         # QA definition to analise
         # set on qa_ui
@@ -344,7 +347,8 @@ class Analytics():
         # Create time series generator object
         tsg = Generator(source_dir=self.source_dir,
                 product=self.product, version=self.version,
-                year=self.year, start=self.start, end=self.end)
+                year=self.year, start=self.start, end=self.end,
+                data_format=self.data_format)
 
         # Load time series
         return tsg.load_time_series(chunked=self.chunked)

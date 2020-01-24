@@ -11,6 +11,7 @@ sys.path.append(str(src_dir.absolute()))
 from TATSSI.input_output.translate import Translate
 from .utils import *
 from TATSSI.time_series.analysis import Analysis
+from TATSSI.time_series.mk_test import mk_test
 
 from statsmodels.tsa.seasonal import seasonal_decompose
 
@@ -162,9 +163,10 @@ class TimeSeriesAnalysis():
         """
         Fill time series decompostion model
         """
+        _models = ['additive', 'multiplicative']
         self.model = widgets.Dropdown(
-                options=['multiplicative', 'additive'],
-                value='multiplicative',
+                options=_models,
+                value=_models[0],
                 description='Decompostion model:',
                 disabled=False,
                 style = {'description_width': 'initial'},
@@ -336,9 +338,12 @@ class TimeSeriesAnalysis():
         self.observed.plot(self.seasonal_decompose.observed.index,
                 self.seasonal_decompose.observed.values,
                 label='Observed')
+
+        # MK test
+        _mk_test = mk_test(self.seasonal_decompose.trend)
         self.trend.plot(self.seasonal_decompose.trend.index,
                 self.seasonal_decompose.trend.values,
-                label='Trend')
+                label=f'Trend {_mk_test}')
 
         # Set the same y limits from observed data
         self.trend.set_ylim(self.observed.get_ylim())

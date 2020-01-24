@@ -24,7 +24,14 @@ def get_times(vrt_fname):
         md = d.GetMetadata()
 
         # Get fields with date info
-        start_date = md['RANGEBEGINNINGDATE']
+        if 'RANGEBEGINNINGDATE' in md:
+            start_date = md['RANGEBEGINNINGDATE']
+        elif 'RangeBeginningDate' in md:
+            start_date = md['RangeBeginningDate']
+        else:
+            err_msg = f"File {fname} does not have date information"
+            raise Exception(err_msg)
+
         times.append(np.datetime64(start_date))
 
     return times

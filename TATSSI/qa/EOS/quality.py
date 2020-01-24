@@ -56,6 +56,7 @@ def quality_decode_from_int(qa_layer_def, intValue, bitField, qualityCache):
         # Get the number of bits used to store the QA
         n_bits = 0
         layers = qa_layer_def.Name.unique()
+
         for layer in layers:
             n_bits += qa_layer_def[qa_layer_def.Name == layer].Length.iloc[0]
 
@@ -69,8 +70,8 @@ def quality_decode_from_int(qa_layer_def, intValue, bitField, qualityCache):
             bits = subset.Length.iloc[0]
             decoded_int_bin = decoded_int[-bits::]
             decoded_int_dec = int(decoded_int_bin, 2)
-            description = subset[subset.Value == decoded_int_dec].Description.values[0]
 
+            description = subset[subset.Value == decoded_int_dec].Description.values[0]
             quality[layer] = {"bits" : f"0b{decoded_int_bin}",
                               "description" : description}
 
@@ -81,7 +82,7 @@ def quality_decode_from_int(qa_layer_def, intValue, bitField, qualityCache):
 
     return int(quality[bitField]['bits'][2:])
 
-def qualityDecodeArray(qa_layer_def, intValue,
+def qualityDecodeArray(qa_layer_def, fill_value, intValue,
                        bitField, qualityCache):
     """
     Function to decode an input array
@@ -89,9 +90,15 @@ def qualityDecodeArray(qa_layer_def, intValue,
     ###qualityDecodeInt_Vect = np.vectorize(quality_decode_from_int)
     # Create output QA decoded array
     qualityDecodeArr = np.zeros_like(intValue)
+    qualityDecodeArr.fill(fill_value)
 
     # Get unique values in QA layer
     unique_values = np.unique(intValue)
+
+    # Remove fill value from unique values
+    idx = np.where(unique_values == fill_value)
+    unique_values = np.delete(unique_values, idx)
+
     for value in unique_values:
         decoded_value = quality_decode_from_int(qa_layer_def,
                                                 value, bitField,
@@ -149,14 +156,12 @@ def qualityDecoder(inRst, product, qualityLayer,
 
     # Read in the input raster layer.
     d = gdal.Open(inRst)
+    inArray = d.ReadAsArray()
 
     # Get GeoTransform and Projection
     gt, proj = d.GetGeoTransform(), d.GetProjection()
     # Get fill value
     md = d.GetMetadata()
-    fill_value = int(md['_FillValue'])
-
-    inArray = d.ReadAsArray()
 
     # Get QA associated to requested product
     product_name, version = product.split('.')
@@ -164,6 +169,26 @@ def qualityDecoder(inRst, product, qualityLayer,
     for qa_layer in qa_layers:
         if qa_layer.QualityLayer.unique()[0] == qualityLayer:
             qa_layer_def = qa_layer
+
+    if '_FillValue' in md:
+        fill_value = int(md['_FillValue'])
+    else:
+        # Get band metadata
+        b = d.GetRasterBand(1)
+        bm = b.GetMetadata()
+        if 'NoData Value' in bm:
+            fill_value = int(md['NoData Value'])
+        else:
+            fill_value = [value for key, value in bm.items() if 'fillvalue' in key.lower()]
+            if len(fill_value) > 0 and fill_value[0].find('d') > 0:
+                fill_value = int(fill_value[0].split('d')[0])
+            else:
+                # Cannot read fill value from metadata
+                # get elemet(s) that are in the QA data values but not in
+                # the QA layer definition
+                _unique = np.unique(inArray)
+                mask = np.isin(_unique, qa_layer_def.Value.values)
+                fill_value = _unique[~mask][0]
 
     # Get fiels list
     bitFieldList = qa_layer_def.Name.unique()
@@ -176,7 +201,7 @@ def qualityDecoder(inRst, product, qualityLayer,
     for f in bitFieldList:
         LOG.info(f"Decoding QA layer {f}...")
         qualityDecoded = qualityDecodeArray(qa_layer_def,
-                                            inArray, f, qualityCache)
+                fill_value, inArray, f, qualityCache)
 
         # Create attribute table
         rat = createAttributeTable(f, qualityCache)
@@ -191,6 +216,7 @@ def qualityDecoder(inRst, product, qualityLayer,
 
         outFileName = os.path.splitext(os.path.basename(inRst))[0]
         dst_img = outName(outDir, outFileName, f)
+
         save_to_file(dst_img, qualityDecoded, proj, gt, md,
                      fill_value, rat)
 

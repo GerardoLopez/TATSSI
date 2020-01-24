@@ -165,12 +165,18 @@ class Generator():
             extension = 'tif'
 
         for i, fname in enumerate(self.fnames):
-            if has_subdatasets(fname) is True:
+            _has_subdatasets, diver_name = has_subdatasets(fname)
+            if _has_subdatasets is True:
                 # For each Scientific Dataset
                 for sds in get_subdatasets(fname):
-                    # SDS name is the last elemtent of : separated string
-                    sds_name = sds[0].split(':')[-1]
-                    sds_name = sds_name.replace(" ", "_")
+                    if diver_name == 'HDF4':
+                        # SDS name is the last elemtent of : separated string
+                        sds_name = sds[0].split(':')[-1]
+                        sds_name = sds_name.replace(" ", "_")
+                    elif diver_name == 'HDF5':
+                        # SDS name is the last elemtent of : separated string
+                        # and last element of a / substring
+                        sds_name = sds[0].split(':')[-1].split('/')[-1]
 
                     if i == 0:
                         # Create output dir

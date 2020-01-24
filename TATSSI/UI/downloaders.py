@@ -67,6 +67,10 @@ class Ui(QtWidgets.QDialog):
         default_product = self.tvProducts.item(0, cols-1).text()
         self.lblProductVersion.setText(default_product)
 
+        # Set default date display format
+        self.start_date.setDisplayFormat('dd/MM/yyyy')
+        self.end_date.setDisplayFormat('dd/MM/yyyy')
+
     @pyqtSlot()
     def on_pbDownload_click(self):
         """
@@ -85,8 +89,6 @@ class Ui(QtWidgets.QDialog):
             donwloader = get_modis_data
 
         url, username, password = read_config()
-
-        from IPython import embed ; ipshell = embed()
 
         # Tile
         tile = self.tiles.currentText()
