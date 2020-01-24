@@ -21,7 +21,7 @@ https://repo.anaconda.com/pkgs/main/linux-64/bzip2-1.0.8-h7b6447c_0.tar.bz2
 https://repo.anaconda.com/pkgs/main/linux-64/expat-2.2.6-he6710b0_0.conda
 https://repo.anaconda.com/pkgs/main/linux-64/freexl-1.0.5-h14c3975_0.conda
 https://repo.anaconda.com/pkgs/main/linux-64/fribidi-1.0.5-h7b6447c_0.conda
-https://conda.anaconda.org/conda-forge/linux-64/gcc_impl_linux-64-7.3.0-habb00fd_2.tar.bz2
+https://anaconda.org/anaconda/gcc_impl_linux-64/7.3.0/download/linux-64/gcc_impl_linux-64-7.3.0-habb00fd_1.tar.bz2
 https://repo.anaconda.com/pkgs/main/linux-64/geos-3.7.1-he6710b0_0.conda
 https://repo.anaconda.com/pkgs/main/linux-64/giflib-5.1.4-h14c3975_1.conda
 https://repo.anaconda.com/pkgs/main/linux-64/gmp-6.1.2-h6c8ec71_1.conda
@@ -57,7 +57,7 @@ https://conda.anaconda.org/conda-forge/linux-64/clang-9.0.1-default_hde54327_0.t
 https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-7.3.0-h553295d_12.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/gfortran_impl_linux-64-7.3.0-hdf63c60_2.tar.bz2
 https://repo.anaconda.com/pkgs/main/linux-64/glib-2.56.2-hd408876_0.conda
-https://conda.anaconda.org/conda-forge/linux-64/gxx_impl_linux-64-7.3.0-hdf63c60_2.tar.bz2
+https://anaconda.org/anaconda/gxx_impl_linux-64/7.3.0/download/linux-64/gxx_impl_linux-64-7.3.0-hdf63c60_1.tar.bz2
 https://repo.anaconda.com/pkgs/main/linux-64/hdf4-4.2.13-h3ca952b_2.conda
 https://repo.anaconda.com/pkgs/main/linux-64/hdf5-1.10.4-hb1b8bf9_0.conda
 https://repo.anaconda.com/pkgs/main/linux-64/libboost-1.67.0-h46d08c1_4.conda
