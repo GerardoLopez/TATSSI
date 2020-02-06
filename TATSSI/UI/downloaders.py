@@ -26,7 +26,7 @@ from TATSSI.UI.helpers.utils import *
 class Ui(QtWidgets.QDialog):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('downloaders_ui.ui', self)
+        uic.loadUi('downloaders.ui', self)
 
         # Tile list
         tiles = self.get_tiles_list()
@@ -63,13 +63,15 @@ class Ui(QtWidgets.QDialog):
                 self.tvProducts.setItem(row, col,
                         QtWidgets.QTableWidgetItem(item))
 
+        self.tvProducts.resizeColumnsToContents()
+
         # Set first product as default
         default_product = self.tvProducts.item(0, cols-1).text()
         self.lblProductVersion.setText(default_product)
 
         # Set default date display format
-        self.start_date.setDisplayFormat('dd/MM/yyyy')
-        self.end_date.setDisplayFormat('dd/MM/yyyy')
+        self.start_date.setDisplayFormat('dd-MM-yyyy')
+        self.end_date.setDisplayFormat('dd-MM-yyyy')
 
     @pyqtSlot()
     def on_pbDownload_click(self):
@@ -94,8 +96,8 @@ class Ui(QtWidgets.QDialog):
         tile = self.tiles.currentText()
 
         # Dates needs to be datetime objects
-        start_date = datetime.strptime(self.start_date.text(), '%d/%m/%Y')
-        end_date = datetime.strptime(self.end_date.text(), '%d/%m/%Y')
+        start_date = datetime.strptime(self.start_date.text(), '%d-%m-%Y')
+        end_date = datetime.strptime(self.end_date.text(), '%d-%m-%Y')
 
         # Run the downloader
         donwloader(platform = platform,

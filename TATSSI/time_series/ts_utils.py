@@ -95,8 +95,9 @@ def run_command(cmd: str):
 def string_to_date(str_date: str):
     """
     Converts a string in three possible layouts into a dt object
-    :param str_date: String in three different formats:
+    :param str_date: String in four different formats:
                      2002-05-28 '%Y-%m-%d'
+                     28-05-2002 '%d-%m-%Y'
                      January 1, 2001 '+%B%e, %Y'
                      Present
     :return _date: datetime object
@@ -112,10 +113,14 @@ def string_to_date(str_date: str):
         _date = dt.strptime(str_date, '%Y-%m-%d')
     except ValueError as e:
         try:
-            # Try alternative format, e.g. January 1, 2001
-            _date = dt.strptime(str_date, '+%B%e, %Y' )
-        except ValueError:
-            raise(e)
+            # Try default format dd-mm-YYYY
+             _date = dt.strptime(str_date, '%d-%m-%Y')
+        except ValueError as e:
+            try:
+                # Try alternative format, e.g. January 1, 2001
+                _date = dt.strptime(str_date, '+%B%e, %Y' )
+            except ValueError:
+                raise(e)
 
     return _date
 

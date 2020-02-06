@@ -103,9 +103,8 @@ class Generator():
             self.start = _start.strftime('%Y-%m-%d')
         else:
             msg = (f"Start date {start} is not within "
-                   f"{self.prodct} temporal extent")
-            Exception(msg)
-            raise
+                   f"{self.product} temporal extent")
+            raise Exception(msg)
 
         _end = string_to_date(end)
         if _end <= temporalExtentEnd:
