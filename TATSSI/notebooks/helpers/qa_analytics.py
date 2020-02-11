@@ -44,6 +44,8 @@ import matplotlib
 matplotlib.use('nbAgg')
 import matplotlib.pyplot as plt
 
+from PyQt5.QtWidgets import QProgressBar
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -91,11 +93,11 @@ class Analytics():
         self.user_qa_selection = None
 
         # Mask based on user_qa_selection
-        # set on __analytics
+        # set on _analytics
         self.mask = None
 
         # Percentage of data available after masking
-        # set on __analytics
+        # set on _analytics
         self.pct_data_available = None
 
         # Max gap length
@@ -286,7 +288,7 @@ class Analytics():
             description = 'QA analytics',
             layout={'width': '19%'}
         )
-        analytics.on_click(self.__analytics)
+        analytics.on_click(self._analytics)
 
         analytics_settings_save = Button(
             description = 'Save QA analytics',
@@ -404,14 +406,15 @@ class Analytics():
             self.user_qa_selection = collections.OrderedDict(
                     json.loads(f.read()))
 
-    def __analytics(self, b):
+    def _analytics(self, b):
         """
         Uses the self.user_qa_selection OrderedDictionary to extract
         the corresponding QA values and create a mask of dimensions:
             (number of qa layers, time steps, cols(lat), rows(lon))
         Additionally computes the temporal mask and the max gap length
         """
-        progress_bar = IntProgress(
+        if not type(b) == QProgressBar:
+            progress_bar = IntProgress(
                 value=0,
                 min=0,
                 max=len(self.user_qa_selection),
@@ -421,8 +424,8 @@ class Analytics():
                 orientation='horizontal',
                 style = {'description_width': 'initial'},
                 layout={'width': '50%'}
-        )
-        display(progress_bar)
+            )
+            display(progress_bar)
 
         n_qa_layers = len(self.user_qa_selection)
 
@@ -441,8 +444,13 @@ class Analytics():
         _qa_layer = getattr(self.ts.qa, f"qa{qa_layer[0]}")
 
         for i, user_qa in enumerate(self.user_qa_selection):
-            progress_bar.value = i
-            progress_bar.description = f"Masking by QA {user_qa}"
+
+            if type(b) == QProgressBar:
+                b.setValue(i)
+                b.setFormat(f"Masking by QA {user_qa}")
+            else:
+                progress_bar.value = i
+                progress_bar.description = f"Masking by QA {user_qa}"
 
             user_qa_fieldname = user_qa.replace(" ", "_").replace("/", "_")
 
@@ -458,9 +466,13 @@ class Analytics():
                     mask[i] = np.logical_or(
                             mask[i], _qa_layer[user_qa_fieldname] == qa_flag_val)
 
-        # Remove progress bar
-        progress_bar.close()
-        del progress_bar
+        if type(b) == QProgressBar:
+            b.setValue(0)
+            b.setEnabled(False)
+        else:
+            # Remove progress bar
+            progress_bar.close()
+            del progress_bar
 
         #self.__temp_mask = mask
         #mask = xr.DataArray(np.all(self.__temp_mask, axis=0),
@@ -486,7 +498,7 @@ class Analytics():
         self.pct_data_available = pct_data_available
 
         # Using the computed mask get the max gap length
-        self.__get_max_gap_length()
+        self.__get_max_gap_length(b)
 
     #def __get_max_gap_length(self):
     #    """
@@ -549,9 +561,10 @@ class Analytics():
 
     #    self.max_gap_length = _max_gap_length
 
-    def __get_max_gap_length(self):
+    def __get_max_gap_length(self, b):
         """
         Compute the max gep length of a masked time series
+        :param b: Progress bar object
         """
         # TODO
         # This function should be paralelised! 
@@ -559,7 +572,8 @@ class Analytics():
         bands, rows, cols = self.mask.shape
         max_gap_length = np.zeros((rows, cols), np.int16)
 
-        progress_bar = IntProgress(
+        if not type(b) == QProgressBar:
+            progress_bar = IntProgress(
                 value=0,
                 min=0,
                 max=10,
@@ -569,11 +583,18 @@ class Analytics():
                 orientation='horizontal',
                 style = {'description_width': 'initial'},
                 layout={'width': '50%'}
-        )
-        display(progress_bar)
+            )
+            display(progress_bar)
+        else:
+            b.setEnabled(True)
 
         for i in range(rows):
-            progress_bar.value = int((i*10.)/rows)
+            if type(b) == QProgressBar:
+                b.setFormat('Computing maximum gap length...')
+                b.setValue(int((i*10.)/rows))
+            else:
+                progress_bar.value = int((i*10.)/rows)
+
             for j in range(cols):
                 for key, group in i_groupby(self.mask.data[:,i,j]):
                     if key == False:
@@ -581,9 +602,13 @@ class Analytics():
                         if _gap_lenght > 0 and _gap_lenght > max_gap_length[i,j]:
                             max_gap_length[i,j] = _gap_lenght
 
-        # Remove progress bar
-        progress_bar.close()
-        del progress_bar
+        if type(b) == QProgressBar:
+            b.setValue(0)
+            b.setEnabled(False)
+        else:
+            # Remove progress bar
+            progress_bar.close()
+            del progress_bar
 
         # Create xarray DataArray
         _max_gap_length = xr.DataArray(max_gap_length,
