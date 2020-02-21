@@ -12,16 +12,26 @@ from TATSSI.input_output.utils import *
 from TATSSI.notebooks.helpers.utils import *
 from TATSSI.qa.EOS.catalogue import Catalogue
 
-from TATSSI.download.modis_downloader import get_modis_data
+from TATSSI.download.modis_downloader import get_modis_data, LOG
 from TATSSI.download.viirs_downloader import get_viirs_data
 
 import ogr
 from datetime import datetime
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSlot
 
 from TATSSI.UI.helpers.utils import *
+
+class QTextEditLogger(logging.Handler):
+    def __init__(self, parent):
+        super().__init__()
+        self.widget = QtWidgets.QPlainTextEdit(parent)
+        self.widget.setReadOnly(True)
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)
 
 class Ui(QtWidgets.QDialog):
     def __init__(self):
@@ -99,6 +109,13 @@ class Ui(QtWidgets.QDialog):
         start_date = datetime.strptime(self.start_date.text(), '%d-%m-%Y')
         end_date = datetime.strptime(self.end_date.text(), '%d-%m-%Y')
 
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        # Setup the logger
+        #from IPython import embed ; ipshell = embed()
+        #self.logTextBox.setFormatter(donwloader.LOG
+
         # Run the downloader
         donwloader(platform = platform,
                    product = product,
@@ -109,6 +126,9 @@ class Ui(QtWidgets.QDialog):
                    n_threads = 1,
                    username = username,
                    password = password)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     @pyqtSlot()
     def on_tvProducts_click(self):

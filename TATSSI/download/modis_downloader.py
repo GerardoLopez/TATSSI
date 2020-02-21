@@ -80,7 +80,7 @@ def download_tile_list(url, tiles):
             r = requests.get(url )
             break
         except requests.execeptions.ConnectionError:
-            time.sleep ( 240 )
+            time.sleep(240)
             
     grab = []
     for line in r.text.splitlines():
@@ -213,8 +213,8 @@ def get_modis_data(platform, product, tiles,
     gr = gr_to_dload
     
     LOG.info( "Will download %d files" % len ( gr ))
-    # Wait for a few minutes before downloading the data
-    time.sleep ( 60 )
+    # Wait for a few seconds before downloading the data
+    time.sleep(5)
 
     # The main download loop. This will get all the URLs with the filenames,
     # and start downloading them in parallel.
