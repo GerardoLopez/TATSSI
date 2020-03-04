@@ -25,7 +25,7 @@ import ogr
 from datetime import datetime
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSlot
 
 import collections
 
@@ -106,6 +106,12 @@ class Ui(QtWidgets.QDialog):
         self.pbQAAnalytics.clicked.connect(
                 self.on_pbQAAnalytics_click)
 
+        self.pbSaveQAAnalytics.clicked.connect(
+                self.on_pbSaveQAAnalytics_click)
+
+        self.pbLoadQAAnalytics.clicked.connect(
+                self.on_pbLoadQAAnalytics_click)
+
         self.cmbQAParamName.currentIndexChanged.connect(
                 self.update_qa_param_def_description)
 
@@ -135,10 +141,66 @@ class Ui(QtWidgets.QDialog):
         dialog.show()
 
     @pyqtSlot()
+    def on_pbSaveQAAnalytics_click(self):
+        """
+        Save the current user-defined QA setting into a JSON file
+        """
+        fname = open_file_dialog(dialog_type = 'save',
+                data_format = 'JSON',
+                extension = 'json')
+
+        with open(fname, 'w') as f:
+            f.write(json.dumps(self.user_qa_selection))
+
+        #LOG.info(f"QA settings file {fname} written to disk.")
+
+    @pyqtSlot()
+    def on_pbLoadQAAnalytics_click(self):
+        """
+        Load user-defined QA saved settings from a JSON file
+        """
+        fname = open_file_dialog(dialog_type = 'open_specific',
+                data_format = 'JSON',
+                extension = 'json')
+
+        if os.path.exists(fname) is False:
+            pass
+
+        # Open file
+        try:
+            with open(fname, 'r') as f:
+                tmp_user_qa_selection = collections.OrderedDict(
+                        json.loads(f.read()))
+        except json.JSONDecodeError:
+            message_text = (f'The file {fname} is not a valid '
+                            f'TATSSI QA Analytics file')
+            message_box(message_text)
+            return None
+
+        # Check that file has same keys as current QA selection
+        if self.user_qa_selection.keys() != tmp_user_qa_selection.keys():
+            message_text = (f'The file {fname} does not have the same QA '
+                            f'parameters names as current QA definition')
+            message_box(message_text)
+            return None
+
+        # Update user QA selection
+        self.user_qa_selection = tmp_user_qa_selection
+
+        # Update list widget lwQAParamDesc
+        self.update_qa_param_def_description()
+        # Update text browser tbrSelection
+        self.tbrSelection.setText(json.dumps(self.user_qa_selection,
+             indent=2))
+
+    @pyqtSlot()
     def on_pbQAAnalytics_click(self):
         """
         Perform QA analytics based on user selection
         """
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
         # Set qa_analytics
         self.qa_analytics.user_qa_selection = self.user_qa_selection
         # Launch analytics
@@ -148,6 +210,9 @@ class Ui(QtWidgets.QDialog):
         self.progressBar.setRange(0, len(self.user_qa_selection))
 
         self.qa_analytics._analytics(self.progressBar)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     @pyqtSlot()
     def set_default_qa_param_desc_selection(self):
@@ -219,6 +284,9 @@ class Ui(QtWidgets.QDialog):
         """
         Creates a TATSSI Analytics object
         """
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
         # Create the QA analytics object
         self.qa_analytics = Analytics(
                 source_dir=self.lblDataDir.text(),
@@ -236,6 +304,9 @@ class Ui(QtWidgets.QDialog):
             qa_defs.append(qa_def)
 
         self.cmbQADef.addItems(qa_defs)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
         # Fill QA definitions table view
         #self.tvQADef.clearContents()
@@ -341,6 +412,16 @@ class Ui(QtWidgets.QDialog):
         """
         output_dir = open_file_dialog('directory')
         self.lblDataDir.setText(f'{output_dir}')
+
+    @staticmethod
+    def message_box(message_text):
+        dialog = QtWidgets.QMessageBox()
+        dialog.setIcon(QtWidgets.QMessageBox.Critical)
+        dialog.setText(message_text)
+        dialog.addButton(QtWidgets.QMessageBox.Ok)
+        dialog.exec()
+
+        return None
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()
