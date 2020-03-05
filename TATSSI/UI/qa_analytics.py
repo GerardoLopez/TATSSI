@@ -2,13 +2,6 @@
 import os
 import sys
 
-import matplotlib
-matplotlib.use("Qt5Agg")
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \
-        as NavigationToolbar
-
 # TATSSI modules
 from pathlib import Path
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -18,8 +11,11 @@ sys.path.append(str(src_dir.absolute()))
 from TATSSI.input_output.utils import *
 from TATSSI.notebooks.helpers.utils import *
 from TATSSI.notebooks.helpers.qa_analytics import Analytics
+from TATSSI.notebooks.helpers.time_series_interpolation import \
+        TimeSeriesInterpolation
 from TATSSI.qa.EOS.catalogue import Catalogue
 from TATSSI.UI.helpers.utils import *
+from TATSSI.UI.plots import PlotMaxGapLength, PlotInterpolation
 
 import ogr
 from datetime import datetime
@@ -28,54 +24,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSlot
 
 import collections
-
-class PlotMaxGapLength(QtWidgets.QMainWindow):
-    def __init__(self, parent=None):
-        super(PlotMaxGapLength, self).__init__(parent)
-
-    def _plot(self, qa_analytics, cmap='viridis', dpi=72):
-        """
-        From the TATSSI QA Analytics obhect plots:
-          - Percentage of data available
-          - Maximum gap length
-        """
-        uic.loadUi('plot.ui', self)
-
-        fig, (ax, bx) = plt.subplots(1, 2, figsize=(9,5),
-                sharex=True, sharey=True, tight_layout=True, dpi=dpi)
-
-        qa_analytics.pct_data_available.plot.imshow(
-                ax=ax, cmap=cmap,
-                cbar_kwargs={'orientation':'horizontal',
-                             'pad' : 0.005},
-        )
-
-        ax.set_frame_on(False)
-        ax.axis('off')
-        ax.set_aspect('equal')
-        ax.title.set_text('% of data available')
-        ax.margins(tight=True)
-
-        qa_analytics.max_gap_length.plot.imshow(
-                ax=bx, cmap=cmap,
-                cbar_kwargs={'orientation':'horizontal',
-                             'pad' : 0.005},
-        )
-
-        bx.set_frame_on(False)
-        bx.axis('off')
-        bx.set_aspect('equal')
-        bx.title.set_text('Max gap-length')
-        bx.margins(tight=True)
-
-        # Set plot on the plot widget
-        self.plotWidget = FigureCanvas(fig)
-        lay = QtWidgets.QVBoxLayout(self.content_plot)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(self.plotWidget)
-        # Add toolbar
-        self.addToolBar(QtCore.Qt.BottomToolBarArea,
-                NavigationToolbar(self.plotWidget, self))
 
 class Ui(QtWidgets.QDialog):
     def __init__(self):
@@ -112,6 +60,9 @@ class Ui(QtWidgets.QDialog):
         self.pbLoadQAAnalytics.clicked.connect(
                 self.on_pbLoadQAAnalytics_click)
 
+        self.pbInterpolation.clicked.connect(
+                self.on_pbInterpolation_click)
+
         self.cmbQAParamName.currentIndexChanged.connect(
                 self.update_qa_param_def_description)
 
@@ -132,6 +83,13 @@ class Ui(QtWidgets.QDialog):
         self.progressBar.hide()
 
         self.show()
+
+    @pyqtSlot()
+    def on_pbInterpolation_click(self):
+        dialog = PlotInterpolation(self)
+        self.dialogs.append(dialog)
+        dialog._plot(self.qa_analytics)
+        dialog.show()
 
     @pyqtSlot()
     def on_pbPlotMaxGapLength_click(self):
