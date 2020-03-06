@@ -483,8 +483,11 @@ class Generator():
 
         # TODO Create a text file with input files instead of wildcards
         # -input_file_list my_list.txt
-        command = (f"gdalbuildvrt -separate -overwrite "
-                   f"{fname} {output_fnames}")
+        conda_path = os.path.dirname(os.environ['CONDA_EXE'])
+        command = os.path.join(conda_path, 'gdalbuildvrt')
+
+        command = (f'{command} -separate -overwrite '
+                   f'{fname} {output_fnames}')
 
         run_command(command)
         LOG.info(f"Layer stack for {sds_name} created successfully.")
