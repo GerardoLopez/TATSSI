@@ -86,10 +86,16 @@ class Ui(QtWidgets.QDialog):
 
     @pyqtSlot()
     def on_pbInterpolation_click(self):
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
         dialog = PlotInterpolation(self)
         self.dialogs.append(dialog)
         dialog._plot(self.qa_analytics)
         dialog.show()
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     @pyqtSlot()
     def on_pbPlotMaxGapLength_click(self):
