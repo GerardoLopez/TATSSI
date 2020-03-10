@@ -124,8 +124,8 @@ class Analytics():
         if isinstance(processes, int) and processes < cpu_count():
             self.processes = processes
         else:
-            msg = f("Processes has been set to 1. Is not advisable "
-                    "to use all CPUs available. Use CPUs - 1.")
+            msg = (f"Processes has been set to 1. Is not advisable "
+                   f"to use all CPUs available. Use CPUs - 1.")
             print(msg)
             self.processes = 1
 
