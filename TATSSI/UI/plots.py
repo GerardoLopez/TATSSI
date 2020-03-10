@@ -1,4 +1,18 @@
 
+import os
+import sys
+
+# TATSSI modules
+from pathlib import Path
+current_dir = os.path.dirname(os.path.realpath(__file__))
+src_dir = Path(current_dir).parents[1]
+sys.path.append(str(src_dir.absolute()))
+
+from TATSSI.notebooks.helpers.time_series_interpolation import \
+        TimeSeriesInterpolation
+
+import numpy as np
+
 import matplotlib
 matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
@@ -20,15 +34,28 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         """
         Set variables from TATSSI QA analytics
         """
+        # Set qa_analytics
+        self.qa_analytics = qa_analytics
+
         # imshow plots
         self.left_imshow = None
         self.right_imshow = None
 
         # Get widgets
-        self.data_vars = self.content_plot.findChild(QtWidgets.QComboBox,
-                'data_vars')
+        self.data_vars = self.content_plot.findChild(
+                QtWidgets.QComboBox, 'data_vars')
         self.data_vars.currentIndexChanged.connect(
                 self.__on_data_vars_change)
+
+        self.time_steps = self.content_plot.findChild(
+                QtWidgets.QComboBox, 'time_steps')
+        self.time_steps.currentIndexChanged.connect(
+                self.__on_time_steps_change)
+
+        self.pb_Interpolate = self.content_plot.findChild(
+                QtWidgets.QPushButton, 'pbInterpolate')
+        self.pb_Interpolate.clicked.connect(
+                self.on_pbInterpolate_click)
 
         # Time series object
         self.ts = qa_analytics.ts
@@ -43,6 +70,8 @@ class PlotInterpolation(QtWidgets.QMainWindow):
 
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
+        # Time steps
+        self.time_steps.addItems(self.__fill_time_steps())
 
          # Create plot objects
         self.__create_plot_objects()
@@ -62,6 +91,59 @@ class PlotInterpolation(QtWidgets.QMainWindow):
                                  'pchip', 'spline', 'akima']
 
         self.interpolation_methods.addItems(interpolation_methods)
+
+    def on_pbInterpolate_click(self):
+        """
+        Performs interpolation for using a specific user selected
+        method taking into account the TATSSI QA analytics mask
+        """
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        # Variables for interpolation
+        self.qa_analytics.selected_data_var = \
+                self.data_vars.currentText()
+        self.qa_analytics.selected_interpolation_method = \
+                self.interpolation_methods.selectedItems()[0].text()
+
+        # TATSSI interpolation
+        tsi = TimeSeriesInterpolation(self.qa_analytics, isNotebook=False)
+        tsi.interpolate()
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
+
+    @pyqtSlot(int)
+    def __on_time_steps_change(self, index):
+        """
+        Handles a change in the time step to display
+        """
+        if len(self.time_steps.currentText()) == 0 or \
+                self.left_imshow is None or \
+                self.right_imshow is None:
+            return None
+
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.left_ds = getattr(self.ts.data, self.data_vars.currentText())
+        if self.mask is None:
+            self.right_ds = self.left_ds.copy(deep=True)
+        else:
+            self.right_ds = self.left_ds * self.mask
+
+        self.left_imshow.set_data(self.left_ds.data[index])
+        self.right_imshow.set_data(self.right_ds.data[index])
+
+        # Set titles
+        self.left_p.set_title(self.time_steps.currentText())
+        self.right_p.set_title(self.time_steps.currentText())
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     @pyqtSlot(int)
     def __on_data_vars_change(self, index):
@@ -99,18 +181,17 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         for data_var in self.ts.data.data_vars:
             data_vars.append(data_var)
 
-        #self.data_vars = Dropdown(
-        #    options=data_vars,
-        #    value=data_vars[0],
-        #    description='Data variables:',
-        #    disabled=False,
-        #    style = {'description_width': 'initial'},
-        #    layout={'width': '400px'},
-        #)
-
-        #self.data_vars.observe(self.on_data_vars_change)
-
         return data_vars
+
+    def __fill_time_steps(self):
+        """
+        Fill the time steps dropdown list
+        """
+        tmp_ds = getattr(self.ts.data, self.data_vars.currentText())
+
+        time_steps = np.datetime_as_string(tmp_ds.time.data, 'm').tolist()
+
+        return time_steps
 
     def on_click(self, event):
         """
@@ -267,7 +348,7 @@ class PlotInterpolation(QtWidgets.QMainWindow):
                 self.on_click)
 
         lay = QtWidgets.QVBoxLayout(self.content_plot)
-        lay.setContentsMargins(0, 50, 0, 0)
+        lay.setContentsMargins(0, 100, 0, 0)
         lay.addWidget(self.plotWidget)
         # Add toolbar
         self.addToolBar(QtCore.Qt.BottomToolBarArea,

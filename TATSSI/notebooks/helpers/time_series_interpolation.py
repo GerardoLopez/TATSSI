@@ -45,13 +45,10 @@ class TimeSeriesInterpolation():
     """
     Class to plot a single time step and per-pixel time series
     """
-    def __init__(self, qa_analytics):
+    def __init__(self, qa_analytics, isNotebook=True):
         """
         :param ts: TATSSI qa_analytics object
         """
-        # Clear cell
-        clear_output()
-
         # Time series object
         self.ts = qa_analytics.ts
         # Source dir
@@ -71,13 +68,23 @@ class TimeSeriesInterpolation():
         # set in __fill_interpolation_method
         self.interpolation_methods = None
 
-        # Display controls
-        self.__display_controls()
+        self.isNotebook = isNotebook
+        if self.isNotebook is True:
+            # Clear cell
+            clear_output()
 
-        # Create plot objects
-        self.__create_plot_objects()
-        # Create plot
-        self.__plot()
+            # Display controls
+            self.__display_controls()
+
+            # Create plot objects
+            self.__create_plot_objects()
+            # Create plot
+            self.__plot()
+        else:
+            self.selected_data_var = \
+                    qa_analytics.selected_data_var
+            self.selected_interpolation_method = \
+                    qa_analytics.selected_interpolation_method
 
         # Disable RasterIO logging, just show ERRORS
         log = rio_logging.getLogger()
@@ -93,26 +100,35 @@ class TimeSeriesInterpolation():
         if self.mask is None:
             pass
 
-        # Set up progress bar
-        _items = len(self.interpolation_methods.value)
-        # For every interpol method selected by the user
-        _item = 0
-        progress_bar = IntProgress(
-                value=0,
-                min=0,
-                max=_items,
-                step=1,
-                description='',
-                bar_style='', # 'success', 'info', 'warning', 'danger' or ''
-                orientation='horizontal',
-                style = {'description_width': 'initial'},
-                layout={'width': '75%'}
-        )
-        display(progress_bar)
-        progress_bar.value = _item
+        if self.isNotebook is True:
+            # Set up progress bar
+            _items = len(self.interpolation_methods.value)
+            # For every interpol method selected by the user
+            _item = 0
+            progress_bar = IntProgress(
+                    value=0,
+                    min=0,
+                    max=_items,
+                    step=1,
+                    description='',
+                    bar_style='', # 'success', 'info', 'warning', 'danger' or ''
+                    orientation='horizontal',
+                    style = {'description_width': 'initial'},
+                    layout={'width': '75%'}
+            )
+            display(progress_bar)
+            progress_bar.value = _item
 
-        # Get temp dataset to perform the interpolation
-        data_var = self.data_vars.value
+            # Get temp dataset to perform the interpolation
+            data_var = self.data_vars.value
+
+            # Interpolation methods
+            interpolation_methods = self.interpolation_methods.value
+
+        else:
+            data_var = self.selected_data_var
+            interpolation_methods = [self.selected_interpolation_method]
+
         tmp_ds = getattr(self.ts.data, data_var).copy(deep=True)
 
         # Store original data type
@@ -145,10 +161,11 @@ class TimeSeriesInterpolation():
         #            idx_lt_two_obs[1]] = fill_value
         #tmp_ds[:, idx_lt_two_obs[0], idx_lt_two_obs[1]] = fill_value
 
-        for method in self.interpolation_methods.value:
-            progress_bar.value = _item
-            progress_bar.description = (f"Interpolation of {data_var}"
-                                        f" using {method}")
+        for method in interpolation_methods:
+            if self.isNotebook is True:
+                progress_bar.value = _item
+                progress_bar.description = (f"Interpolation of {data_var}"
+                                            f" using {method}")
 
             if method == 'smoothn':
                 # First, we need a linear interpolation
@@ -197,11 +214,13 @@ class TimeSeriesInterpolation():
                             threads_per_worker=threads_per_worker,
                             memory_limit=memory_limit)
 
-            _item += 1
+            if self.isNotebook is True:
+                _item += 1
 
-        # Remove progress bar
-        progress_bar.close()
-        del progress_bar
+        if self.isNotebook is True:
+            # Remove progress bar
+            progress_bar.close()
+            del progress_bar
 
     def __create_plot_objects(self):
         """

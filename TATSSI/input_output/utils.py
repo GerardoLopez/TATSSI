@@ -268,11 +268,11 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
     :tile size: Integer, number of lines to use as tile size
     # TODO Document DASK variables
     """
-
     if dask == True:
-        client = Client(n_workers=n_workers,
-                threads_per_worker=threads_per_worker,
-                memory_limit=memory_limit)
+        pass
+        #client = Client(n_workers=n_workers,
+        #        threads_per_worker=threads_per_worker,
+        #        memory_limit=memory_limit)
 
     # Get temp dataset extract the metadata
     if type(data) == xr.core.dataset.Dataset:
@@ -334,8 +334,9 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
     dst_ds = None
 
     if dask == True:
+        pass
         # Close client
-        client.close()
+        #client.close()
 
     LOG.info(f"File {fname} saved")
 

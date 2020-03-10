@@ -117,6 +117,10 @@ class Analytics():
         # All QA definitions
         self.qa_defs = self.__get_qa_defs()
 
+        # Variables for interpolation
+        self.selected_data_var = None
+        self.selected_interpolation_method = None
+
     def __set_n_processes(self, processes):
         """
         Sets the number of CPUs to use

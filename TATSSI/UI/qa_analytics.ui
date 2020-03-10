@@ -394,7 +394,7 @@ p, li { white-space: pre-wrap; }
      <string>Description</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pbSelectAll">
+   <widget class="QPushButton" name="pbInterpolation">
     <property name="geometry">
      <rect>
       <x>900</x>
@@ -404,7 +404,7 @@ p, li { white-space: pre-wrap; }
      </rect>
     </property>
     <property name="text">
-     <string>Select ALL</string>
+     <string>Interpolation</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pbPlotMaxGapLength">

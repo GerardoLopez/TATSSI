@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>868</width>
-    <height>1001</height>
+    <width>778</width>
+    <height>1031</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>TATSSI Interpolation</string>
   </property>
   <widget class="QWidget" name="content_plot">
    <widget class="QComboBox" name="data_vars">
@@ -53,14 +53,14 @@
    <widget class="QPushButton" name="pbInterpolate">
     <property name="geometry">
      <rect>
-      <x>810</x>
+      <x>680</x>
       <y>10</y>
-      <width>41</width>
-      <height>23</height>
+      <width>91</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>I</string>
+     <string>Interpolate</string>
     </property>
    </widget>
    <widget class="QListWidget" name="interpolation_methods">
@@ -68,18 +68,41 @@
      <rect>
       <x>540</x>
       <y>10</y>
-      <width>261</width>
-      <height>21</height>
+      <width>131</width>
+      <height>81</height>
      </rect>
     </property>
     <property name="sizeAdjustPolicy">
      <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
     </property>
     <property name="dragEnabled">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="selectionMode">
      <enum>QAbstractItemView::MultiSelection</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblTimeSteps">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>91</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Time steps</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="time_steps">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>40</y>
+      <width>271</width>
+      <height>23</height>
+     </rect>
     </property>
    </widget>
   </widget>
