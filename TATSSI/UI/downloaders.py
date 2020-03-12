@@ -33,10 +33,11 @@ class QTextEditLogger(logging.Handler):
         msg = self.format(record)
         self.widget.appendPlainText(msg)
 
-class Ui(QtWidgets.QDialog):
-    def __init__(self):
-        super(Ui, self).__init__()
+class DownloadersUI(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(DownloadersUI, self).__init__(parent)
         uic.loadUi('downloaders.ui', self)
+        self.parent = parent
 
         # Tile list
         tiles = self.get_tiles_list()
@@ -194,6 +195,7 @@ class Ui(QtWidgets.QDialog):
         else:
             return 'MOLA'
 
-app = QtWidgets.QApplication(sys.argv)
-window = Ui()
-app.exec_()
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+    window = DownloadersUI()
+    app.exec_()
