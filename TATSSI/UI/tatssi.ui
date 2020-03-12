@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>58</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TATSSI</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuDownloaders">
+    <property name="title">
+     <string>Data</string>
+    </property>
+    <addaction name="actionTranslator"/>
+    <addaction name="actionDownloaders"/>
+   </widget>
+   <widget class="QMenu" name="menuQuality">
+    <property name="title">
+     <string>Quality</string>
+    </property>
+    <addaction name="actionAnalytics"/>
+   </widget>
+   <widget class="QMenu" name="menuTime_Series">
+    <property name="title">
+     <string>Time Series</string>
+    </property>
+    <addaction name="actionSmoothing"/>
+    <addaction name="actionAnalysis"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+   </widget>
+   <addaction name="menuDownloaders"/>
+   <addaction name="menuQuality"/>
+   <addaction name="menuTime_Series"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionTranslator">
+   <property name="text">
+    <string>Translator</string>
+   </property>
+  </action>
+  <action name="actionDownloaders">
+   <property name="text">
+    <string>Downloaders</string>
+   </property>
+  </action>
+  <action name="actionAnalytics">
+   <property name="text">
+    <string>Analytics</string>
+   </property>
+  </action>
+  <action name="actionSmoothing">
+   <property name="text">
+    <string>Smoothing</string>
+   </property>
+  </action>
+  <action name="actionAnalysis">
+   <property name="text">
+    <string>Analysis</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
