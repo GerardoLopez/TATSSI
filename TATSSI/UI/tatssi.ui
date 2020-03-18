@@ -40,6 +40,7 @@
     <property name="title">
      <string>Time Series</string>
     </property>
+    <addaction name="actionGenerator"/>
     <addaction name="actionSmoothing"/>
     <addaction name="actionAnalysis"/>
    </widget>
@@ -49,8 +50,8 @@
     </property>
    </widget>
    <addaction name="menuDownloaders"/>
-   <addaction name="menuQuality"/>
    <addaction name="menuTime_Series"/>
+   <addaction name="menuQuality"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -77,6 +78,11 @@
   <action name="actionAnalysis">
    <property name="text">
     <string>Analysis</string>
+   </property>
+  </action>
+  <action name="actionGenerator">
+   <property name="text">
+    <string>Generator</string>
    </property>
   </action>
  </widget>

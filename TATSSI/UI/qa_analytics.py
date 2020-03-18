@@ -15,7 +15,8 @@ from TATSSI.notebooks.helpers.time_series_interpolation import \
         TimeSeriesInterpolation
 from TATSSI.qa.EOS.catalogue import Catalogue
 from TATSSI.UI.helpers.utils import *
-from TATSSI.UI.plots import PlotMaxGapLength, PlotInterpolation
+from TATSSI.UI.plots_qa_analytics import PlotMaxGapLength
+from TATSSI.UI.plots_qa_analytics import PlotInterpolation
 
 import ogr
 from datetime import datetime
@@ -25,10 +26,11 @@ from PyQt5.QtCore import Qt, pyqtSlot
 
 import collections
 
-class Ui(QtWidgets.QDialog):
-    def __init__(self):
-        super(Ui, self).__init__()
+class QAAnalyticsUI(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(QAAnalyticsUI, self).__init__()
         uic.loadUi('qa_analytics.ui', self)
+        self.parent = parent
 
         # List of dialogs
         self.dialogs = list()
@@ -387,7 +389,8 @@ class Ui(QtWidgets.QDialog):
 
         return None
 
-app = QtWidgets.QApplication(sys.argv)
-window = Ui()
-app.exec_()
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+    window = QAAnalyticsUI()
+    app.exec_()
 

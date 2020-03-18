@@ -49,7 +49,7 @@ class TimeSeriesSmoothing():
     """
     debug_view = widgets.Output(layout={'border': '1px solid black'})
 
-    def __init__(self, fname, band=1):
+    def __init__(self, fname, band=1, isNotebook=True):
         """
         :param ts: TATSSI qa_analytics object
         """
@@ -59,12 +59,14 @@ class TimeSeriesSmoothing():
         # Time series object
         self.ts = Analysis(fname=fname)
 
-        # Smoothing methods
-        # set in __fill_smoothing_method
-        self.smoothing_methods = None
+        self.isNotebook = isNotebook
+        if self.isNotebook is True:
+            # Smoothing methods
+            # set in __fill_smoothing_method
+            self.smoothing_methods = None
 
-        # Display controls
-        self.__display_controls()
+            # Display controls
+            self.__display_controls()
 
         # Create plot objects
         self.__create_plot_objects()
@@ -82,7 +84,6 @@ class TimeSeriesSmoothing():
         self.fig = plt.figure(figsize=(10.0, 3.0))
 
         # Image plot
-        # subplot2grid((rows,cols), (row,col)
         self.img_p = plt.subplot2grid((1, 4), (0, 0), colspan=1)
         # Time series plot
         self.ts_p = plt.subplot2grid((1, 4), (0, 1), colspan=3)
@@ -232,7 +233,7 @@ class TimeSeriesSmoothing():
 
         # Draw a point as a reference
         self.img_p.plot(event.xdata, event.ydata,
-                marker='o', color='red', markersize=3)
+                marker='o', color='red', markersize=7, alpha=0.7)
 
         # Interpolated data to smooth
         img_plot_sd = self.img_ds.sel(longitude=event.xdata,
@@ -245,7 +246,7 @@ class TimeSeriesSmoothing():
         img_plot_sd.plot(ax=self.ts_p, color='black',
                 linestyle = '-', linewidth=1, label='Original data')
 
-        # For every interpol method selected by the user
+        # For every smoothing method selected by the user
         for method in self.smoothing_methods.value:
             y = img_plot_sd.data
             s = float(self.smooth_factor.value)
