@@ -52,7 +52,8 @@ class TATSSI_UI(QtWidgets.QMainWindow):
         dialog
         """
         fname = open_file_dialog('open')
-        self.time_series_smoothing = TimeSeriesSmoothingUI(fname=fname)
+        if not fname == '':
+            self.time_series_smoothing = TimeSeriesSmoothingUI(fname=fname)
 
     def _analytics(self):
         """
