@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Plot</class>
+ <widget class="QMainWindow" name="Plot">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1376</width>
+    <height>577</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TATSSI Smoothing</string>
+  </property>
+  <widget class="QWidget" name="content_plot">
+   <widget class="QComboBox" name="data_vars">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>10</y>
+      <width>271</width>
+      <height>23</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblDataVariables">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>91</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Data variables</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblSmoothingM">
+    <property name="geometry">
+     <rect>
+      <x>400</x>
+      <y>10</y>
+      <width>141</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Smoothing methods</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbSmooth">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>10</y>
+      <width>161</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Smooth</string>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="smoothing_methods">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>10</y>
+      <width>201</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+    </property>
+    <property name="dragEnabled">
+     <bool>false</bool>
+    </property>
+    <property name="selectionMode">
+     <enum>QAbstractItemView::MultiSelection</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblTimeSteps">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>91</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Time steps</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="time_steps">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>40</y>
+      <width>271</width>
+      <height>23</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lblSmoothFactor">
+    <property name="geometry">
+     <rect>
+      <x>760</x>
+      <y>10</y>
+      <width>91</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Smooth factor</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="smooth_factor">
+    <property name="geometry">
+     <rect>
+      <x>860</x>
+      <y>10</y>
+      <width>66</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="value">
+     <double>0.500000000000000</double>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
