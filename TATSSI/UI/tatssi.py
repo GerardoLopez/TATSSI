@@ -20,6 +20,7 @@ from TATSSI.UI.downloaders import DownloadersUI
 from TATSSI.UI.time_series_generator import TimeSeriesGeneratorUI
 from TATSSI.UI.qa_analytics import QAAnalyticsUI
 from TATSSI.UI.time_series_smoothing import TimeSeriesSmoothingUI
+from TATSSI.UI.time_series_analysis import TimeSeriesAnalysisUI
 
 class TATSSI_UI(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -31,6 +32,7 @@ class TATSSI_UI(QtWidgets.QMainWindow):
         self.actionGenerator.triggered.connect(self._time_series_generator)
         self.actionAnalytics.triggered.connect(self._analytics)
         self.actionSmoothing.triggered.connect(self._time_series_smoothing)
+        self.actionAnalysis.triggered.connect(self._time_series_analysis)
 
         self.show()
 
@@ -54,6 +56,15 @@ class TATSSI_UI(QtWidgets.QMainWindow):
         fname = open_file_dialog('open')
         if not fname == '':
             self.time_series_smoothing = TimeSeriesSmoothingUI(fname=fname)
+
+    def _time_series_analysis(self):
+        """
+        For a user selected file open the Time Series Analysis
+        dialog
+        """
+        fname = open_file_dialog('open')
+        if not fname == '':
+            self.time_series_analysis = TimeSeriesAnalysisUI(fname=fname)
 
     def _analytics(self):
         """

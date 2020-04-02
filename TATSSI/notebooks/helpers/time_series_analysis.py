@@ -58,7 +58,7 @@ class TimeSeriesAnalysis():
     """
     debug_view = widgets.Output(layout={'border': '1px solid black'})
 
-    def __init__(self, fname, cmap='YlGn'):
+    def __init__(self, fname, cmap='YlGn', isNotebook=True):
         """
         :param ts: TATSSI file time series
         """
@@ -72,8 +72,10 @@ class TimeSeriesAnalysis():
         # set in __fill_data_variables
         self.data_vars = None
 
-        # Display controls
-        self.__display_controls()
+        self.isNotebook = isNotebook
+        if self.isNotebook is True:
+            # Display controls
+            self.__display_controls()
 
         # Default colormap
         self.cmap = cmap

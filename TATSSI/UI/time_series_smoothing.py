@@ -32,7 +32,7 @@ from PyQt5.QtCore import Qt, pyqtSlot
 class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
     def __init__(self, fname, parent=None):
         super(TimeSeriesSmoothingUI, self).__init__(parent)
-        uic.loadUi('plot_smoothing.ui', self)
+        uic.loadUi('time_series_smoothing.ui', self)
         self.parent = parent
 
         # Set input file name
