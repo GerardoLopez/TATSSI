@@ -110,12 +110,12 @@ class DownloadersUI(QtWidgets.QDialog):
         start_date = datetime.strptime(self.start_date.text(), '%d-%m-%Y')
         end_date = datetime.strptime(self.end_date.text(), '%d-%m-%Y')
 
+        # Enable progress bar
+        self.progressBar.setEnabled(True)
+        self.progressBar.setValue(0)
+
         # Wait cursor
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
-
-        # Setup the logger
-        #from IPython import embed ; ipshell = embed()
-        #self.logTextBox.setFormatter(donwloader.LOG
 
         # Run the downloader
         donwloader(platform = platform,
@@ -126,10 +126,15 @@ class DownloadersUI(QtWidgets.QDialog):
                    end_date = end_date,
                    n_threads = 1,
                    username = username,
-                   password = password)
+                   password = password,
+                   progressBar = self.progressBar)
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
+
+        # Disable progress bar
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
 
     @pyqtSlot()
     def on_tvProducts_click(self):

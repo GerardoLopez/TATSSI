@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>843</width>
+    <width>1077</width>
     <height>618</height>
    </rect>
   </property>
@@ -14,44 +14,23 @@
    <string>Downloaders</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_4">
+   <item row="4" column="0" colspan="3">
+    <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Output directory</string>
+      <string>Start date (dd/mm/yyy)</string>
      </property>
     </widget>
    </item>
    <item row="0" column="1" colspan="3">
     <widget class="QComboBox" name="tiles"/>
    </item>
-   <item row="9" column="0" colspan="3">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>Output</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="7">
-    <widget class="QPushButton" name="pbDownload">
-     <property name="text">
-      <string>Download product for selected dates</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="6">
+   <item row="9" column="6">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="4">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>End date (dd/mm/yyy)</string>
      </property>
     </widget>
    </item>
@@ -62,36 +41,10 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QLabel" name="label_2">
+   <item row="4" column="4">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Start date (dd/mm/yyy)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QLabel" name="label_1">
-     <property name="text">
-      <string>Product and Version</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="5">
-    <widget class="QDateEdit" name="end_date">
-     <property name="displayFormat">
-      <string notr="true">dd-MM-yyyy</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="2" colspan="5">
-    <widget class="QLabel" name="lblProductVersion">
-     <property name="font">
-      <font>
-       <underline>true</underline>
-      </font>
-     </property>
-     <property name="text">
-      <string>/home/tatssi/Projects/data/MCD23Q2.005</string>
+      <string>End date (dd/mm/yyy)</string>
      </property>
     </widget>
    </item>
@@ -118,6 +71,46 @@
      </property>
      <property name="text">
       <string>/tmp</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="7">
+    <widget class="QPushButton" name="pbDownload">
+     <property name="text">
+      <string>Download product for selected dates</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Output directory</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="5">
+    <widget class="QDateEdit" name="end_date">
+     <property name="displayFormat">
+      <string notr="true">dd-MM-yyyy</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2" colspan="5">
+    <widget class="QLabel" name="lblProductVersion">
+     <property name="font">
+      <font>
+       <underline>true</underline>
+      </font>
+     </property>
+     <property name="text">
+      <string>/home/tatssi/Projects/data/MCD23Q2.005</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label_1">
+     <property name="text">
+      <string>Product and Version</string>
      </property>
     </widget>
    </item>
@@ -293,8 +286,21 @@
      </column>
     </widget>
    </item>
-   <item row="10" column="0" colspan="7">
-    <widget class="QTextBrowser" name="tbLog"/>
+   <item row="8" column="0" colspan="7">
+    <widget class="QProgressBar" name="progressBar">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

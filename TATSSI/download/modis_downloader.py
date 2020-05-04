@@ -136,7 +136,8 @@ def required_files (url_list, output_dir):
 def get_modis_data(platform, product, tiles, 
                    output_dir, start_date,
                    end_date=None, n_threads=5,
-                   username=None, password=None):
+                   username=None, password=None,
+                   progressBar=None):
     """The main workhorse of MODIS downloading. This function will grab
     products for a particular platform (MOLT, MOLA or MOTA). The products
     are specified by their MODIS code (e.g. MCD45A1.051 or MOD09GA.006).
@@ -211,8 +212,12 @@ def get_modis_data(platform, product, tiles,
     # Check whether we have some files available already
     gr_to_dload = required_files(gr, output_dir)
     gr = gr_to_dload
-    
-    LOG.info( "Will download %d files" % len ( gr ))
+  
+    msg = f"Will download {len(gr)} files..."
+    if progressBar is not None:
+        progressBar.setFormat(msg)
+
+    LOG.info("Will download %d files" % len ( gr ))
     # Wait for a few seconds before downloading the data
     time.sleep(5)
 
@@ -222,13 +227,15 @@ def get_modis_data(platform, product, tiles,
     with requests.Session() as s:
         s.auth = (username, password)
         download_tile_patch = partial(download_tiles,
-                                     session=s,
-                                     output_dir=output_dir,
-                                     username=username,
-                                     password=password )
+                session=s,
+                output_dir=output_dir,
+                username=username,
+                password=password )
         
         with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
-            for fich in executor.map(download_tile_patch, gr):
+            for i, fich in enumerate(executor.map(download_tile_patch, gr)):
                 dload_files.append(fich)
+                if progressBar is not None:
+                    progressBar.setValue((len(dload_files) / len(gr)) * 100.0)
         
     return dload_files

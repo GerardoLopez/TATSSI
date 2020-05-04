@@ -135,7 +135,8 @@ def required_files (url_list, output_dir):
 def get_viirs_data(platform, product, tiles, 
                    output_dir, start_date,
                    end_date=None, n_threads=5,
-                   username=None, password=None):
+                   username=None, password=None,
+                   progressBar=None):
     """The main workhorse of VIIRS downloading. The products are specified
     by their VIIRS code (e.g. VNP13A1.001 or VNP09A1.001).
     You need to specify a tile (or a list of tiles), as well as a starting
@@ -205,10 +206,14 @@ def get_viirs_data(platform, product, tiles,
     # Check whether we have some files available already
     gr_to_dload = required_files(gr, output_dir)
     gr = gr_to_dload
+
+    msg = f"Will download {len(gr)} files..."
+    if progressBar is not None:
+        progressBar.setFormat(msg)
     
-    LOG.info( "Will download %d files" % len ( gr ))
-    # Wait for a few minutes before downloading the data
-    time.sleep(10)
+    LOG.info(msg)
+    # Wait for a few seconds before downloading the data
+    time.sleep(5)
 
     # The main download loop. This will get all the URLs with the filenames,
     # and start downloading them in parallel.
@@ -224,5 +229,7 @@ def get_viirs_data(platform, product, tiles,
         with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
             for fich in executor.map(download_tile_patch, gr):
                 dload_files.append(fich)
+                if progressBar is not None:
+                    progressBar.setValue((len(dload_files) / len(gr)) * 100.0)
         
     return dload_files
