@@ -22,6 +22,7 @@
       * Run R with the following command: ```/usr/bin/R```
       * ```install.packages('changepoint')```
       * ```install.packages('changepoint.np')```
+      * Exit R with the following command: ```quit()```
 
 * Run TATSSI
   * If you want to use the Jupyter Notebooks:
