@@ -43,6 +43,9 @@ class DownloadersUI(QtWidgets.QDialog):
         tiles = self.get_tiles_list()
         self.tiles.clear()
         self.tiles.addItems(tiles)
+        # Change combobox stylesheet and add scrollbar
+        self.tiles.setStyleSheet("combobox-popup: 0")
+        self.tiles.view().setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         # Create TATSSI catalogue object
         catalogue = Catalogue()
