@@ -14,7 +14,21 @@
 * Install the required libraries:
   * ```cd TATSSI```
   * ```conda install --file tatssi-package-list.txt```
-* Go to the ```TATSSI/notebooks``` directory and run ```jupyter notebook```
+  * If you wanto to use the [```changepoint```](http://dx.doi.org/10.18637/jss.v058.i03) R package:
+    * Install R
+      * ```sudo apt update```
+      * ```sudo apt-get install r-base```
+    * Install the ```changepoint``` package
+      * Run R with the following command: ```/usr/bin/R```
+      * ```install.packages('changepoint')```
+      * ```install.packages('changepoint.np')```
+      * Exit R with the following command: ```quit()```
+
+* Run TATSSI
+  * If you want to use the Jupyter Notebooks:
+    * Go to the ```TATSSI/notebooks``` directory and run ```jupyter notebook```
+  * If you prefer to use the UI:
+    * Go to the ```TATSSI/TATSSI/UI``` directory and run ```python tatssi.py```
 
 ## Description
 
