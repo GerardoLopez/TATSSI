@@ -80,13 +80,22 @@ class TimeSeriesGeneratorUI(QtWidgets.QDialog):
         # Wait cursor
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
 
+        # Enable progress bar
+        self.progressBar.setEnabled(True)
+        self.progressBar.setValue(0)
+
         # Create the time series generator object
         tsg = Generator(source_dir=self.lblDataDir.text(),
                         product=product, version=version,
-                        data_format=self.data_format)
+                        data_format=self.data_format,
+                        progressBar=self.progressBar)
 
         # Generate the time series
         tsg.generate_time_series()
+
+        # Disable progress bar
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
