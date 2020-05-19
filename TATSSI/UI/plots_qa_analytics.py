@@ -20,8 +20,22 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \
         as NavigationToolbar
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import osr
+
 from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtGui import QFont
+
+def get_projection(proj4_string):
+    """
+    Get spatial reference system from PROJ4 string
+    """
+    srs = osr.SpatialReference()
+    srs.ImportFromProj4(proj4_string)
+
+    return srs
 
 class PlotInterpolation(QtWidgets.QMainWindow):
     """
@@ -370,8 +384,33 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
         """
         uic.loadUi('plot.ui', self)
 
-        fig, (ax, bx) = plt.subplots(1, 2, figsize=(9,5),
-                sharex=True, sharey=True, tight_layout=True, dpi=dpi)
+        # Get projection from first data variable
+        for key in qa_analytics.ts.data.data_vars:
+            proj4_string = getattr(qa_analytics.ts.data, key).crs
+            break
+
+        # If projection is Sinusoidal
+        srs = get_projection(proj4_string)
+        if srs.GetAttrValue('PROJECTION') == 'Sinusoidal':
+            globe=ccrs.Globe(ellipse=None,
+                semimajor_axis=6371007.181,
+                semiminor_axis=6371007.181)
+
+            proj = ccrs.Sinusoidal(globe=globe)
+        else:
+            proj = None
+
+        fig, (ax, bx) = plt.subplots(1, 2, figsize=(15.6, 9.5),
+                sharex=True, sharey=True, tight_layout=True, dpi=dpi,
+                subplot_kw=dict(projection=proj))
+
+        if proj is not None:
+            ax.coastlines(resolution='10m', color='white')
+            ax.add_feature(cfeature.BORDERS, edgecolor='white')
+            ax.gridlines()
+
+            bx.coastlines(resolution='10m', color='white')
+            bx.gridlines()
 
         qa_analytics.pct_data_available.plot.imshow(
                 ax=ax, cmap=cmap,
@@ -402,6 +441,13 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
         lay = QtWidgets.QVBoxLayout(self.content_plot)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(self.plotWidget)
+
         # Add toolbar
-        self.addToolBar(QtCore.Qt.BottomToolBarArea,
-                NavigationToolbar(self.plotWidget, self))
+        font = QFont()
+        font.setPointSize(12)
+
+        toolbar = NavigationToolbar(self.plotWidget, self)
+        toolbar.setFont(font)
+
+        self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
+

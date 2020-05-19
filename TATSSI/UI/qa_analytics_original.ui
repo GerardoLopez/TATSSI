@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1123</width>
-    <height>768</height>
+    <height>762</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>950</x>
-     <y>740</y>
+     <y>730</y>
      <width>166</width>
      <height>24</height>
     </rect>
@@ -352,7 +352,7 @@ p, li { white-space: pre-wrap; }
      <x>10</x>
      <y>400</y>
      <width>1101</width>
-     <height>331</height>
+     <height>321</height>
     </rect>
    </property>
    <property name="title">
@@ -398,7 +398,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>900</x>
-      <y>270</y>
+      <y>260</y>
       <width>191</width>
       <height>23</height>
      </rect>
@@ -411,7 +411,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>650</x>
-      <y>270</y>
+      <y>260</y>
       <width>191</width>
       <height>23</height>
      </rect>
@@ -424,7 +424,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>450</x>
-      <y>270</y>
+      <y>260</y>
       <width>191</width>
       <height>23</height>
      </rect>
@@ -437,7 +437,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>270</y>
+      <y>260</y>
       <width>191</width>
       <height>23</height>
      </rect>
@@ -450,7 +450,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>210</x>
-      <y>270</y>
+      <y>260</y>
       <width>191</width>
       <height>23</height>
      </rect>
@@ -463,7 +463,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>250</y>
+      <y>240</y>
       <width>1081</width>
       <height>20</height>
      </rect>
@@ -479,7 +479,7 @@ p, li { white-space: pre-wrap; }
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>300</y>
+      <y>290</y>
       <width>1081</width>
       <height>23</height>
      </rect>
@@ -494,7 +494,7 @@ p, li { white-space: pre-wrap; }
       <x>410</x>
       <y>30</y>
       <width>681</width>
-      <height>221</height>
+      <height>211</height>
      </rect>
     </property>
     <property name="selectionMode">
@@ -507,7 +507,7 @@ p, li { white-space: pre-wrap; }
       <x>10</x>
       <y>90</y>
       <width>391</width>
-      <height>161</height>
+      <height>151</height>
      </rect>
     </property>
    </widget>
