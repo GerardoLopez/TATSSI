@@ -76,8 +76,16 @@ class PlotQA():
         # Get categories
         ds = gdal.Open(qa_fname)
         band = ds.GetRasterBand(1)
-        band.GetRasterColorTable() # Needed to get category names
-        category_names = np.array(band.GetRasterCategoryNames())
+
+        # Get raster attribute table
+        band.GetRasterColorTable()
+        rat = band.GetDefaultRAT()
+
+        category_names = rat.ReadAsArray(1).astype(str)
+
+        ## band.GetRasterColorTable() # Needed to get category names
+        ## category_names = np.array(band.GetRasterCategoryNames())
+
         # Get indices where there is a category description
         idx = np.where(category_names != '')
 
