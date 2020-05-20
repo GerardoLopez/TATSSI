@@ -26,7 +26,8 @@ class Generator():
     Class to generate time series of a specific TATSSI product
     """
     def __init__(self, source_dir, product, version,
-            year=None, start=None, end=None, data_format='hdf'):
+            year=None, start=None, end=None, data_format='hdf',
+            progressBar=None):
         """
         Constructor for Generator class
         """
@@ -64,6 +65,9 @@ class Generator():
             self.__set_year(year)
             # Start and End dates
             self.__set_start_end_dates(start, end)
+
+            if progressBar is not None:
+                self.progressBar = progressBar
 
     def __get_product_dates_range(self):
         """
@@ -163,6 +167,12 @@ class Generator():
             options = Translate.driver_options
             extension = 'tif'
 
+        # Number of files to process
+        n_files = len(self.fnames)
+        msg = f"Creating COGs..."
+        if self.progressBar is not None:
+            self.progressBar.setFormat(msg)
+
         for i, fname in enumerate(self.fnames):
             _has_subdatasets, diver_name = has_subdatasets(fname)
             if _has_subdatasets is True:
@@ -222,8 +232,15 @@ class Generator():
                               output_format=output_format,
                               options=options)
 
+            if self.progressBar is not None:
+                self.progressBar.setValue((i/n_files) * 100.0)
+
         # Create layerstack of bands or subdatasets
-        LOG.info(f"Generating {self.product} layer stacks...")
+        msg = f"Generating {self.product} layer stacks..."
+        LOG.info(msg)
+
+        if self.progressBar is not None:
+            self.progressBar.setFormat(msg)
 
         for dataset in self.__datasets:
             self.__generate_layerstack(dataset, extension)
@@ -408,17 +425,29 @@ class Generator():
         qa_layer_names = self.__get_qa_layers()
 
         # Decode QA layers
-        for qa_layer in qa_layer_names:
+        for i, qa_layer in enumerate(qa_layer_names):
+            if self.progressBar is not None:
+                msg = f"Decoding files for {qa_layer}..."
+                self.progressBar.setFormat(msg)
+
             qa_fnames = self.__get_qa_files(qa_layer, extension)
+
+            # Number of files for this QA layer
+            n_files = len(qa_fnames)
 
             # Decode all files
             for qa_fname in qa_fnames:
                 qualityDecoder(qa_fname, self.product, qa_layer,
                                bitField='ALL', createDir=True)
 
+                if self.progressBar is not None:
+                    self.progressBar.setValue((i/n_files) * 100.0)
+
         for qa_layer in qa_layer_names:
-            LOG.info(f"Generating {self.product} QA layer stacks "
-                     f"for {qa_layer}...")
+            msg = (f"Generating {self.product} QA layer stacks "
+                   f"for {qa_layer}...")
+            LOG.info(msg)
+            self.progressBar.setFormat(msg)
 
             # Get all bit fields per QA layer sub directories
             if qa_layer[0] == '_' :
