@@ -92,7 +92,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Time steps</string>
+     <string>Dates</string>
     </property>
    </widget>
    <widget class="QComboBox" name="time_steps">
@@ -103,6 +103,12 @@
       <width>271</width>
       <height>23</height>
      </rect>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+    </property>
+    <property name="minimumContentsLength">
+     <number>12</number>
     </property>
    </widget>
    <widget class="QLabel" name="lblSmoothFactor">

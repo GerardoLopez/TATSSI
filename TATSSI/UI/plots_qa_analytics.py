@@ -55,21 +55,20 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         self.left_imshow = None
         self.right_imshow = None
 
-        # Get widgets
-        self.data_vars = self.content_plot.findChild(
-                QtWidgets.QComboBox, 'data_vars')
+        # Set widgets connections with methods
         self.data_vars.currentIndexChanged.connect(
                 self.__on_data_vars_change)
 
-        self.time_steps = self.content_plot.findChild(
-                QtWidgets.QComboBox, 'time_steps')
         self.time_steps.currentIndexChanged.connect(
                 self.__on_time_steps_change)
 
-        self.pb_Interpolate = self.content_plot.findChild(
-                QtWidgets.QPushButton, 'pbInterpolate')
         self.pb_Interpolate.clicked.connect(
                 self.on_pbInterpolate_click)
+
+        # Change combobox stylesheet and add scrollbar
+        self.time_steps.setStyleSheet("combobox-popup: 0")
+        self.time_steps.view().setVerticalScrollBarPolicy(
+                Qt.ScrollBarAsNeeded)
 
         # Time series object
         self.ts = qa_analytics.ts

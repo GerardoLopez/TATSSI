@@ -77,6 +77,22 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.left_imshow = None
         self.right_imshow = None
 
+        # Connect time steps with corresponsing method
+        self.time_steps_left.currentIndexChanged.connect(
+                self.__on_time_steps_left_change)
+
+        self.time_steps_right.currentIndexChanged.connect(
+                self.__on_time_steps_right_change)
+
+        # Change time_steps combo boxes stylesheet and add scrollbar
+        self.time_steps_left.setStyleSheet("combobox-popup: 0")
+        self.time_steps_left.view().setVerticalScrollBarPolicy(
+                Qt.ScrollBarAsNeeded)
+
+        self.time_steps_right.setStyleSheet("combobox-popup: 0")
+        self.time_steps_right.view().setVerticalScrollBarPolicy(
+                Qt.ScrollBarAsNeeded)
+
         # Climatology button
         self.pbAnomalies.clicked.connect(
                 self.on_pbAnomalies_click)
@@ -88,6 +104,10 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.__fill_year()
         self.years.currentIndexChanged.connect(
                 self.__on_years_change)
+
+        # Time steps
+        self.time_steps_left.addItems(self.__fill_time_steps())
+        self.time_steps_right.addItems(self.__fill_time_steps())
 
         # Decomposition model
         self.model.addItems(self.__fill_model())
@@ -101,6 +121,33 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Climatology year
         self.climatology_year = None
         self.anomalies = None
+
+    @pyqtSlot(int)
+    def __on_time_steps_change(self, index):
+        """
+        Handles a change in the time step to display
+        """
+        if len(self.time_steps_left.currentText()) == 0 or \
+                len(self.time_steps_right.currentText()) == 0 or \
+                self.left_imshow is None or \
+                self.right_imshow is None:
+            return None
+
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.left_imshow.set_data(self.self.single_year_ds.data[index])
+        self.right_imshow.set_data(self.self.single_year_ds.data[index])
+
+        # Set titles
+        self.left_p.set_title(self.time_steps_left.currentText())
+        self.right_p.set_title(self.time_steps_right.currentText())
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     def on_pbAnomalies_click(self):
         """
@@ -194,27 +241,6 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         return _models
 
-    def on_pbSmooth_click(self):
-        """
-        Performs a smoothing for using a specific user selected
-        method
-        """
-        # Wait cursor
-        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
-
-        # Output file name
-        smoothing_method = self.smoothing_methods.selectedItems()[0].text()
-        _fname, _ext = os.path.splitext(self.fname)
-        output_fname = f'{_fname}.{smoothing_method}.tif'
-
-        smoother = Smoothing(fname=self.fname, output_fname=output_fname,
-                smoothing_methods=[smoothing_method])
-
-        smoother.smooth()
-
-        # Standard cursor
-        QtWidgets.QApplication.restoreOverrideCursor()
-
     def __fill_data_variables(self):
         """
         Fill the data variables dropdown list
@@ -229,9 +255,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         """
         Fill the time steps dropdown list
         """
-        tmp_ds = getattr(self.ts.data, self.data_vars.currentText())
-
-        time_steps = np.datetime_as_string(tmp_ds.time.data, 'm').tolist()
+        time_steps = np.datetime_as_string(
+                self.single_year_ds.time.data, 'm').tolist()
 
         return time_steps
 
@@ -390,6 +415,11 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.single_year_ds = getattr(self.ts.data,
                 self.data_vars.currentText()).sel(time=time_slice)
 
+        # Update time steps
+        self.time_steps_left.clear() ; self.time_steps_right.clear()
+        self.time_steps_left.addItems(self.__fill_time_steps())
+        self.time_steps_right.addItems(self.__fill_time_steps())
+
         # Update images with current year
         self.__update_imshow()
 
@@ -400,23 +430,44 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         QtWidgets.QApplication.restoreOverrideCursor()
 
     @pyqtSlot(int)
-    def __on_time_steps_change(self, index):
+    def __on_time_steps_left_change(self, index):
         """
         Handles a change in the time step to display
         """
-        if len(self.time_steps.currentText()) == 0 or \
-                self.img_imshow is None:
+        if len(self.time_steps_left.currentText()) == 0 or \
+                self.left_imshow is None:
             return None
 
         # Wait cursor
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        self.img_ds = getattr(self.ts.data, self.data_vars.currentText())
-
-        self.img_imshow.set_data(self.img_ds.data[index])
+        self.left_imshow.set_data(self.single_year_ds.data[index])
 
         # Set titles
-        self.img_p.set_title(self.time_steps.currentText())
+        self.left_p.set_title(self.time_steps_left.currentText())
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
+
+    @pyqtSlot(int)
+    def __on_time_steps_right_change(self, index):
+        """
+        Handles a change in the time step to display
+        """
+        if len(self.time_steps_right.currentText()) == 0 or \
+                self.right_imshow is None:
+            return None
+
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.right_imshow.set_data(self.single_year_ds.data[index])
+
+        # Set titles
+        self.right_p.set_title(self.time_steps_right.currentText())
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -429,14 +480,16 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         Update images shown as imshow plots
         """
         # Plot layers at 1/3 and 2/3 of time series
-        layers = self.single_year_ds.shape[0]
-        first_layer = int(layers * 0.3)
-        second_layer = int(layers * 0.6)
+        # layers = self.single_year_ds.shape[0]
+        # first_layer = int(layers * 0.33)
+        # second_layer = int(layers * 0.66)
 
-        self.left_imshow = self.single_year_ds[first_layer].plot.imshow(
+        # self.left_imshow = self.single_year_ds[first_layer].plot.imshow(
+        self.left_imshow = self.single_year_ds[0].plot.imshow(
                 cmap=self.cmap, ax=self.left_p, add_colorbar=False)
 
-        self.right_imshow = self.single_year_ds[second_layer].plot.imshow(
+        # self.right_imshow = self.single_year_ds[second_layer].plot.imshow(
+        self.right_imshow = self.single_year_ds[0].plot.imshow(
                 cmap=self.cmap, ax=self.right_p, add_colorbar=False)
 
         self.left_p.set_aspect('equal')

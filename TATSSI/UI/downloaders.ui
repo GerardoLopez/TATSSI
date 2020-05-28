@@ -14,10 +14,17 @@
    <string>Downloaders</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label_1">
      <property name="text">
-      <string>Tile</string>
+      <string>Product and Version</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="3">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Start date (dd/mm/yyy)</string>
      </property>
     </widget>
    </item>
@@ -33,51 +40,6 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="6">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Start date (dd/mm/yyy)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="3">
-    <widget class="QDateEdit" name="start_date">
-     <property name="displayFormat">
-      <string notr="true">dd-MM-yyyy</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0" colspan="7">
-    <widget class="QPushButton" name="pbOutputDirectory">
-     <property name="text">
-      <string>Select output directory</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="4">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>End date (dd/mm/yyy)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="5">
-    <widget class="QDateEdit" name="end_date">
-     <property name="displayFormat">
-      <string notr="true">dd-MM-yyyy</string>
-     </property>
-    </widget>
-   </item>
    <item row="2" column="2" colspan="5">
     <widget class="QLabel" name="lblProductVersion">
      <property name="font">
@@ -90,24 +52,17 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QLabel" name="label_1">
+   <item row="5" column="0" colspan="7">
+    <widget class="QPushButton" name="pbOutputDirectory">
      <property name="text">
-      <string>Product and Version</string>
+      <string>Select output directory</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>Output directory</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="7">
-    <widget class="QPushButton" name="pbDownload">
-     <property name="text">
-      <string>Download product for selected dates</string>
+   <item row="4" column="5">
+    <widget class="QDateEdit" name="end_date">
+     <property name="displayFormat">
+      <string notr="true">dd-MM-yyyy</string>
      </property>
     </widget>
    </item>
@@ -324,43 +279,45 @@
      </property>
     </widget>
    </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Output directory</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="7">
+    <widget class="QPushButton" name="pbDownload">
+     <property name="text">
+      <string>Download product for selected dates</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="4">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>End date (dd/mm/yyy)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="3">
+    <widget class="QDateEdit" name="start_date">
+     <property name="displayFormat">
+      <string notr="true">dd-MM-yyyy</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Tile</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>Downloaders</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>Downloaders</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <designerdata>
   <property name="gridDeltaX">
    <number>10</number>

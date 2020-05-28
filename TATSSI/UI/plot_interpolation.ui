@@ -50,7 +50,7 @@
      <string>Interpolation methods</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pbInterpolate">
+   <widget class="QPushButton" name="pb_Interpolate">
     <property name="geometry">
      <rect>
       <x>680</x>
@@ -92,7 +92,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Time steps</string>
+     <string>Dates</string>
     </property>
    </widget>
    <widget class="QComboBox" name="time_steps">
@@ -103,6 +103,15 @@
       <width>271</width>
       <height>23</height>
      </rect>
+    </property>
+    <property name="maxVisibleItems">
+     <number>13</number>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+    </property>
+    <property name="minimumContentsLength">
+     <number>12</number>
     </property>
    </widget>
   </widget>
