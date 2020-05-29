@@ -54,6 +54,7 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         # imshow plots
         self.left_imshow = None
         self.right_imshow = None
+        self.projection = None
 
         # Set widgets connections with methods
         self.data_vars.currentIndexChanged.connect(
@@ -289,7 +290,8 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         # Left plot
         self.left_ds = getattr(self.ts.data, self.data_vars.currentText())
         self.left_imshow = self.left_ds[0].plot.imshow(cmap='Greys_r',
-                ax=self.left_p, add_colorbar=False)
+                ax=self.left_p, add_colorbar=False,
+                transform=self.projection)
 
         # Turn off axis
         self.left_p.axis('off')
@@ -311,7 +313,8 @@ class PlotInterpolation(QtWidgets.QMainWindow):
 
         # Right plot
         self.right_imshow = self.right_ds[0].plot.imshow(cmap='Greys_r',
-                ax=self.right_p, add_colorbar=False)
+                ax=self.right_p, add_colorbar=False,
+                transform=self.projection)
 
         # Turn off axis
         self.right_p.axis('off')
@@ -328,16 +331,40 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         """
         Create plot objects
         """
+        # Get projection from first data variable
+        for key in self.qa_analytics.ts.data.data_vars:
+            proj4_string = getattr(self.qa_analytics.ts.data, key).crs
+            break
+
+        # If projection is Sinusoidal
+        srs = get_projection(proj4_string)
+        if srs.GetAttrValue('PROJECTION') == 'Sinusoidal':
+            globe=ccrs.Globe(ellipse=None,
+                semimajor_axis=6371007.181,
+                semiminor_axis=6371007.181)
+
+            self.projection = ccrs.Sinusoidal(globe=globe)
+
+        # Figure
         self.fig = plt.figure(figsize=(8.0, 7.0))
 
         # Left plot
-        self.left_p = plt.subplot2grid((2, 2), (0, 0), colspan=1)
+        self.left_p = plt.subplot2grid((2, 2), (0, 0), colspan=1,
+                projection=self.projection)
+
         # Right plot
         self.right_p = plt.subplot2grid((2, 2), (0, 1), colspan=1,
-                                   sharex=self.left_p, sharey=self.left_p)
+                sharex=self.left_p, sharey=self.left_p,
+                projection=self.projection)
+
+        if self.projection is not None:
+            for _axis in [self.left_p, self.right_p]:
+                _axis.coastlines(resolution='10m', color='white')
+                _axis.add_feature(cfeature.BORDERS, edgecolor='white')
+                _axis.gridlines()
+
         # Time series plot
         self.ts_p = plt.subplot2grid((2, 2), (1, 0), colspan=2)
-
 
     def _plot(self, qa_analytics, cmap='viridis', dpi=72):
         """
@@ -363,9 +390,15 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         lay = QtWidgets.QVBoxLayout(self.content_plot)
         lay.setContentsMargins(0, 100, 0, 0)
         lay.addWidget(self.plotWidget)
+
         # Add toolbar
-        self.addToolBar(QtCore.Qt.BottomToolBarArea,
-                NavigationToolbar(self.plotWidget, self))
+        font = QFont()
+        font.setPointSize(12)
+
+        toolbar = NavigationToolbar(self.plotWidget, self)
+        toolbar.setFont(font)
+
+        self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
 
 class PlotMaxGapLength(QtWidgets.QMainWindow):
     """
@@ -404,17 +437,16 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
                 subplot_kw=dict(projection=proj))
 
         if proj is not None:
-            ax.coastlines(resolution='10m', color='white')
-            ax.add_feature(cfeature.BORDERS, edgecolor='white')
-            ax.gridlines()
-
-            bx.coastlines(resolution='10m', color='white')
-            bx.gridlines()
+            for _axis in [ax, bx]:
+                _axis.coastlines(resolution='10m', color='white')
+                _axis.add_feature(cfeature.BORDERS, edgecolor='white')
+                _axis.gridlines()
 
         qa_analytics.pct_data_available.plot.imshow(
                 ax=ax, cmap=cmap,
                 cbar_kwargs={'orientation':'horizontal',
                              'pad' : 0.005},
+                transform=proj
         )
 
         ax.set_frame_on(False)
@@ -427,6 +459,7 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
                 ax=bx, cmap=cmap,
                 cbar_kwargs={'orientation':'horizontal',
                              'pad' : 0.005},
+                transform=proj
         )
 
         bx.set_frame_on(False)

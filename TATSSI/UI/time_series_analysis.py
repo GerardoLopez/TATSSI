@@ -34,13 +34,27 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \
         as NavigationToolbar
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import osr
+
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtGui import QFont
 
 # Experimental
 from rpy2.robjects.packages import importr
 from rpy2.robjects import FloatVector
 from rpy2.robjects import numpy2ri
+
+def get_projection(proj4_string):
+    """
+    Get spatial reference system from PROJ4 string
+    """
+    srs = osr.SpatialReference()
+    srs.ImportFromProj4(proj4_string)
+
+    return srs
 
 class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
     def __init__(self, fname, parent=None):
@@ -76,6 +90,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # imshow plots
         self.left_imshow = None
         self.right_imshow = None
+        self.projection = None
 
         # Connect time steps with corresponsing method
         self.time_steps_left.currentIndexChanged.connect(
@@ -479,18 +494,13 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         """
         Update images shown as imshow plots
         """
-        # Plot layers at 1/3 and 2/3 of time series
-        # layers = self.single_year_ds.shape[0]
-        # first_layer = int(layers * 0.33)
-        # second_layer = int(layers * 0.66)
-
-        # self.left_imshow = self.single_year_ds[first_layer].plot.imshow(
         self.left_imshow = self.single_year_ds[0].plot.imshow(
-                cmap=self.cmap, ax=self.left_p, add_colorbar=False)
+                cmap=self.cmap, ax=self.left_p, add_colorbar=False,
+                transform=self.projection)
 
-        # self.right_imshow = self.single_year_ds[second_layer].plot.imshow(
         self.right_imshow = self.single_year_ds[0].plot.imshow(
-                cmap=self.cmap, ax=self.right_p, add_colorbar=False)
+                cmap=self.cmap, ax=self.right_p, add_colorbar=False,
+                transform=self.projection)
 
         self.left_p.set_aspect('equal')
         self.right_p.set_aspect('equal')
@@ -548,13 +558,37 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         """
         years_fmt = mdates.DateFormatter('%Y')
 
+        # Get projection from first data variable
+        for key in self.ts.data.data_vars:
+            proj4_string = getattr(self.ts.data, key).crs
+            break
+
+        # If projection is Sinusoidal
+        srs = get_projection(proj4_string)
+        if srs.GetAttrValue('PROJECTION') == 'Sinusoidal':
+            globe=ccrs.Globe(ellipse=None,
+                semimajor_axis=6371007.181,
+                semiminor_axis=6371007.181)
+
+            self.projection = ccrs.Sinusoidal(globe=globe)
+
+        # Figure
         self.fig = plt.figure(figsize=(11.0, 6.0))
 
         # subplot2grid((rows,cols), (row,col)
         # Left, right and climatology plots
-        self.left_p = plt.subplot2grid((4, 4), (0, 0), rowspan=2)
+        self.left_p = plt.subplot2grid((4, 4), (0, 0), rowspan=2,
+                projection=self.projection)
         self.right_p = plt.subplot2grid((4, 4), (0, 1), rowspan=2,
-                sharex=self.left_p, sharey=self.left_p)
+                sharex=self.left_p, sharey=self.left_p,
+                projection=self.projection)
+
+        if self.projection is not None:
+            for _axis in [self.left_p, self.right_p]:
+                _axis.coastlines(resolution='10m', color='white')
+                _axis.add_feature(cfeature.BORDERS, edgecolor='white')
+                _axis.gridlines()
+
         self.climatology = plt.subplot2grid((4, 4), (2, 0),
                 rowspan=2, colspan=2)
 
@@ -593,9 +627,15 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         lay = QtWidgets.QVBoxLayout(self.content_plot)
         lay.setContentsMargins(0, 70, 0, 0)
         lay.addWidget(self.plotWidget)
+
         # Add toolbar
-        self.addToolBar(QtCore.Qt.BottomToolBarArea,
-                NavigationToolbar(self.plotWidget, self))
+        font = QFont()
+        font.setPointSize(12)
+
+        toolbar = NavigationToolbar(self.plotWidget, self)
+        toolbar.setFont(font)
+
+        self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
 
     @staticmethod
     def message_box(message_text):
