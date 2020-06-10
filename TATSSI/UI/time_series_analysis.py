@@ -11,12 +11,13 @@ sys.path.append(str(src_dir.absolute()))
 from TATSSI.time_series.smoothn import smoothn
 from TATSSI.time_series.analysis import Analysis
 from TATSSI.time_series.mk_test import mk_test
-
 from TATSSI.UI.plots_time_series_analysis import PlotAnomalies
+from TATSSI.UI.helpers.utils import *
 
 #from TATSSI.notebooks.helpers.time_series_analysis import \
 #        TimeSeriesAnalysis
 
+import ogr
 import numpy as np
 from rasterio import logging as rio_logging
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -36,6 +37,8 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.io.shapereader import Reader as cReader
+from cartopy.feature import ShapelyFeature
 import osr
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
@@ -111,6 +114,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Climatology button
         self.pbAnomalies.clicked.connect(
                 self.on_pbAnomalies_click)
+        # Overlay button
+        self.pbOverlay.clicked.connect(
+                self.on_pbOverlay_click)
 
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
@@ -163,6 +169,42 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
+
+    def on_pbOverlay_click(self):
+        """
+        EXPERIMENTAL
+        Overlay a specific geometry on maps
+        """
+        fname = open_file_dialog(dialog_type = 'open_specific',
+                data_format = 'Shapefile',
+                extension = 'shp')
+
+        if os.path.exists(fname) is False:
+            pass
+
+        # Open file
+        spatial_reference = self.get_shapefile_spatial_reference(fname)
+
+        # Get ellipsoid/datum parameters
+        globe=ccrs.Globe(ellipse=None,
+                semimajor_axis=spatial_reference.GetSemiMajor(),
+                semiminor_axis=spatial_reference.GetSemiMinor())
+
+        self.shapefile_projection = ccrs.Sinusoidal(globe=globe)
+            #ccrs.CRS(spatial_reference.ExportToProj4())
+
+        try:
+            shape_feature = ShapelyFeature(cReader(fname).geometries(),
+                self.shapefile_projection, facecolor='none')
+
+            for _axis in [self.left_p, self.right_p]:
+                _axis.add_feature(shape_feature,
+                        edgecolor='gray')
+        except:
+            return None
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def on_pbAnomalies_click(self):
         """
@@ -647,11 +689,21 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         return None
 
-#if __name__ == "__main__":
+    @staticmethod
+    def get_shapefile_spatial_reference(fname):
+        driver = ogr.GetDriverByName('ESRI Shapefile')
+        dataset = driver.Open(fname)
 
-#    fname = '/home/glopez/Desktop/MOD13A2.006._1_km_16_days_EVI.linear.smoothn.tif'
+        layer = dataset.GetLayer()
+        spatialRef = layer.GetSpatialRef()
 
-#    app = QtWidgets.QApplication([])
-#    window = TimeSeriesAnalysisUI(fname=fname)
-#    app.exec_()
+        return spatialRef
+
+if __name__ == "__main__":
+
+    fname = '/home/glopez/Projects/TATSSI/data/MOD13A2.006/1_km_16_days_EVI/interpolated/MOD13A2.006._1_km_16_days_EVI.linear.smoothn.int16.tif'
+
+    app = QtWidgets.QApplication([])
+    window = TimeSeriesAnalysisUI(fname=fname)
+    app.exec_()
 

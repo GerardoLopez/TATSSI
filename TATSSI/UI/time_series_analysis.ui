@@ -175,6 +175,20 @@ anomalies</string>
 products</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pbOverlay">
+    <property name="geometry">
+     <rect>
+      <x>900</x>
+      <y>10</y>
+      <width>161</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Overlay
+geometry</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>
