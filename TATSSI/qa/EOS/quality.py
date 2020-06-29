@@ -6,6 +6,7 @@ from glob import glob
 import json
 from collections import OrderedDict
 import pandas as pd
+import xarray as xr
 
 import requests
 import numpy as np
@@ -172,6 +173,12 @@ def qualityDecoder(inRst, product, qualityLayer,
 
     if '_FillValue' in md:
         fill_value = int(md['_FillValue'])
+
+    xr_d = xr.open_rasterio(inRst)
+    if 'nodatavals' in xr_d.attrs:
+        fill_value = int(xr_d.nodatavals[0])
+        xr_d = None
+        del(xr_d)
     else:
         # Get band metadata
         b = d.GetRasterBand(1)
@@ -189,6 +196,9 @@ def qualityDecoder(inRst, product, qualityLayer,
                 _unique = np.unique(inArray)
                 mask = np.isin(_unique, qa_layer_def.Value.values)
                 fill_value = _unique[~mask][0]
+
+    # Check if there are negative values
+    inArray[inArray < 0] = fill_value
 
     # Get fiels list
     bitFieldList = qa_layer_def.Name.unique()

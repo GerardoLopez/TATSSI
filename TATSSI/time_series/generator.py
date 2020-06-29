@@ -27,7 +27,7 @@ class Generator():
     """
     def __init__(self, source_dir, product, version,
             year=None, start=None, end=None, data_format='hdf',
-            progressBar=None):
+            progressBar=None, preprocessed=False):
         """
         Constructor for Generator class
         """
@@ -49,10 +49,11 @@ class Generator():
         fnames = glob(os.path.join(self.source_dir,
             f"*{product}*{version}*.{data_format}"))
 
-        if len(fnames) == 0:
+        if len(fnames) == 0 and preprocessed == False:
             err_msg = (f"There are no {product} files in "
                        f"{self.source_dir}")
             raise(IOError(err_msg))
+        #elif len(fnames) > 0:
         else:
             self.product = f"{product}.{version}"
             self.product_name = product
@@ -66,8 +67,7 @@ class Generator():
             # Start and End dates
             self.__set_start_end_dates(start, end)
 
-            if progressBar is not None:
-                self.progressBar = progressBar
+            self.progressBar = progressBar
 
     def __get_product_dates_range(self):
         """
@@ -447,7 +447,8 @@ class Generator():
             msg = (f"Generating {self.product} QA layer stacks "
                    f"for {qa_layer}...")
             LOG.info(msg)
-            self.progressBar.setFormat(msg)
+            if self.progressBar is not None:
+                self.progressBar.setFormat(msg)
 
             # Get all bit fields per QA layer sub directories
             if qa_layer[0] == '_' :
@@ -493,7 +494,13 @@ class Generator():
         qa_fnames.sort()
 
         if len(qa_fnames) == 0:
-            raise Exception(f"QA dir {qa_dir} is empty.")
+            # For preprocessed time series...
+            qa_fnames = f'*{_qa_layer}*.{extension}'
+            qa_fnames = glob(os.path.join(qa_dir[0], qa_fnames))
+            qa_fnames.sort()
+
+            if len(qa_fnames) == 0:
+                raise Exception(f"QA dir {qa_dir} is empty.")
 
         return qa_fnames
 

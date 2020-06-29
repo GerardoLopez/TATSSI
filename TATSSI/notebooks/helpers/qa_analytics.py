@@ -354,7 +354,8 @@ class Analytics():
         tsg = Generator(source_dir=self.source_dir,
                 product=self.product, version=self.version,
                 year=self.year, start=self.start, end=self.end,
-                data_format=self.data_format)
+                data_format=self.data_format,
+                preprocessed=True)
 
         # Load time series
         return tsg.load_time_series(chunked=self.chunked)

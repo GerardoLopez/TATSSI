@@ -260,7 +260,8 @@ class QAAnalyticsUI(QtWidgets.QDialog):
                 chunked=True,
                 version=self.txtVersion.toPlainText(),
                 start=self.start_date.text(),
-                end=self.end_date.text())
+                end=self.end_date.text(),
+                data_format='tif')
 
         # Fill QA definition combo box
         self.cmbQADef.clear()
