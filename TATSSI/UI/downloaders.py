@@ -127,7 +127,7 @@ class DownloadersUI(QtWidgets.QDialog):
                    output_dir = output,
                    start_date = start_date,
                    end_date = end_date,
-                   n_threads = 6,
+                   n_threads = 10,
                    username = username,
                    password = password,
                    progressBar = self.progressBar)
