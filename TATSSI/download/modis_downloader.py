@@ -13,6 +13,8 @@ import os
 import datetime
 import time
 import json
+import pickle
+from pathlib import Path
 
 import requests
 from concurrent import futures
@@ -43,23 +45,66 @@ def read_config():
 
     return url, username, password
 
-def get_available_dates(url, start_date, end_date=None):
+def save_available_dates(product, avail_dates):
+    """
+    Save the available dates for a specific product on a pickle file
+    in $HOME/.TATSSI/{product}
+    """
+    homedir = os.path.expanduser("~")
+    config_dir = os.path.join(homedir, '.TATSSI')
+    # Create TATSSI config dir 
+    Path(config_dir).mkdir(parents=True, exist_ok=True)
+
+    fname = os.path.join(config_dir, product)
+
+    with open(fname, 'wb') as f:
+        pickle.dump(avail_dates, f)
+
+    f.close()
+
+def get_available_dates_from_cache(product):
+    """
+    Get the available dates for a specific product from the
+    TATSSI config dir
+    """
+    homedir = os.path.expanduser("~")
+    config_dir = os.path.join(homedir, '.TATSSI')
+
+    fname = os.path.join(config_dir, product)
+
+    if os.path.exists(fname) is True:
+        with open(fname, 'rb') as f:
+            avail_dates = pickle.load(f)
+    else:
+        avail_dates = []
+
+    return avail_dates
+
+def get_available_dates(url, product, start_date, end_date=None,
+                        use_cache=False):
     """
     This function gets the available dates for a particular
     product, and returns the ones that fall within a particular
     pair of dates. If the end date is set to ``None``, it will
-    be assumed it is today.
+    be assumed it is today. If use_cache is True then first the
+    available dates will be first obtained from any cache available.
     """
+    if use_cache is True:
+        avail_dates = get_available_dates_from_cache(product)
+    else:
+        avail_dates = []
+
     if end_date is None:
         end_date = datetime.datetime.now()
     r = requests.get(url)
+
     if not r.ok:
         raise WebError(
             "Problem contacting NASA server. Either server " +
             "is down, or the product you used (%s) is kanckered" %
             url)
     html = r.text
-    avail_dates = []
+
     for line in html.splitlines()[19:]:
         if line.find("[DIR]") >= 0 and line.find("href") >= 0:
             this_date = line.split("href=")[1].split('"')[1].strip("/")
@@ -67,6 +112,11 @@ def get_available_dates(url, start_date, end_date=None):
                                                        "%Y.%m.%d")
             if this_datetime >= start_date and this_datetime <= end_date:
                 avail_dates.append(url + "/" + this_date)
+
+    # Save search to cache
+    if len(avail_dates) > 0:
+        save_available_dates(product, avail_dates)
+
     return avail_dates
 
 def download_tile_list(url, tiles):
@@ -99,7 +149,9 @@ def download_tiles(url, session, username, password, output_dir):
     LOG.debug("Getting %s from %s(-> %s)" % (fname, url, r1.url))
 
     if not r.ok:
-        raise IOError("Can't start download... [%s]" % fname)
+        # raise IOError(f"Can't start download... {fname}")
+        print(f"Can't start download... {fname}. Try download again.")
+        return
 
     file_size = int(r.headers['content-length'])
     LOG.debug("\t%s file size: %d" % (fname, file_size))
@@ -137,7 +189,8 @@ def get_modis_data(platform, product, tiles,
                    output_dir, start_date,
                    end_date=None, n_threads=5,
                    username=None, password=None,
-                   progressBar=None):
+                   progressBar=None,
+                   use_cache=False):
     """The main workhorse of MODIS downloading. This function will grab
     products for a particular platform (MOLT, MOLA or MOTA). The products
     are specified by their MODIS code (e.g. MCD45A1.051 or MOD09GA.006).
@@ -173,6 +226,8 @@ def get_modis_data(platform, product, tiles,
     n_threads: int
         The number of concurrent downloads to envisage. I haven't got a clue
         as to what a good number would be here...
+    use_cache: boolean
+        Whether to use local cache with results from previous searches
 
     """
     # Read config
@@ -194,7 +249,8 @@ def get_modis_data(platform, product, tiles,
     # Cook the URL for the product
     url = BASE_URL + platform + "/" + product
     # Get all the available dates in the NASA archive...
-    the_dates = get_available_dates(url, start_date, end_date=end_date)
+    the_dates = get_available_dates(url, product, start_date,
+            end_date=end_date, use_cache=use_cache)
     
     # We then explore the NASA archive for the dates that we are going to
     # download. This is done in parallel. For each date, we will get the

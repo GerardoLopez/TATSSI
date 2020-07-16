@@ -59,6 +59,10 @@ class DownloadersUI(QtWidgets.QDialog):
         self.pbDownload.clicked.connect(
                 self.on_pbDownload_click)
 
+        # Fill Threads combo box
+        self.cbThreads.clear()
+        self.cbThreads.addItems(['1','2','3','4','5','6'])
+
         self.show()
 
     def fill_products_table(self, catalogue):
@@ -108,6 +112,13 @@ class DownloadersUI(QtWidgets.QDialog):
 
         # Tile
         tile = self.tiles.currentText()
+        # Number of threads
+        n_threads = int(self.cbThreads.currentText())
+        # Use cache
+        if self.rbUseCache.isChecked() == True:
+            use_cache = True
+        else:
+            use_cache = False
 
         # Dates needs to be datetime objects
         start_date = datetime.strptime(self.start_date.text(), '%d-%m-%Y')
@@ -127,10 +138,11 @@ class DownloadersUI(QtWidgets.QDialog):
                    output_dir = output,
                    start_date = start_date,
                    end_date = end_date,
-                   n_threads = 10,
+                   n_threads = n_threads,
                    username = username,
                    password = password,
-                   progressBar = self.progressBar)
+                   progressBar = self.progressBar,
+                   use_cache = use_cache)
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
