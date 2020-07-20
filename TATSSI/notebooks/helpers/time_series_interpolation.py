@@ -91,7 +91,8 @@ class TimeSeriesInterpolation():
         log.setLevel(rio_logging.ERROR)
 
     def interpolate(self, tile_size=256, n_workers=1,
-                    threads_per_worker=8, memory_limit='14GB'):
+                    threads_per_worker=8, memory_limit='14GB',
+                    progressBar=None):
         """
         Interpolates the data of a time series object using
         the method or methods provided
@@ -212,7 +213,8 @@ class TimeSeriesInterpolation():
                             data_var=data_var, method=method,
                             tile_size=tile_size, n_workers=n_workers,
                             threads_per_worker=threads_per_worker,
-                            memory_limit=memory_limit)
+                            memory_limit=memory_limit,
+                            progressBar=progressBar)
 
             if self.isNotebook is True:
                 _item += 1

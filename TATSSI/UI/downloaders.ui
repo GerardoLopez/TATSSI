@@ -21,13 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Start date (dd/mm/yyy)</string>
-     </property>
-    </widget>
-   </item>
    <item row="6" column="1" colspan="6">
     <widget class="QLabel" name="lblOutputDirectory">
      <property name="font">
@@ -56,13 +49,6 @@
     <widget class="QPushButton" name="pbOutputDirectory">
      <property name="text">
       <string>Select output directory</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="5">
-    <widget class="QDateEdit" name="end_date">
-     <property name="displayFormat">
-      <string notr="true">dd-MM-yyyy</string>
      </property>
     </widget>
    </item>
@@ -293,20 +279,6 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="4">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>End date (dd/mm/yyy)</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="3">
-    <widget class="QDateEdit" name="start_date">
-     <property name="displayFormat">
-      <string notr="true">dd-MM-yyyy</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
@@ -341,8 +313,44 @@
      </property>
     </widget>
    </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Start date (dd/mm/yyyy)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QDateEdit" name="start_date">
+     <property name="displayFormat">
+      <string notr="true">dd-MM-yyyy</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>End date (dd/mm/yyy)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="3">
+    <widget class="QDateEdit" name="end_date">
+     <property name="displayFormat">
+      <string notr="true">dd-MM-yyyy</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tiles</tabstop>
+  <tabstop>rbUseCache</tabstop>
+  <tabstop>cbThreads</tabstop>
+  <tabstop>tvProducts</tabstop>
+  <tabstop>pbOutputDirectory</tabstop>
+  <tabstop>pbDownload</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
  <designerdata>

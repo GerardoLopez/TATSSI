@@ -66,6 +66,8 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         self.pb_Interpolate.clicked.connect(
                 self.on_pbInterpolate_click)
 
+        self.progressBar.setEnabled(False)
+
         # Change combobox stylesheet and add scrollbar
         self.time_steps.setStyleSheet("combobox-popup: 0")
         self.time_steps.view().setVerticalScrollBarPolicy(
@@ -122,10 +124,17 @@ class PlotInterpolation(QtWidgets.QMainWindow):
 
         # TATSSI interpolation
         tsi = TimeSeriesInterpolation(self.qa_analytics, isNotebook=False)
-        tsi.interpolate()
+        # Enable progress bar
+        self.progressBar.setEnabled(True)
+        self.progressBar.setValue(0)
+        tsi.interpolate(progressBar=self.progressBar)
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
+
+        # Disable progress bar
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
 
     @pyqtSlot(int)
     def __on_time_steps_change(self, index):
@@ -320,8 +329,8 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         self.right_p.axis('off')
         self.right_p.set_aspect('equal')
 
-        plt.margins(tight=True)
-        plt.tight_layout()
+        #plt.margins(tight=True)
+        #plt.tight_layout()
 
         # Legend
         self.ts_p.legend(loc='best', fontsize='small',
@@ -400,6 +409,54 @@ class PlotInterpolation(QtWidgets.QMainWindow):
 
         self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
 
+        # Needed in order to use a tight layout with Cartopy axes
+        self.fig.canvas.draw()
+        plt.tight_layout()
+
+class PlotStatistics(QtWidgets.QMainWindow):
+    """
+    Plot the histogram of the maximum gap-length and the percentage of
+    data available when applying a QA-user selection to a TATSSI time
+    series
+    """
+    def __init__(self, parent=None):
+        super(PlotStatistics, self).__init__(parent)
+
+    def _plot(self, qa_analytics, dpi=72):
+        """
+        From the TATSSI QA Analytics object plots histograms of:
+          - Percentage of data available
+          - Maximum gap length
+        """
+        uic.loadUi('plot.ui', self)
+
+        fig, (ax, bx) = plt.subplots(1, 2, figsize=(16,11),
+                sharex=True, sharey=True, tight_layout=True, dpi=dpi)
+
+        # Plot histograms
+        qa_analytics.pct_data_available.plot.hist(ax=ax)
+        qa_analytics.max_gap_length.plot.hist(ax=bx)
+
+        ax.title.set_text('% of data available histogram')
+        bx.title.set_text('Max gap-length histogram')
+
+        # Set plot on the plot widget
+        self.plotWidget = FigureCanvas(fig)
+        lay = QtWidgets.QVBoxLayout(self.content_plot)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(self.plotWidget)
+
+        # Add toolbar
+        font = QFont()
+        font.setPointSize(12)
+
+        toolbar = NavigationToolbar(self.plotWidget, self)
+        toolbar.setFont(font)
+
+        self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
+
+        plt.tight_layout()
+
 class PlotMaxGapLength(QtWidgets.QMainWindow):
     """
     Plot the maximum gap-length and the percentage of data available
@@ -432,8 +489,9 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
         else:
             proj = None
 
-        fig, (ax, bx) = plt.subplots(1, 2, figsize=(15.6, 9.5),
-                sharex=True, sharey=True, tight_layout=True, dpi=dpi,
+        fig, (ax, bx) = plt.subplots(1, 2, figsize=(16, 9.6),
+                #sharex=True, sharey=True, tight_layout=True, dpi=dpi,
+                sharex=True, sharey=True, dpi=dpi,
                 subplot_kw=dict(projection=proj))
 
         if proj is not None:
@@ -453,7 +511,6 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
         ax.axis('off')
         ax.set_aspect('equal')
         ax.title.set_text('% of data available')
-        ax.margins(tight=True)
 
         qa_analytics.max_gap_length.plot.imshow(
                 ax=bx, cmap=cmap,
@@ -466,7 +523,6 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
         bx.axis('off')
         bx.set_aspect('equal')
         bx.title.set_text('Max gap-length')
-        bx.margins(tight=True)
 
         # Set plot on the plot widget
         self.plotWidget = FigureCanvas(fig)
@@ -482,4 +538,9 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
         toolbar.setFont(font)
 
         self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
+
+        # Needed in order to use a tight layout with Cartopy axes
+        fig.canvas.draw()
+        plt.tight_layout()
+
 

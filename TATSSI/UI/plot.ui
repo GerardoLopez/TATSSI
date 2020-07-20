@@ -6,23 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>772</width>
-    <height>650</height>
+    <width>1114</width>
+    <height>732</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QWidget" name="content_plot" native="true">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>20</y>
-     <width>721</width>
-     <height>571</height>
-    </rect>
-   </property>
-  </widget>
+  <widget class="QWidget" name="content_plot"/>
  </widget>
  <resources/>
  <connections/>

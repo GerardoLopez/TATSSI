@@ -257,7 +257,7 @@ def check_source_img(source_img):
 
 def save_dask_array(fname, data, data_var, method, tile_size=256,
                    n_workers=1, threads_per_worker=1, memory_limit='4GB',
-                   dask=True):
+                   dask=True, progressBar=None):
     """
     Saves to file an interpolated time series for a specific
     data variable using a selected interpolation method
@@ -296,7 +296,10 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
     proj = srs.ExportToWkt()
 
     # Get GDAL datatype from NumPy datatype
-    dtype = gdal_array.NumericTypeCodeToGDALTypeCode(data.dtype)
+    if data.dtype == 'bool':
+        dtype = gdal.GDT_Byte
+    else:
+        dtype = gdal_array.NumericTypeCodeToGDALTypeCode(data.dtype)
 
     # Dimensions
     layers, rows, cols = data.shape
@@ -307,6 +310,9 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
 
     block = tile_size
     for start_row in range(0, rows, block):
+        if progressBar is not None:
+            progressBar.setValue((start_row/rows) * 100.0)
+
         if start_row + block > rows:
             end_row = rows
         else:

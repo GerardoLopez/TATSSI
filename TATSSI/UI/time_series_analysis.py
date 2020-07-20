@@ -117,6 +117,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Overlay button
         self.pbOverlay.clicked.connect(
                 self.on_pbOverlay_click)
+        # Save products button
+        self.pbSaveProducts.clicked.connect(
+                self.on_pbSaveProducts_click)
 
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
@@ -169,6 +172,50 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
+
+    def on_pbSaveProducts_click(self):
+        """
+        Save to COGs all the time series analysis products
+        """
+        n_quartiles = 3
+        quartiles = [0.25, 0.5, 0.75]
+        var = '_1_km_16_days_EVI'
+
+        # Group by day of year to compute quartiles
+        grouped_by_doy = self.ts.data[var].time.groupby("time.dayofyear")
+        # Get the number of time steps
+        n_time_steps = len(grouped_by_doy.groups.keys())
+        # rows and cols
+        rows, cols = self.ts.data[var].shape[1:]
+        # Create output array
+        # Layers
+        # 0 - Q1
+        # 1 - Median
+        # 2 - Q3
+        # 3 - Q1 - 1.5 * IQR
+        # 4 - Q3 + 1.5 * IQR
+        # 5 - Negative outliers
+        # 6 - Positive outliers
+        q_data = np.zeros((n_quartiles+4, n_time_steps, rows, cols))
+
+        for i, (doy, _times) in enumerate(grouped_by_doy):
+            # Get time series for DoY
+            ts_doy = self.ts.data[var].sel(time=_times.data)
+            # Get quartiles for DoY
+            q_data[0:3,i] = np.quantile(ts_doy, q=quartiles, axis=0)
+
+            # Get IQR
+            iqr = q_data[2,i] - q_data[0,i]
+            # Get boundaries
+            q_data[3,i] = q_data[0,i] - (1.5 * iqr)
+            q_data[4,i] = q_data[2,i] + (1.5 * iqr)
+            # Get outliers
+
+            from IPython import embed ; ipshell = embed()
+            np.where(ts_doy < q_data[3,i])[0] 
+
+
+        from IPython import embed ; ipshell = embed()
 
     def on_pbOverlay_click(self):
         """

@@ -30,19 +30,6 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="13">
-       <widget class="QLabel" name="lblStartDate">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Start date (dd-mm-yyy)</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0" colspan="2">
        <widget class="QLabel" name="lblDataDir_">
         <property name="maximumSize">
@@ -171,7 +158,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>End date (dd/mm/yyy)</string>
+         <string>End date (dd/mm/yyyy)</string>
         </property>
        </widget>
       </item>
@@ -317,6 +304,19 @@ p, li { white-space: pre-wrap; }
       <item row="4" column="2" colspan="2">
        <widget class="QComboBox" name="cmbQADef"/>
       </item>
+      <item row="2" column="12" colspan="2">
+       <widget class="QLabel" name="lblStartDate">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Start date (dd-mm-yyyy)</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -328,6 +328,9 @@ p, li { white-space: pre-wrap; }
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="4" column="6">
        <widget class="QPushButton" name="pbInterpolation">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Interpolation</string>
         </property>
@@ -373,16 +376,6 @@ p, li { white-space: pre-wrap; }
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="3">
-       <widget class="QTextBrowser" name="tbrSelection">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>211</height>
-         </size>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="3" rowspan="2" colspan="4">
        <widget class="QListWidget" name="lwQAParamDesc">
         <property name="minimumSize">
@@ -405,6 +398,9 @@ p, li { white-space: pre-wrap; }
       </item>
       <item row="4" column="0">
        <widget class="QPushButton" name="pbSaveQAAnalytics">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Save QA Analytics</string>
         </property>
@@ -426,8 +422,31 @@ p, li { white-space: pre-wrap; }
       </item>
       <item row="4" column="4">
        <widget class="QPushButton" name="pbPlotMaxGapLength">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
-         <string>Plot Max Gap Length</string>
+         <string>Plot QA analytics</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QPushButton" name="pbStatistics">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Plot statistics</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="QTextBrowser" name="tbrSelection">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>211</height>
+         </size>
         </property>
        </widget>
       </item>
