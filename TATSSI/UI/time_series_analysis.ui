@@ -53,15 +53,14 @@
    <widget class="QPushButton" name="pbAnomalies">
     <property name="geometry">
      <rect>
-      <x>1070</x>
+      <x>1030</x>
       <y>10</y>
-      <width>161</width>
-      <height>51</height>
+      <width>191</width>
+      <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Compute and plot
-anomalies</string>
+     <string>Compute and plot anomalies</string>
     </property>
    </widget>
    <widget class="QLabel" name="lblYears">
@@ -164,29 +163,43 @@ anomalies</string>
    <widget class="QPushButton" name="pbSaveProducts">
     <property name="geometry">
      <rect>
-      <x>1240</x>
+      <x>1230</x>
       <y>10</y>
-      <width>161</width>
-      <height>51</height>
+      <width>191</width>
+      <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Save
-products</string>
+     <string>Save products</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pbOverlay">
     <property name="geometry">
      <rect>
-      <x>900</x>
+      <x>830</x>
       <y>10</y>
-      <width>161</width>
-      <height>51</height>
+      <width>191</width>
+      <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Overlay
-geometry</string>
+     <string>Overlay geometry</string>
+    </property>
+   </widget>
+   <widget class="QProgressBar" name="progressBar">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>830</x>
+      <y>40</y>
+      <width>591</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>0</number>
     </property>
    </widget>
   </widget>

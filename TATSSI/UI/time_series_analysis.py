@@ -12,12 +12,14 @@ from TATSSI.time_series.smoothn import smoothn
 from TATSSI.time_series.analysis import Analysis
 from TATSSI.time_series.mk_test import mk_test
 from TATSSI.UI.plots_time_series_analysis import PlotAnomalies
+from TATSSI.input_output.utils import save_dask_array
 from TATSSI.UI.helpers.utils import *
 
 #from TATSSI.notebooks.helpers.time_series_analysis import \
 #        TimeSeriesAnalysis
 
 import ogr
+import xarray as xr
 import numpy as np
 from rasterio import logging as rio_logging
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -177,9 +179,21 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         """
         Save to COGs all the time series analysis products
         """
-        n_quartiles = 3
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        # Compute climatology
+        self.ts.climatology()
+
+        self.progressBar.setEnabled(True)
+        self.progressBar.setValue(0)
+        msg = f"Computing quartiles and saving outliers..."
+        self.progressBar.setFormat(msg)
+        
         quartiles = [0.25, 0.5, 0.75]
-        var = '_1_km_16_days_EVI'
+        n_quartiles = len(quartiles)
+        quartile_names = ['Q1', 'median', 'Q2', 'minimum', 'maximum']
+        var = self.data_vars.currentText()
 
         # Group by day of year to compute quartiles
         grouped_by_doy = self.ts.data[var].time.groupby("time.dayofyear")
@@ -194,11 +208,16 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # 2 - Q3
         # 3 - Q1 - 1.5 * IQR
         # 4 - Q3 + 1.5 * IQR
-        # 5 - Negative outliers
-        # 6 - Positive outliers
-        q_data = np.zeros((n_quartiles+4, n_time_steps, rows, cols))
+        q_data = np.zeros((n_quartiles+2, n_time_steps, rows, cols))
+
+        # Store Days of Year
+        doys = []
 
         for i, (doy, _times) in enumerate(grouped_by_doy):
+            self.progressBar.setValue(int((i/len(grouped_by_doy))*100))
+
+            doys.append(doy)
+
             # Get time series for DoY
             ts_doy = self.ts.data[var].sel(time=_times.data)
             # Get quartiles for DoY
@@ -209,13 +228,54 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
             # Get boundaries
             q_data[3,i] = q_data[0,i] - (1.5 * iqr)
             q_data[4,i] = q_data[2,i] + (1.5 * iqr)
-            # Get outliers
 
-            from IPython import embed ; ipshell = embed()
-            np.where(ts_doy < q_data[3,i])[0] 
+            # Upper boundary outliers
+            upper_boundary_outliers = ts_doy < q_data[3,i]
+            upper_boundary_outliers.attrs = ts_doy.attrs
+            fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_upper_boundary_outliers_DoY_{doy:03d}.tif')
 
+            save_dask_array(fname=fname,
+                            data=upper_boundary_outliers,
+                            data_var=var, method=None,
+                            n_workers=4)
+
+            # Lower boundary outliers
+            lower_boundary_outliers = ts_doy < q_data[4,i]
+            lower_boundary_outliers.attrs = ts_doy.attrs
+            fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_lower_boundary_outliers_DoY_{doy:03d}.tif')
+
+            save_dask_array(fname=fname,
+                            data=lower_boundary_outliers,
+                            data_var=var, method=None,
+                            n_workers=4)
+
+        # Save quartiles
+        self.progressBar.setValue(0)
+        msg = f"Saving quartiles..."
+        self.progressBar.setFormat(msg)
+
+        for i, quartile_name in enumerate(quartile_names):
+            self.progressBar.setValue(int((i/len(quartile_names))*100))
+
+            fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_{quartile_name}.tif')
+
+            tmp_ds = xr.zeros_like(self.ts.climatology_mean)
+            tmp_ds.data = q_data[i]
+
+            save_dask_array(fname=fname, data=tmp_ds,
+                            data_var=var, method=None,
+                            n_workers=4)
 
         from IPython import embed ; ipshell = embed()
+
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     def on_pbOverlay_click(self):
         """

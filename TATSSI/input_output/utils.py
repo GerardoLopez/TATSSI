@@ -328,8 +328,13 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
             # Fill value
             dst_band.SetMetadataItem('_FillValue', str(tmp_ds.nodatavals[layer]))
             # Date
-            dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
-                                         tmp_ds.time.data[layer].astype(str))
+            if 'time' in tmp_ds.dims:
+                dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                        tmp_ds.time.data[layer].astype(str))
+            else:
+                dst_band.SetMetadataItem('RANGEBEGINNINGDATE',
+                        tmp_ds.dayofyear.data[layer].astype(str))
+
             # Data variable name
             dst_band.SetMetadataItem('data_var', data_var)
 
