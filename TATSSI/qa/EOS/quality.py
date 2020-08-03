@@ -176,10 +176,15 @@ def qualityDecoder(inRst, product, qualityLayer,
 
     xr_d = xr.open_rasterio(inRst)
     if 'nodatavals' in xr_d.attrs:
-        fill_value = int(xr_d.nodatavals[0])
-        xr_d = None
-        del(xr_d)
-    else:
+        try:
+            fill_value = int(xr_d.nodatavals[0])
+            xr_d = None
+            del(xr_d)
+        except ValueError:
+            del(xr_d)
+
+    # If there is no fill_value set
+    if not 'fill_value' in locals():
         # Get band metadata
         b = d.GetRasterBand(1)
         bm = b.GetMetadata()

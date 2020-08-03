@@ -319,6 +319,7 @@ class PlotInterpolation(QtWidgets.QMainWindow):
             self.right_ds = self.left_ds.copy(deep=True)
         else:
             self.right_ds = self.left_ds * self.mask
+            self.right_ds.attrs = self.left_ds.attrs
 
         # Right plot
         self.right_imshow = self.right_ds[0].plot.imshow(cmap='Greys_r',

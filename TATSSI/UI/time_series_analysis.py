@@ -185,6 +185,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Compute climatology
         self.ts.climatology()
 
+        from IPython import embed ; ipshell = embed()
+
         self.progressBar.setEnabled(True)
         self.progressBar.setValue(0)
         msg = f"Computing quartiles and saving outliers..."
@@ -270,6 +272,41 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                             n_workers=4)
 
         from IPython import embed ; ipshell = embed()
+        # Save climatology and per-year standard anomalies
+        fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_climatology_mean.tif')
+        save_dask_array(fname=fname, data=self.ts.climatology_mean,
+                data_var=var, method=None, n_workers=4)
+        fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_climatology_std.tif')
+        save_dask_array(fname=fname, data=self.ts.climatology_std,
+                data_var=var, method=None, n_workers=4)
+
+        self.progressBar.setValue(0)
+        msg = f"Saving climatologies and per-year anomalies..."
+        self.progressBar.setFormat(msg)
+
+        grouped_by_year = self.ts.data[var].time.groupby("time.year")
+
+        for i, (_year, _times) in enumerate(grouped_by_year):
+            self.progressBar.setValue(int((i/len(grouped_by_year))*100))
+
+            # Get time series for year
+            ts_year = self.ts.data[var].sel(time=_times.data)
+
+            # Anomalies (only for full years)
+            if not len(ts_year.time) == n_time_steps:
+                continue
+
+            anomalies = (ts_year - self.ts.climatology_mean.data) \
+                    / self.ts.climatology_std.data
+
+            fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_anomalies{_year}.tif')
+
+            anomalies.attrs = ts_year.attrs
+            save_dask_array(fname=fname, data=anomalies,
+                    data_var=var, method=None, n_workers=4)
 
         self.progressBar.setValue(0)
         self.progressBar.setEnabled(False)
@@ -481,14 +518,20 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.observed.plot(self.seasonal_decompose.observed.index[peaks],
                 ts_df[self.data_vars.currentText()][peaks],
                 label=f'Peaks [{peaks.shape[0]}]',
-                marker='x', color='C1', alpha=0.5)
+                marker='x', color='C1', alpha=0.3)
+
+        valleys, _ = find_peaks(ts_df[self.data_vars.currentText()]*(-1))
+        self.observed.plot(self.seasonal_decompose.observed.index[valleys],
+                ts_df[self.data_vars.currentText()][valleys],
+                label=f'Valleys, [{valleys.shape[0]}]',
+                marker='x', color='C2', alpha=0.3)
 
         # MK test
-        #_mk_test = mk_test(self.seasonal_decompose.trend)
+        _mk_test = mk_test(self.seasonal_decompose.trend.values)
         self.trend.plot(self.seasonal_decompose.trend.index,
                 self.seasonal_decompose.trend.values,
-                label=f'Trend')
-                #label=f'Trend {_mk_test}')
+                #label=f'Trend')
+                label=f'Trend {_mk_test}')
 
         # Set the same y limits from observed data
         self.trend.set_ylim(self.observed.get_ylim())
@@ -698,7 +741,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 ax=self.climatology)
         self.climatology.tick_params(axis='x', rotation=70)
 
-        plt.margins(tight=True)
+        # Needed in order to use a tight layout with Cartopy axes
+        self.fig.canvas.draw()
         plt.tight_layout()
 
     def __create_plot_objects(self):

@@ -10,6 +10,15 @@ from __future__ import division
 import numpy as np
 from scipy.stats import norm
 
+from numba import jit
+
+@jit(nopython=True)
+def get_s(x, n):
+    s = 0.0
+    for k in range(n-1):
+        for j in range(k+1, n):
+            s += np.sign(x[j] - x[k])
+    return s
 
 def mk_test(x, alpha=0.05):
     """
@@ -49,22 +58,20 @@ def mk_test(x, alpha=0.05):
 
     """
     n = len(x)
-
-    # calculate S
-    s = 0
-    for k in range(n-1):
-        for j in range(k+1, n):
-            s += np.sign(x[j] - x[k])
+    s = get_s(x, n)
 
     # calculate the unique data
-    unique_x, tp = np.unique(x, return_counts=True)
-    g = len(unique_x)
+    # unique_x, tp = np.unique(x, return_counts=True)
+    # g = len(unique_x)
 
     # calculate the var(s)
-    if n == g:  # there is no tie
-        var_s = (n*(n-1)*(2*n+5))/18
-    else:  # there are some ties in data
-        var_s = (n*(n-1)*(2*n+5) - np.sum(tp*(tp-1)*(2*tp+5)))/18
+    # if n == g:  # there is no tie
+    #     var_s = (n*(n-1)*(2*n+5))/18
+    # else:  # there are some ties in data
+    #     var_s = (n*(n-1)*(2*n+5) - np.sum(tp*(tp-1)*(2*tp+5)))/18
+
+    # There is no unique data
+    var_s = (n*(n-1)*(2*n+5))/18
 
     if s > 0:
         z = (s - 1)/np.sqrt(var_s)
@@ -75,6 +82,7 @@ def mk_test(x, alpha=0.05):
 
     # calculate the p_value
     p = 2*(1-norm.cdf(abs(z)))  # two tail test
+
     h = abs(z) > norm.ppf(1-alpha/2)
 
     if (z < 0) and h:
@@ -84,8 +92,7 @@ def mk_test(x, alpha=0.05):
     else:
         trend = 'no trend'
 
-    return trend, h, p, z
-
+    return trend, h, f'{p}', f'{z}'
 
 def check_num_samples(beta, delta, std_dev, alpha=0.05, n=4, num_iter=1000,
                       tol=1e-6, num_cycles=10000, m=5):
