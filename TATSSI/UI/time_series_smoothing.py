@@ -13,8 +13,8 @@ sys.path.append(str(src_dir.absolute()))
 from TATSSI.time_series.smoothn import smoothn
 from TATSSI.time_series.analysis import Analysis
 from TATSSI.time_series.smoothing import Smoothing
-from TATSSI.notebooks.helpers.time_series_smoothing import \
-        TimeSeriesSmoothing
+#from TATSSI.notebooks.helpers.time_series_smoothing import \
+#        TimeSeriesSmoothing
 
 # Smoothing methods
 import statsmodels.tsa.api as tsa
@@ -37,6 +37,9 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
 
         # Set input file name
         self.fname = fname
+
+        # Hide progress bar
+        self.progressBar.hide()
 
         # Plot input data
         self._plot()
@@ -83,14 +86,36 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
 
         # Output file name
-        smoothing_method = self.smoothing_methods.selectedItems()[0].text()
-        _fname, _ext = os.path.splitext(self.fname)
-        output_fname = f'{_fname}.{smoothing_method}.tif'
+        smoothing_methods = self.smoothing_methods.selectedItems()
+        for _method in smoothing_methods:
+            smoothing_method = _method.text()
 
-        smoother = Smoothing(fname=self.fname, output_fname=output_fname,
-                smoothing_methods=[smoothing_method])
+            _fname, _ext = os.path.splitext(self.fname)
+            _s = self.smooth_factor.value()
+            output_fname = f'{_fname}.{smoothing_method}.s_{_s}.tif'
 
-        smoother.smooth()
+            # Show and enable progress bar
+            self.progressBar.show()
+            self.progressBar.setEnabled(True)
+            _text = f"Smoothing using {smoothing_method}..."
+            self.progressBar.setFormat(_text)
+            self.progressBar.setValue(0)
+
+            # Perform smoothing
+            smoother = Smoothing(data=self.ts.data,
+                    output_fname=output_fname,
+                    smoothing_method=smoothing_method,
+                    s=self.smooth_factor.value(),
+                    progressBar=self.progressBar)
+
+            smoother.smooth()
+
+            # Disable progress bar
+            self.progressBar.setValue(0)
+
+        # Disable progress bar
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
 
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()

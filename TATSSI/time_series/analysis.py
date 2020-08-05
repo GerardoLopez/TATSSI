@@ -105,6 +105,15 @@ class Analysis():
             times = get_times_from_file_band(self.fname)
         data_array['time'] = times
 
+        # Check that _FillValue is not NaN
+        if data_array.nodatavals[0] is np.NaN:
+            # Use _FillValue from band metadata
+            _fill_value = get_fill_value_band_metadata(self.fname)
+
+            data_array.attrs['nodatavals'] = \
+                    tuple(np.full((len(data_array.nodatavals))
+                        ,_fill_value))
+
         # Create new dataset
         self.dataset_name = self.__get_dataset_name()
         dataset = data_array.to_dataset(name=self.dataset_name)

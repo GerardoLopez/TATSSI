@@ -7,6 +7,7 @@ from dask.diagnostics import ProgressBar
 import rasterio as rio
 import logging
 from rasterio import logging as rio_logging
+import statsmodels.tsa.api as tsa
 
 from TATSSI.input_output.utils import save_dask_array
 
@@ -19,7 +20,8 @@ class Smoothing():
     """
     def __init__(self, data=None, fname=None,
                  output_fname=None,
-                 smoothing_methods=['smoothn']):
+                 smoothing_method='smoothn',
+                 s=0.75, progressBar=None):
         """
         TATSSI smoother. Can receive either:
         - an xarray with dimensions time, latitude and longitude
@@ -30,12 +32,15 @@ class Smoothing():
         :param data: xarray with dimensions time, latitude and longitude
         :param fname: Input filename full path
         :param output_fname: Output filename full path
-        :param smoothing_methods: A valid TATSSI smoothing method
+        :param smoothing_method: A valid TATSSI smoothing method
+        :param s: Smoothing factor
+        :param progressBar: Progress bar object
         """
         # Set self.data
         if data is not None:
             if self.__check_is_xarray(data) is True:
                 self.data = data
+                self.dataset_name = list(data.data_vars.keys())[0]
         elif fname is not None:
             self.fname = fname
             self.dataset_name = None # set in self.__get_dataset
@@ -44,37 +49,58 @@ class Smoothing():
         # Output filename
         self.output_fname = output_fname
 
-        if type(smoothing_methods) == list:
-            self.smoothing_methods = smoothing_methods
+        self.smoothing_method = smoothing_method
+
+        self.s = s
+        self.progressBar = progressBar
 
     def smooth(self):
         """
         Method to perform a smoothing on a time series
         """
-        def __smoothn(_data):
-            # Create output array
-            _smoothed_data = smoothn(_data, isrobust=True, s=0.75,
+        def __smoothn(_data, s):
+            _smoothed_data = smoothn(_data, isrobust=True, s=s,
                      TolZ=1e-6, axis=0)[0].astype(_data.dtype)
 
             return _smoothed_data
 
+        def __smooth_tsa(_data, _method, s):
+            #fit = _method(_data.astype(float)).fit(smoothing_level=s)
+            fit = _method(_data).fit(smoothing_level=s)
+
+            # Re-cast to original data type
+            fittedvalues = np.zeros_like(fit.fittedvalues)
+            fittedvalues[0:-1] = fit.fittedvalues[1::]
+            fittedvalues[-1] = y[-1]
+
+            return fittedvalues
+
         # Create output array
         # Smooth data like a porco!
-        y = getattr(self.data, self.dataset_name)
-        smoothed_data = xr.apply_ufunc(__smoothn, y,
-                dask='parallelized', output_dtypes=[y.data.dtype])
+        y = self.data[self.dataset_name]
+
+        # Only for smoothn
+        if self.smoothing_method == 'smoothn':
+            smoothed_data = xr.apply_ufunc(__smoothn, y, self.s,
+                    dask='parallelized', output_dtypes=[y.data.dtype])
+        else:
+            _method = getattr(tsa, self.smoothing_method)
+            smoothed_data = xr.apply_ufunc(
+                    __smooth_tsa, y, _method, self.s,
+                    dask='parallelized', output_dtypes=[y.data.dtype])
 
         # Copy attributes
-        smoothed_data.attrs = getattr(self.data, self.dataset_name).attrs
+        smoothed_data.attrs = self.data[self.dataset_name].attrs
 
-        with ProgressBar():
-            smoothed_data = smoothed_data.compute()
+        # with ProgressBar():
+        #     smoothed_data = smoothed_data.compute()
 
         save_dask_array(fname=self.output_fname, data=smoothed_data,
-                        data_var=self.dataset_name, method='smoothn',
-                        dask=False)
-                        #tile_size=256, n_workers=3,
-                        #threads_per_worker=1, memory_limit='7GB')
+                data_var=self.dataset_name, method=self.smoothing_method,
+                progressBar=self.progressBar)
+                #dask=False)
+                #tile_size=256, n_workers=3,
+                #threads_per_worker=1, memory_limit='7GB')
 
     def __get_dataset(self):
         """

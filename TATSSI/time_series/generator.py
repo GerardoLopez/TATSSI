@@ -370,7 +370,7 @@ class Generator():
             if data_array.nodatavals[0] is np.NaN:
                 # Use _FillValue from VRT firts band metadata
                 if _fill_value is None:
-                    _fill_value = self.get_fill_value_band_metadata(vrt)
+                    _fill_value = get_fill_value_band_metadata(vrt)
 
                 data_array.attrs['nodatavals'] = \
                         tuple(np.full((len(data_array.nodatavals))
@@ -553,29 +553,3 @@ class Generator():
             raise(e)
 
         return sub_dir
-
-    @staticmethod
-    def get_fill_value_band_metadata(vrt):
-        """
-        Get fill value from the first layer of a VRT file
-        """
-        # Open file
-        _d = gdal.Open(vrt)
-        # Get first file from VRT layerstack
-        _file = _d.GetFileList()[1]
-
-        _d = gdal.Open(_file)
-        # Get metatada from band
-        _md = _d.GetRasterBand(1).GetMetadata()
-
-        # Find _FillValue
-        _tmp_fill_values = []
-        for key, value in _md.items():
-            if 'fillvalue' in key.lower():
-                _tmp_fill_values.append(int(value))
-
-        if len(_tmp_fill_values) > 0:
-            return _tmp_fill_values[0]
-        else:
-            return 0
-

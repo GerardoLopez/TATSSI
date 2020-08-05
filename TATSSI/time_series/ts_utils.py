@@ -142,3 +142,31 @@ def get_chunk_size(filename):
     chunks = (raster_count, block_size[0], block_size[1])
 
     return chunks
+
+def get_fill_value_band_metadata(fname):
+    """
+    Get fill value from the first layer of a GDAL compatible file
+    """
+    # Open file
+    _d = gdal.Open(fname)
+    # Get first file from VRT layerstack
+    file_list = _d.GetFileList()
+    if len(file_list) == 1:
+        _file = file_list[0]
+    else:
+        _file = file_list[1]
+
+    _d = gdal.Open(_file)
+    # Get metatada from band
+    _md = _d.GetRasterBand(1).GetMetadata()
+
+    # Find _FillValue
+    _tmp_fill_values = []
+    for key, value in _md.items():
+        if 'fillvalue' in key.lower():
+            _tmp_fill_values.append(int(value))
+
+    if len(_tmp_fill_values) > 0:
+        return _tmp_fill_values[0]
+    else:
+        return 0
