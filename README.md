@@ -48,8 +48,9 @@ There are some [Jupyter Notebooks](https://jupyter.org/) associated to each modu
 * [Aplicaciones del análisis de series de tiempo](presentaciones/AplicasionesSeriesTiempo.pdf)
 * [Análisis de algunos métodos de interpolación](presentaciones/AnalisisMetodosInterpolacion.pdf)
 
-## Some plots...
-A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
+## Some plots and presentations...
+* A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
+* Presentation at [JSM2020](https://docs.google.com/presentation/d/1H50s65jyT2G8JmNj8m0BRneFYpD1Ze7UO7lhbnmYaNg/edit?usp=sharing)
 
 ### Funding
 TATSSI is funded by "Convocatoria de Proyectos de Desarrollo Científico para Atender Problemas Nacionales 2016" Project No. 2760; P.I.: Inder Tecuapetla. Collaborators: Gerardo Lopez Saldana, Rainer Ressl and Isabel Cruz.
