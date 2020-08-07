@@ -164,7 +164,7 @@ def get_fill_value_band_metadata(fname):
     _tmp_fill_values = []
     for key, value in _md.items():
         if 'fillvalue' in key.lower():
-            _tmp_fill_values.append(int(value))
+            _tmp_fill_values.append(int(float(value)))
 
     if len(_tmp_fill_values) > 0:
         return _tmp_fill_values[0]

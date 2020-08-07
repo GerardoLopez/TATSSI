@@ -38,9 +38,6 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         # Set input file name
         self.fname = fname
 
-        # Hide progress bar
-        self.progressBar.hide()
-
         # Plot input data
         self._plot()
 
@@ -56,12 +53,20 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         # imshow plots
         self.img_imshow = None
 
+        # Hide progress bar
+        self.progressBar.hide()
+        # Disable smoothing button
+        self.pbSmooth.setEnabled(False)
+
         # Get widgets
         self.time_steps.currentIndexChanged.connect(
                 self.__on_time_steps_change)
 
         self.pbSmooth.clicked.connect(
                 self.on_pbSmooth_click)
+
+        self.smoothing_methods.clicked.connect(
+                self.on_smoothing_methods_click)
 
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
@@ -76,6 +81,17 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
 
         # Set smoothing methods
         self.__fill_smoothing_methods()
+
+    def on_smoothing_methods_click(self):
+        """
+        Enable the smoothing push button if there are smoothing
+        methods selected
+        """
+        if len(self.smoothing_methods.selectedItems()) == 0:
+            # Disable smoothing button
+            self.pbSmooth.setEnabled(False)
+        else:
+            self.pbSmooth.setEnabled(True)
 
     def on_pbSmooth_click(self):
         """
