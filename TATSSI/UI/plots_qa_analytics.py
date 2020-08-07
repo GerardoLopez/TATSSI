@@ -66,7 +66,11 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         self.pb_Interpolate.clicked.connect(
                 self.on_pbInterpolate_click)
 
+        self.interpolation_methods.clicked.connect(
+                self.on_interpolation_methods_click)
+
         self.progressBar.setEnabled(False)
+        self.pb_Interpolate.setEnabled(False)
 
         # Change combobox stylesheet and add scrollbar
         self.time_steps.setStyleSheet("combobox-popup: 0")
@@ -135,6 +139,16 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         # Disable progress bar
         self.progressBar.setValue(0)
         self.progressBar.setEnabled(False)
+
+    def on_interpolation_methods_click(self):
+        """
+        Enable the pbInterpolate push button when there is an
+        interpolation method selected
+        """
+        if len(self.interpolation_methods.selectedItems()) > 0:
+            self.pb_Interpolate.setEnabled(True)
+        else:
+            self.pb_Interpolate.setEnabled(False)
 
     @pyqtSlot(int)
     def __on_time_steps_change(self, index):
