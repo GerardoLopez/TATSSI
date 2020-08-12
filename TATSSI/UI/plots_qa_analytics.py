@@ -130,7 +130,7 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         tsi = TimeSeriesInterpolation(self.qa_analytics, isNotebook=False)
         # Enable progress bar
         self.progressBar.setEnabled(True)
-        self.progressBar.setValue(0)
+        self.progressBar.setValue(1)
         tsi.interpolate(progressBar=self.progressBar)
 
         # Standard cursor

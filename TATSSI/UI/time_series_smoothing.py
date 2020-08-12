@@ -115,7 +115,7 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
             self.progressBar.setEnabled(True)
             _text = f"Smoothing using {smoothing_method}..."
             self.progressBar.setFormat(_text)
-            self.progressBar.setValue(0)
+            self.progressBar.setValue(1)
 
             # Perform smoothing
             smoother = Smoothing(data=self.ts.data,

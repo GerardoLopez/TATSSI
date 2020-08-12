@@ -151,7 +151,7 @@ def get_fill_value_band_metadata(fname):
     _d = gdal.Open(fname)
     # Get first file from VRT layerstack
     file_list = _d.GetFileList()
-    if len(file_list) == 1:
+    if len(file_list) <= 2:
         _file = file_list[0]
     else:
         _file = file_list[1]
@@ -164,7 +164,10 @@ def get_fill_value_band_metadata(fname):
     _tmp_fill_values = []
     for key, value in _md.items():
         if 'fillvalue' in key.lower():
-            _tmp_fill_values.append(int(float(value)))
+            if value == 'nan' or value == np.NaN:
+                _tmp_fill_values.append(np.NaN)
+            else:
+                _tmp_fill_values.append(int(float(value)))
 
     if len(_tmp_fill_values) > 0:
         return _tmp_fill_values[0]
