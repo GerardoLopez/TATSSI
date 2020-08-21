@@ -32,21 +32,26 @@ class Constants:
 
         for i in range(gdal.GetDriverCount()):
             driver = gdal.GetDriver(i)
-
             driver_metadata = driver.GetMetadata()
-            # Only add the driver to the available DQ supported formats
-            # if it has and associated file name extension
+
             if 'DMD_EXTENSION' in driver_metadata:
                 ID.append(i)
                 ShortName.append(driver.ShortName)
                 LongName.append(driver.LongName)
                 Extension.append(driver_metadata['DMD_EXTENSION'])
+            elif 'DMD_EXTENSIONS' in driver_metadata:
+                ID.append(i)
+                ShortName.append(driver.ShortName)
+                LongName.append(driver.LongName)
+                Extension.append(driver_metadata['DMD_EXTENSIONS'])
+            else:
+                continue
 
-                # Update dictionary
-                driver_dict.update({'ID' : ID,
-                                    'short_name' : ShortName,
-                                    'long_name' : LongName,
-                                    'extension' : Extension})
+            # Update dictionary
+            driver_dict.update({'ID' : ID,
+                                'short_name' : ShortName,
+                                'long_name' : LongName,
+                                'extension' : Extension})
 
         df = pd.DataFrame(data = driver_dict)
 

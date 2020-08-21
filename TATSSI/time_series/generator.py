@@ -27,7 +27,7 @@ class Generator():
     """
     def __init__(self, source_dir, product, version,
             year=None, start=None, end=None, data_format='hdf',
-            progressBar=None, preprocessed=False):
+            progressBar=None, preprocessed=False, extent=None):
         """
         Constructor for Generator class
         """
@@ -68,6 +68,7 @@ class Generator():
             self.__set_start_end_dates(start, end)
 
             self.progressBar = progressBar
+            self.extent = extent
 
     def __get_product_dates_range(self):
         """
@@ -204,7 +205,8 @@ class Generator():
                     Translate(source_img=sds[0],
                               target_img=output_fname,
                               output_format=output_format,
-                              options=options)
+                              options=options,
+                              extent=self.extent)
 
             else:
                 # Get dimensions
@@ -230,7 +232,8 @@ class Generator():
                     Translate(source_img=fname,
                               target_img=output_fname,
                               output_format=output_format,
-                              options=options)
+                              options=options,
+                              extent=self.extent)
 
             if self.progressBar is not None:
                 self.progressBar.setValue((i/n_files) * 100.0)

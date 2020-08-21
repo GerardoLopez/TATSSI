@@ -5,3 +5,4 @@ from .time_series_generator import *
 from .time_series_smoothing import *
 from .time_series_analysis import *
 from .plots_time_series_analysis import *
+from .plot_time_series_generator import *

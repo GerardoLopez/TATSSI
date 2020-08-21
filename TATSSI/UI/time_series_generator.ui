@@ -6,41 +6,27 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>843</width>
-    <height>310</height>
+    <width>1077</width>
+    <height>618</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Time series generator</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QPushButton" name="pbDataDirectory">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>Select data directory</string>
-     </property>
-    </widget>
-   </item>
-   <item row="14" column="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
    <item row="5" column="0" colspan="4">
     <widget class="QTableWidget" name="tvProducts">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
      </property>
      <column>
       <property name="text">
@@ -209,34 +195,16 @@
      </column>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QLabel" name="lblProductVersion_">
-     <property name="text">
-      <string>Product and Version</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="2" colspan="2">
-    <widget class="QLabel" name="lblProductVersion">
-     <property name="font">
-      <font>
-       <underline>true</underline>
-      </font>
+   <item row="0" column="0">
+    <widget class="QPushButton" name="pbDataDirectory">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
      <property name="text">
-      <string>MCD12Q1.006</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2" colspan="2">
-    <widget class="QLabel" name="lblDataDir">
-     <property name="font">
-      <font>
-       <underline>true</underline>
-      </font>
-     </property>
-     <property name="text">
-      <string>/home/tatssi/Projects/data/MOD13A2.006</string>
+      <string>Select data directory</string>
      </property>
     </widget>
    </item>
@@ -257,43 +225,61 @@
      </property>
     </widget>
    </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="lblProductVersion_">
+     <property name="text">
+      <string>Product and Version</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1" colspan="3">
+    <widget class="QLabel" name="lblProductVersion">
+     <property name="font">
+      <font>
+       <underline>true</underline>
+      </font>
+     </property>
+     <property name="text">
+      <string>MCD12Q1.006</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="3">
+    <widget class="QLabel" name="lblDataDir">
+     <property name="font">
+      <font>
+       <underline>true</underline>
+      </font>
+     </property>
+     <property name="text">
+      <string>/home/tatssi/Projects/data/MOD13A2.006</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QPushButton" name="pbGetSubsetExtent">
+     <property name="text">
+      <string>Select spatial subset</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="lblFormat">
+     <property name="text">
+      <string>Format | Driver | Extension</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2" colspan="2">
+    <widget class="QComboBox" name="cmbFormats"/>
+   </item>
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>Downloaders</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>Downloaders</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <designerdata>
   <property name="gridDeltaX">
    <number>10</number>

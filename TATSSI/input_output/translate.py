@@ -27,8 +27,9 @@ class Translate():
                       "INTERLEAVE=BAND"]
 
     def __init__(self, source_img, target_img,
-                 output_format = 'GTiff',
-                 options = None):
+                 output_format='GTiff',
+                 options=None,
+                 extent=None):
 
         # Check that GDAL can handle input dataset
         check_source_img(source_img)
@@ -37,11 +38,11 @@ class Translate():
         target_img_dir = os.path.dirname(target_img)
         if not os.path.exists(target_img_dir):
             raise(IOError("Output directory does not exist!"))
+
         self.target_img = target_img
-
         self.output_format = output_format
-
         self.options = options
+        self.extent = extent
 
         self.__translate()
 
@@ -60,6 +61,22 @@ class Translate():
             proj, gt = self.__get_srs_hdf5(src_dataset.GetFileList()[0])
             src_dataset.SetProjection(proj)
             src_dataset.SetGeoTransform(gt)
+
+        if not self.extent is None:
+            # GDAL warp option
+            # outputBounds (minX, minY, maxX, maxY)
+            # self.extent is (w, e, s, n)
+            outputBounds = (self.extent[0],
+                            self.extent[2],
+                            self.extent[1],
+                            self.extent[3])
+            gdal_warp_options = gdal.WarpOptions(
+                    outputBounds=outputBounds,
+                    format='MEM')
+
+            # Warp to a memory dataset        
+            src_dataset = gdal.Warp('', src_dataset,
+                    options=gdal_warp_options)
 
         return src_dataset
 
@@ -126,14 +143,14 @@ class Translate():
 
         # Set output format
         driver = gdal.GetDriverByName(self.output_format)
+
         # Do translation
         if self.options is None:
             dst_dataset = driver.CreateCopy(self.target_img,
-                                            src_dataset, 0)
+                    src_dataset, 0)
         else:
             dst_dataset = driver.CreateCopy(self.target_img,
-                                            src_dataset, 0,
-                                            options=self.options)
+                    src_dataset, 0, options=self.options)
 
         # Flush dataset
         dst_dataset = None

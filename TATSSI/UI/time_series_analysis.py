@@ -12,7 +12,8 @@ from TATSSI.time_series.smoothn import smoothn
 from TATSSI.time_series.analysis import Analysis
 from TATSSI.time_series.mk_test import mk_test
 from TATSSI.UI.plots_time_series_analysis import PlotAnomalies
-from TATSSI.input_output.utils import save_dask_array
+from TATSSI.input_output.utils import save_dask_array, \
+        get_geotransform_from_xarray
 from TATSSI.UI.helpers.utils import *
 
 #from TATSSI.notebooks.helpers.time_series_analysis import \
@@ -24,10 +25,12 @@ import numpy as np
 from rasterio import logging as rio_logging
 from statsmodels.tsa.seasonal import seasonal_decompose
 from scipy.signal import find_peaks
+from scipy.stats import norm
 
 import seaborn as sbn
 
 from dask.diagnostics import ProgressBar
+from numba import jit
 
 import matplotlib
 matplotlib.use("Qt5Agg")
@@ -96,6 +99,11 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.left_imshow = None
         self.right_imshow = None
         self.projection = None
+        # decomposition objects
+        self.trend = None
+        self.seasonal = None
+        self.resid_a = None
+        self.resid_m = None
 
         # Connect time steps with corresponsing method
         self.time_steps_left.currentIndexChanged.connect(
@@ -120,8 +128,14 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.pbOverlay.clicked.connect(
                 self.on_pbOverlay_click)
         # Save products button
-        self.pbSaveProducts.clicked.connect(
-                self.on_pbSaveProducts_click)
+        self.pbClimatology.clicked.connect(
+                self.on_pbClimatology_click)
+        # Decomposition button
+        self.pbDecomposition.clicked.connect(
+                self.on_pbDecomposition_click)
+        # MK test
+        self.pbMKTest.clicked.connect(
+                self.on_pbMKTest_click)
 
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
@@ -147,6 +161,186 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Climatology year
         self.climatology_year = None
         self.anomalies = None
+
+    def on_pbMKTest_click(self):
+        """
+        Compute and save Mann-Kendall test products
+        """
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.progressBar.setEnabled(True)
+        msg = f"Computing Mann-Kendall test..."
+        self.progressBar.setFormat(msg)
+        self.progressBar.setValue(1)
+
+        # Get trend based on a moving window
+        period = len(self.single_year_ds)
+        # Get data type
+        dtype = self.left_ds.dtype
+
+        # Check if we have to subset the data
+        if not self.left_imshow.get_extent() == self.left_p.get_extent():
+            # Create subset
+            w, e, s, n = self.left_p.get_extent()
+            _data = self.left_ds.sel(longitude=slice(int(w),int(e)),
+                    latitude=slice(int(n),int(s)))
+
+            new_gt = get_geotransform_from_xarray(_data)
+            _data.attrs['transform'] = new_gt
+        else:
+            _data = self.left_ds
+
+        def __get_z(x, s=None):
+            n = x.shape[2]
+
+            for k in range(n-1):
+                for j in range(k+1, n):
+                    if s is None:
+                        s = np.sign(x[:,:,j] - x[:,:,k])
+                    else:
+                        s += np.sign(x[:,:,j] - x[:,:,k])
+
+            var_s = (n*(n-1)*(2*n+5))/18
+
+            z = np.where(s > 0,
+                    (s - 1)/np.sqrt(var_s),
+                    (s + 1)/np.sqrt(var_s))
+
+            z[s==0] = 0.0
+
+            return z
+
+        def __get_p(z):
+            p = 2*(1-norm.cdf(abs(z)))  # two tail test
+
+            return p
+
+        #def __get_h(z, alpha=0.05):
+        def __get_h(z, alpha=0.01):
+            h = abs(z) > norm.ppf(1-alpha/2)
+
+            return h
+
+        z = xr.apply_ufunc(__get_z, _data,
+                input_core_dims=[['time']],
+                dask='parallelized',
+                output_dtypes=[np.float32])
+
+        z = z.compute()
+
+        p = xr.apply_ufunc(__get_p, z,
+                dask='parallelized',
+                output_dtypes=[np.float32])
+
+        h = xr.apply_ufunc(__get_h, z,
+                dask='parallelized',
+                output_dtypes=[np.int8])
+
+        # Save products
+        var = self.data_vars.currentText()
+        products = [z, p, h]
+        product_names = ['z', 'p', 'h']
+
+        for i, product in enumerate(product_names):
+            fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_mann-kendall_test_{product}.tif')
+
+            msg = f"Saving Mann-Kendal test - {product}..."
+            self.progressBar.setFormat(msg)
+            self.progressBar.setValue(1)
+
+            # Set attributes from input data
+            products[i].attrs = _data.attrs
+
+            # Add time dimension
+            products[i] = products[i].expand_dims(
+                    dim='time', axis=0)
+
+            save_dask_array(fname=fname, data=products[i],
+                    data_var=var, method=None,
+                    n_workers=4, progressBar=self.progressBar)
+
+            self.progressBar.setValue(1)
+
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
+
+    def on_pbDecomposition_click(self):
+        """
+        Save decomposition products:
+            Trend, Seasonality, Residuals
+        """
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.progressBar.setEnabled(True)
+        msg = f"Computing time series decomposition..."
+        self.progressBar.setFormat(msg)
+        self.progressBar.setValue(1)
+
+        # Extract period from the current single year
+        period = len(self.single_year_ds)
+        nobs = len(self.left_ds)
+
+        # Get data type
+        dtype = self.left_ds.dtype
+
+        # Get trend based on a moving window
+        trend = self.left_ds.rolling(time=period, min_periods=1,
+                center=True).mean().astype(dtype)
+        trend.attrs = self.left_ds.attrs
+
+        period_averages = self.left_ds.groupby("time.dayofyear")
+        period_averages = period_averages.mean(axis=0).astype(dtype)
+
+        if self.model.currentText()[0] == 'a':
+            period_averages -= period_averages.mean(axis=0).astype(dtype)
+            seasonal = np.tile(period_averages.T, nobs // period + 1).T[:nobs]
+            residuals = (self.left_ds - trend - seasonal).astype(dtype)
+        else:
+            period_averages /= period_averages.mean(axis=0).astype(dtype)
+            seasonal = np.tile(period_averages.T, nobs // period + 1).T[:nobs]
+            residuals = (self.left_ds / seasonal / trend).astype(dtype)
+
+        seasonal = None
+        del(seasonal)
+
+        period_averages.attrs = self.left_ds.attrs
+        residuals.attrs = self.left_ds.attrs
+
+        # Save to disk
+        products = [trend, period_averages, residuals]
+        product_names = ['trend', 'seasonality', 'residuals']
+
+        var = self.data_vars.currentText()
+
+        for i, product in enumerate(product_names):
+            fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_seasonal_decomposition_{product}.tif')
+
+            msg = f"Computing time series decomposition - {product}..."
+            self.progressBar.setFormat(msg)
+            self.progressBar.setValue(1)
+
+            save_dask_array(fname=fname, data=products[i],
+                            data_var=var, method=None,
+                            n_workers=4, progressBar=self.progressBar)
+
+            self.progressBar.setValue(1)
+
+        # Delete big arrays onced they are saved
+        period_averages, residuals = None, None
+        del(period_averages, residuals)
+
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     @pyqtSlot(int)
     def __on_time_steps_change(self, index):
@@ -175,7 +369,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
 
-    def on_pbSaveProducts_click(self):
+    def on_pbClimatology_click(self):
         """
         Save to COGs all the time series analysis products
         """
@@ -185,10 +379,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Compute climatology
         self.ts.climatology()
 
-        from IPython import embed ; ipshell = embed()
-
         self.progressBar.setEnabled(True)
-        self.progressBar.setValue(0)
+        self.progressBar.setValue(1)
         msg = f"Computing quartiles and saving outliers..."
         self.progressBar.setFormat(msg)
         
@@ -262,7 +454,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
             self.progressBar.setValue(int((i/len(quartile_names))*100))
 
             fname = (f'{os.path.splitext(self.fname)[0]}'
-                     f'_{quartile_name}.tif')
+                     f'_climatology_quartile_{quartile_name}.tif')
 
             tmp_ds = xr.zeros_like(self.ts.climatology_mean)
             tmp_ds.data = q_data[i]
@@ -271,7 +463,6 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                             data_var=var, method=None,
                             n_workers=4)
 
-        from IPython import embed ; ipshell = embed()
         # Save climatology and per-year standard anomalies
         fname = (f'{os.path.splitext(self.fname)[0]}'
                      f'_climatology_mean.tif')
@@ -426,7 +617,12 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         times = list(map(str, times))
         self.years.addItems(times)
 
-        current_year = times[0]
+        # Set default year as first full year
+        if len(times) > 1:
+            current_year = times[1]
+            self.years.setCurrentIndex(1)
+        else:
+            current_year = times[0]
 
         time_slice = slice(f"{current_year}-01-01",
                            f"{current_year}-12-31",)
@@ -471,9 +667,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         # Clear subplots
         self.observed.clear()
-        self.trend.clear()
-        self.seasonal.clear()
-        self.resid.clear()
+        self.trend_p.clear()
+        self.seasonal_p.clear()
+        self.resid_p.clear()
         self.climatology.clear()
 
         # Delete last reference point
@@ -500,48 +696,55 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
             left_plot_sd = left_plot_sd.compute()
             single_year_ds = single_year_ds.compute()
 
-        # Seasonal decompose
         ts_df = left_plot_sd.to_dataframe()
-        self.seasonal_decompose = seasonal_decompose(
-                ts_df[self.data_vars.currentText()],
-                model=self.model.currentText(),
-                freq=self.single_year_ds.shape[0],
-                extrapolate_trend='freq')
 
-        # Plot seasonal decompose
-        self.observed.plot(self.seasonal_decompose.observed.index,
-                self.seasonal_decompose.observed.values,
-                label='Observed')
+        # Mann-Kendall test
+        _mk_test = mk_test(left_plot_sd.data)
 
-        peaks, _ = find_peaks(ts_df[self.data_vars.currentText()])
-                #height=2000)
-        self.observed.plot(self.seasonal_decompose.observed.index[peaks],
-                ts_df[self.data_vars.currentText()][peaks],
+        # Observations + peaks and valleys
+        self.observed.plot(left_plot_sd.time, left_plot_sd.data,
+                label=f'Observed {_mk_test}')
+
+        peaks, _ = find_peaks(left_plot_sd.data)
+        self.observed.plot(left_plot_sd.time[peaks],
+                left_plot_sd[peaks],
                 label=f'Peaks [{peaks.shape[0]}]',
                 marker='x', color='C1', alpha=0.3)
 
-        valleys, _ = find_peaks(ts_df[self.data_vars.currentText()]*(-1))
-        self.observed.plot(self.seasonal_decompose.observed.index[valleys],
-                ts_df[self.data_vars.currentText()][valleys],
+        valleys, _ = find_peaks(left_plot_sd.data*(-1))
+        self.observed.plot(left_plot_sd.time[valleys],
+                left_plot_sd[valleys],
                 label=f'Valleys, [{valleys.shape[0]}]',
                 marker='x', color='C2', alpha=0.3)
 
-        # MK test
-        _mk_test = mk_test(self.seasonal_decompose.trend.values)
-        self.trend.plot(self.seasonal_decompose.trend.index,
-                self.seasonal_decompose.trend.values,
-                #label=f'Trend')
-                label=f'Trend {_mk_test}')
+        # Seasonal decompose
+        period = len(self.single_year_ds)
+        nobs = len(left_plot_sd)
+
+        # TODO interpolate and extrapolate trend
+        trend = left_plot_sd.rolling(time=period, min_periods=1,
+                center=True).mean()
+        self.trend_p.plot(left_plot_sd.time.data, trend.data,
+                label=f'Trend (window = {period})')
+
+        period_averages = left_plot_sd.groupby("time.dayofyear").mean()
+
+        if self.model.currentText()[0] == 'a':
+            period_averages -= period_averages.mean(axis=0)
+            seasonal = np.tile(period_averages.T, nobs // period + 1).T[:nobs]
+            resid = (left_plot_sd - trend) - seasonal
+        else:
+            period_averages /= period_averages.mean(axis=0)
+            seasonal = np.tile(period_averages.T, nobs // period + 1).T[:nobs]
+            resid = left_plot_sd / seasonal / trend
+
+        self.seasonal_p.plot(left_plot_sd.time.data, seasonal,
+                label='Seasonality')
+        self.resid_p.plot(left_plot_sd.time.data, resid.data,
+                label='Residuals')
 
         # Set the same y limits from observed data
-        self.trend.set_ylim(self.observed.get_ylim())
-
-        self.seasonal.plot(self.seasonal_decompose.seasonal.index,
-                self.seasonal_decompose.seasonal.values,
-                label='Seasonality')
-        self.resid.plot(self.seasonal_decompose.resid.index,
-                self.seasonal_decompose.resid.values,
-                label='Residuals')
+        self.trend_p.set_ylim(self.observed.get_ylim())
 
         # Climatology
         sbn.boxplot(ts_df.index.dayofyear,
@@ -556,7 +759,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.climatology.tick_params(axis='x', rotation=70)
 
         # Change point
-        r_vector = FloatVector(self.seasonal_decompose.trend.values)
+        r_vector = FloatVector(trend.data)
         #changepoint_r = self.cpt.cpt_mean(r_vector)
         #changepoints_r = self.cpt.cpt_var(r_vector, method='PELT',
         #        penalty='Manual', pen_value='2*log(n)')
@@ -570,20 +773,20 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 i_cpt = int(i_cpt) + 1
                 cpt_index = self.seasonal_decompose.trend.index[i_cpt]
                 if i == 0 :
-                    self.trend.axvline(cpt_index, color='black',
+                    self.trend_p.axvline(cpt_index, color='black',
                             lw='1.0', label='Change point')
                 else:
-                    self.trend.axvline(cpt_index, color='black', lw='1.0')
+                    self.trend_p.axvline(cpt_index, color='black', lw='1.0')
 
         # Legend
         self.observed.legend(loc='best', fontsize='small',
                 fancybox=True, framealpha=0.5)
         self.observed.set_title('Time series decomposition')
-        self.trend.legend(loc='best', fontsize='small',
+        self.trend_p.legend(loc='best', fontsize='small',
                 fancybox=True, framealpha=0.5)
-        self.seasonal.legend(loc='best', fontsize='small',
+        self.seasonal_p.legend(loc='best', fontsize='small',
                 fancybox=True, framealpha=0.5)
-        self.resid.legend(loc='best', fontsize='small',
+        self.resid_p.legend(loc='best', fontsize='small',
                 fancybox=True, framealpha=0.5)
 
         #self.climatology.legend([self.years.value], loc='best',
@@ -594,9 +797,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         # Grid
         self.observed.grid(axis='both', alpha=.3)
-        self.trend.grid(axis='both', alpha=.3)
-        self.seasonal.grid(axis='both', alpha=.3)
-        self.resid.grid(axis='both', alpha=.3)
+        self.trend_p.grid(axis='both', alpha=.3)
+        self.seasonal_p.grid(axis='both', alpha=.3)
+        self.resid_p.grid(axis='both', alpha=.3)
         self.climatology.grid(axis='both', alpha=.3)
 
         # Redraw plot
@@ -731,9 +934,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         # Plot seasonal decompose
         self.seasonal_decompose.observed.plot(ax=self.observed)
-        self.seasonal_decompose.trend.plot(ax=self.trend)
-        self.seasonal_decompose.seasonal.plot(ax=self.seasonal)
-        self.seasonal_decompose.resid.plot(ax=self.resid)
+        self.seasonal_decompose.trend.plot(ax=self.trend_p)
+        self.seasonal_decompose.seasonal.plot(ax=self.seasonal_p)
+        self.seasonal_decompose.resid.plot(ax=self.resid_p)
 
         # Climatology
         sbn.boxplot(ts_df.index.dayofyear,
@@ -789,11 +992,11 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.observed = plt.subplot2grid((4, 4), (0, 2), colspan=2)
         self.observed.xaxis.set_major_formatter(years_fmt)
 
-        self.trend = plt.subplot2grid((4, 4), (1, 2), colspan=2,
+        self.trend_p = plt.subplot2grid((4, 4), (1, 2), colspan=2,
                 sharex=self.observed)
-        self.seasonal = plt.subplot2grid((4, 4), (2, 2), colspan=2,
+        self.seasonal_p = plt.subplot2grid((4, 4), (2, 2), colspan=2,
                 sharex=self.observed)
-        self.resid = plt.subplot2grid((4, 4), (3, 2), colspan=2,
+        self.resid_p = plt.subplot2grid((4, 4), (3, 2), colspan=2,
                 sharex=self.observed)
 
     def _plot(self, cmap='viridis', dpi=72):
@@ -829,6 +1032,53 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         toolbar.setFont(font)
 
         self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
+
+    def __get_change_points(self, trend):
+        """
+        Compute change points on the detrended time series
+        """
+        msg = f"Identifying change points..."
+        self.progressBar.setFormat(msg)
+        self.progressBar.setValue(1)
+
+        trend = trend.compute()
+
+        # Output data
+        output = xr.zeros_like(trend).astype(np.int16).load()
+
+        layers, rows, cols = trend.shape
+
+        for x in range(cols):
+            print(x)
+            self.progressBar.setValue(int((x / rows) * 100))
+            #_data = trend[:,:,x].compute()
+            for y in range(rows):
+                _data = trend[:,y,x]
+                r_vector = FloatVector(_data)
+
+                #changepoint_r = self.cpt.cpt_mean(r_vector)
+                #changepoints_r = self.cpt.cpt_var(r_vector, method='PELT',
+                #        penalty='Manual', pen_value='2*log(n)')
+
+                changepoints_r = self.cpt.cpt_meanvar(r_vector,
+                        test_stat='Normal', method='BinSeg', penalty="SIC")
+
+                changepoints = numpy2ri.rpy2py(
+                        self.cpt.cpts(changepoints_r)).astype(int)
+
+                if changepoints.shape[0] > 0:
+                    output[changepoints+1, y, x] = True
+
+        fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_change_points.tif')
+
+        msg = f"Saving change points..."
+        self.progressBar.setFormat(msg)
+        self.progressBar.setValue(1)
+
+        save_dask_array(fname=fname, data=output,
+                data_var=self.data_vars.currentText(), method=None,
+                n_workers=4, progressBar=self.progressBar)
 
     @staticmethod
     def message_box(message_text):

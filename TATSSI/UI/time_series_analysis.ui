@@ -53,14 +53,14 @@
    <widget class="QPushButton" name="pbAnomalies">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>870</x>
       <y>10</y>
-      <width>191</width>
+      <width>131</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Compute and plot anomalies</string>
+     <string>Standard anomalies</string>
     </property>
    </widget>
    <widget class="QLabel" name="lblYears">
@@ -160,25 +160,25 @@
      <number>12</number>
     </property>
    </widget>
-   <widget class="QPushButton" name="pbSaveProducts">
+   <widget class="QPushButton" name="pbClimatology">
     <property name="geometry">
      <rect>
-      <x>1230</x>
+      <x>1290</x>
       <y>10</y>
-      <width>191</width>
+      <width>131</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Save products</string>
+     <string>Climatology</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pbOverlay">
     <property name="geometry">
      <rect>
-      <x>830</x>
+      <x>730</x>
       <y>10</y>
-      <width>191</width>
+      <width>131</width>
       <height>23</height>
      </rect>
     </property>
@@ -192,14 +192,40 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>830</x>
+      <x>730</x>
       <y>40</y>
-      <width>591</width>
+      <width>691</width>
       <height>23</height>
      </rect>
     </property>
     <property name="value">
      <number>0</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbDecomposition">
+    <property name="geometry">
+     <rect>
+      <x>1150</x>
+      <y>10</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Decomposition</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbMKTest">
+    <property name="geometry">
+     <rect>
+      <x>1010</x>
+      <y>10</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Trend analysis</string>
     </property>
    </widget>
   </widget>

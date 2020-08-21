@@ -15,6 +15,23 @@ import logging
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
+def get_geotransform_from_xarray(data):
+    """
+    Get the GeoTransform tuple from xarray latitude and longitude
+    dimensions. GeoTransform is affine compatible with xarray and
+    rasterio.
+    :param data: xarray
+    :return GeoTransform tuple
+    """
+    # Get current GeoTransform
+    x_res = data.longitude.values[1] - data.longitude.values[0]
+    y_res = data.latitude.values[1] - data.latitude.values[0]
+
+    gt = (x_res, 0.0, data.longitude.data[0] - (x_res / 2.),
+          0.0, y_res, data.latitude.data[0] - (y_res / 2.))
+
+    return gt
+
 def get_image_dimensions(fname):
     """
     Get dimensions in rows, columns and number of bands of an image
@@ -311,7 +328,11 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
     block = tile_size
     for start_row in range(0, rows, block):
         if progressBar is not None:
-            progressBar.setValue((start_row/rows) * 100.0)
+            _progressBar_val = (start_row/rows) * 100.0
+            if _progressBar_val == 0:
+                progressBar.setValue(1)
+            else:
+                progressBar.setValue(_progressBar_val)
 
         if start_row + block > rows:
             end_row = rows
@@ -350,5 +371,4 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
         #client.close()
 
     LOG.info(f"File {fname} saved")
-
 
