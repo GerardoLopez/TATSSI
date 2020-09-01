@@ -554,13 +554,13 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Wait cursor
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        # The get_climatology method will create two datasets:
+        first_run = False
+
+        # The climatology method will create two datasets:
         #   ts.climatology_mean
         #   ts.climatology_std
         if self.ts.climatology_mean is None and \
-            self.ts.climatology_std is None and \
-            (self.climatology_year is None or \
-             self.climatology_year != self.years.currentText()):
+            self.ts.climatology_std is None:
 
             # Compute climatology
             self.ts.climatology()
@@ -570,6 +570,11 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 self.ts.climatology_std = self.ts.climatology_std.compute()
 
             self.climatology_year = self.years.currentText()
+            first_run = True
+
+        if self.climatology_year is None or \
+            self.climatology_year != self.years.currentText() or \
+            first_run is True:
 
             if self.ts.climatology_mean.shape[0] != self.single_year_ds.shape[0]:
                 # Standard cursor
@@ -587,6 +592,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
             with ProgressBar():
                 self.anomalies = anomalies.compute()
+
+            first_run = False
 
         self.__plotAnomalies()
 
