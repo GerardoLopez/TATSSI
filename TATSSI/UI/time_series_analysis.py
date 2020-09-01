@@ -514,8 +514,13 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 data_format = 'Shapefile',
                 extension = 'shp')
 
+        # If there is no selection
+        if fname == '':
+            return None
+
+        # If file does not exists
         if os.path.exists(fname) is False:
-            pass
+            return None
 
         # Open file
         spatial_reference = self.get_shapefile_spatial_reference(fname)
