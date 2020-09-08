@@ -121,6 +121,10 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.time_steps_right.view().setVerticalScrollBarPolicy(
                 Qt.ScrollBarAsNeeded)
 
+        self.bandwidth.setStyleSheet("combobox-popup: 0")
+        self.bandwidth.view().setVerticalScrollBarPolicy(
+                Qt.ScrollBarAsNeeded)
+
         # Climatology button
         self.pbAnomalies.clicked.connect(
                 self.on_pbAnomalies_click)
@@ -144,6 +148,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.__fill_year()
         self.years.currentIndexChanged.connect(
                 self.__on_years_change)
+
+        # Bandwidth use for time series decomposition
+        self.__fill_bandwidth()
 
         # Time steps
         self.time_steps_left.addItems(self.__fill_time_steps())
@@ -175,7 +182,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.progressBar.setValue(1)
 
         # Get trend based on a moving window
-        period = len(self.single_year_ds)
+        period = int(self.bandwidth.currentText())
         # Get data type
         dtype = self.left_ds.dtype
 
@@ -283,7 +290,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.progressBar.setValue(1)
 
         # Extract period from the current single year
-        period = len(self.single_year_ds)
+        period = int(self.bandwidth.currentText())
         nobs = len(self.left_ds)
 
         # Get data type
@@ -642,6 +649,18 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.single_year_ds = getattr(self.ts.data,
                 self.data_vars.currentText()).sel(time=time_slice)
 
+    def __fill_bandwidth(self):
+        """
+        Fill bandwidth combo box with 3 to max numbers of time steps
+        in a single calendar year
+        """
+        n_obs_single_year = self.single_year_ds.shape[0]
+
+        bandwidth = list(map(str, np.arange(3, n_obs_single_year + 1)))
+
+        self.bandwidth.addItems(bandwidth)
+        self.bandwidth.setCurrentIndex(len(bandwidth)-1)
+
     def __fill_model(self):
         """
         Fill time series decompostion model
@@ -730,7 +749,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 marker='x', color='C2', alpha=0.3)
 
         # Seasonal decompose
-        period = len(self.single_year_ds)
+        period = int(self.bandwidth.currentText())
         nobs = len(left_plot_sd)
 
         # TODO interpolate and extrapolate trend
