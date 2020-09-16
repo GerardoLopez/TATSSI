@@ -40,14 +40,14 @@
    <widget class="QLabel" name="lblModel">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>390</x>
       <y>10</y>
-      <width>131</width>
+      <width>141</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>Decomposition model</string>
+     <string>Decomposition and BW</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pbAnomalies">
@@ -89,9 +89,9 @@
    <widget class="QComboBox" name="model">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>540</x>
       <y>10</y>
-      <width>150</width>
+      <width>111</width>
       <height>23</height>
      </rect>
     </property>
@@ -226,6 +226,19 @@
     </property>
     <property name="text">
      <string>Trend analysis</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="bandwidth">
+    <property name="geometry">
+     <rect>
+      <x>658</x>
+      <y>10</y>
+      <width>61</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="maxCount">
+     <number>366</number>
     </property>
    </widget>
   </widget>
