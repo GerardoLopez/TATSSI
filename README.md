@@ -52,7 +52,7 @@ There are some [Jupyter Notebooks](https://jupyter.org/) associated to each modu
 
 ## Some plots and presentations...
 * A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
-* Presentation at JSM2020: [Gerardo Lopez Saldana](https://docs.google.com/presentation/d/1H50s65jyT2G8JmNj8m0BRneFYpD1Ze7UO7lhbnmYaNg/edit?usp=sharing); [Inder Tecuapetla](https://irt466.wixsite.com/inder)
+* Presentations at the 2020 Joint Statistical Meetings: [Gerardo Lopez Saldana](https://docs.google.com/presentation/d/1H50s65jyT2G8JmNj8m0BRneFYpD1Ze7UO7lhbnmYaNg/edit?usp=sharing); [Inder Tecuapetla](https://irt466.wixsite.com/inder)
 
 ### Funding
 TATSSI is funded by "Convocatoria de Proyectos de Desarrollo Científico para Atender Problemas Nacionales 2016" Project No. 2760; P.I.: Inder Tecuapetla. Collaborators: Gerardo Lopez Saldana, Rainer Ressl and Isabel Cruz.
