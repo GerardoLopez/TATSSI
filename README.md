@@ -39,7 +39,7 @@ TATSSI is a set of software tools to analise Earth Observation (EO) data. It all
 * Download data from the Land Processes Distributed Active Archive Center ([LP DAAC](https://lpdaac.usgs.gov/))
 * Transform to/from diverse EO raster data formats using [GDAL](https://gdal.org/)
 * Decode the QA-SDS associated to diverse [MODIS](https://lpdaac.usgs.gov/product_search/?collections=Combined+MODIS&collections=Terra+MODIS&collections=Aqua+MODIS&view=list) & [VIIRS](https://lpdaac.usgs.gov/product_search/?query=VIIRS&collections=S-NPP+VIIRS) data.
-* Create time series of the aforemetnioned products masking by the user-defined QA parameter selection
+* Create time series of the aforementioned products masking by the user-defined QA parameter selection
 * Perform basic gap-filling using the interpolation methods used in [SciPy](https://docs.scipy.org/doc/scipy/reference/interpolate.html).
 
 There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, go to ```TATSSI/notebooks``` and enjoy!
