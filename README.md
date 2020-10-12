@@ -1,4 +1,6 @@
 # Tools for Analysing Time Series of Satellite Imagery (TATSSI)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4050082.svg)](https://doi.org/10.5281/zenodo.4050082)
+
 
 ## Install using Anaconda
 
@@ -37,7 +39,7 @@ TATSSI is a set of software tools to analise Earth Observation (EO) data. It all
 * Download data from the Land Processes Distributed Active Archive Center ([LP DAAC](https://lpdaac.usgs.gov/))
 * Transform to/from diverse EO raster data formats using [GDAL](https://gdal.org/)
 * Decode the QA-SDS associated to diverse [MODIS](https://lpdaac.usgs.gov/product_search/?collections=Combined+MODIS&collections=Terra+MODIS&collections=Aqua+MODIS&view=list) & [VIIRS](https://lpdaac.usgs.gov/product_search/?query=VIIRS&collections=S-NPP+VIIRS) data.
-* Create time series of the aforemetnioned products masking by the user-defined QA parameter selection
+* Create time series of the aforementioned products masking by the user-defined QA parameter selection
 * Perform basic gap-filling using the interpolation methods used in [SciPy](https://docs.scipy.org/doc/scipy/reference/interpolate.html).
 
 There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, go to ```TATSSI/notebooks``` and enjoy!
@@ -50,7 +52,7 @@ There are some [Jupyter Notebooks](https://jupyter.org/) associated to each modu
 
 ## Some plots and presentations...
 * A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
-* Presentation at [JSM2020](https://docs.google.com/presentation/d/1H50s65jyT2G8JmNj8m0BRneFYpD1Ze7UO7lhbnmYaNg/edit?usp=sharing)
+* Presentations at the 2020 Joint Statistical Meetings: [Gerardo Lopez Saldana](https://docs.google.com/presentation/d/1H50s65jyT2G8JmNj8m0BRneFYpD1Ze7UO7lhbnmYaNg/edit?usp=sharing); [Inder Tecuapetla](https://irt466.wixsite.com/inder)
 
 ### Funding
 TATSSI is funded by "Convocatoria de Proyectos de Desarrollo Científico para Atender Problemas Nacionales 2016" Project No. 2760; P.I.: Inder Tecuapetla. Collaborators: Gerardo Lopez Saldana, Rainer Ressl and Isabel Cruz.
