@@ -160,10 +160,13 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         """
         Fill smoothing methods
         """
-        smoothing_methods = ['smoothn',
-                             'ExponentialSmoothing',
-                             'SimpleExpSmoothing',
-                             'Holt']
+        # TODO document smoothing methods
+        # smoothing_methods = ['smoothn',
+        #                      'ExponentialSmoothing',
+        #                      'SimpleExpSmoothing',
+        #                      'Holt']
+
+        smoothing_methods = ['smoothn']
 
         self.smoothing_methods.addItems(smoothing_methods)
 

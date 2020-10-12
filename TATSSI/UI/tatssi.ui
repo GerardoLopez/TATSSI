@@ -27,7 +27,6 @@
     <property name="title">
      <string>Data</string>
     </property>
-    <addaction name="actionTranslator"/>
     <addaction name="actionDownloaders"/>
    </widget>
    <widget class="QMenu" name="menuQuality">
@@ -48,6 +47,7 @@
     <property name="title">
      <string>About</string>
     </property>
+    <addaction name="actionTATSSI"/>
    </widget>
    <addaction name="menuDownloaders"/>
    <addaction name="menuTime_Series"/>
@@ -83,6 +83,11 @@
   <action name="actionGenerator">
    <property name="text">
     <string>Generator</string>
+   </property>
+  </action>
+  <action name="actionTATSSI">
+   <property name="text">
+    <string>TATSSI</string>
    </property>
   </action>
  </widget>

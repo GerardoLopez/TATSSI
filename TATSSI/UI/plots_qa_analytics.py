@@ -106,9 +106,12 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         """
         Fill interpolation methods
         """
-        interpolation_methods = ['linear', 'nearest', 'slinear',
-                                 'quadratic', 'cubic', 'krog',
-                                 'pchip', 'spline', 'akima']
+        # TODO document interpolation methods
+        # interpolation_methods = ['linear', 'nearest', 'slinear',
+        #                          'quadratic', 'cubic', 'krog',
+        #                          'pchip', 'spline', 'akima']
+
+        interpolation_methods = ['linear', 'nearest', 'spline']
 
         self.interpolation_methods.addItems(interpolation_methods)
 

@@ -21,6 +21,7 @@ from TATSSI.UI.time_series_generator import TimeSeriesGeneratorUI
 from TATSSI.UI.qa_analytics import QAAnalyticsUI
 from TATSSI.UI.time_series_smoothing import TimeSeriesSmoothingUI
 from TATSSI.UI.time_series_analysis import TimeSeriesAnalysisUI
+from TATSSI.UI.about import AboutUI
 
 class TATSSI_UI(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -33,8 +34,15 @@ class TATSSI_UI(QtWidgets.QMainWindow):
         self.actionAnalytics.triggered.connect(self._analytics)
         self.actionSmoothing.triggered.connect(self._time_series_smoothing)
         self.actionAnalysis.triggered.connect(self._time_series_analysis)
+        self.actionTATSSI.triggered.connect(self._about)
 
         self.show()
+
+    def _about(self):
+        """
+        Shows the TATSSI about dialog
+        """
+        self.about = AboutUI(parent=self)
 
     def _downloaders(self):
         """

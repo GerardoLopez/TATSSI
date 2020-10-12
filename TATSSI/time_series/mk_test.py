@@ -86,11 +86,11 @@ def mk_test(x, alpha=0.05):
     h = abs(z) > norm.ppf(1-alpha/2)
 
     if (z < 0) and h:
-        trend = 'decreasing'
+        trend = '-1'
     elif (z > 0) and h:
-        trend = 'increasing'
+        trend = '0'
     else:
-        trend = 'no trend'
+        trend = '+1'
 
     return trend, h, f'{p}', f'{z}'
 
