@@ -1,6 +1,5 @@
 # Tools for Analysing Time Series of Satellite Imagery (TATSSI)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4050082.svg)](https://doi.org/10.5281/zenodo.4050082)
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4081163.svg)](https://doi.org/10.5281/zenodo.4081163)
 
 ## Install using Anaconda
 
