@@ -40,6 +40,8 @@ TATSSI is a set of software tools to analise Earth Observation (EO) data. It all
 * Decode the QA-SDS associated to diverse [MODIS](https://lpdaac.usgs.gov/product_search/?collections=Combined+MODIS&collections=Terra+MODIS&collections=Aqua+MODIS&view=list) & [VIIRS](https://lpdaac.usgs.gov/product_search/?query=VIIRS&collections=S-NPP+VIIRS) data.
 * Create time series of the aforementioned products masking by the user-defined QA parameter selection
 * Perform basic gap-filling using the interpolation methods used in [SciPy](https://docs.scipy.org/doc/scipy/reference/interpolate.html).
+* Smooth time series using robust spline smoothing following [Garcia. 2010](https://doi.org/10.1016/j.csda.2009.09.020)
+* Analyse time series using different tools such as decomposition, climatologies, trends, change point detection, etc.
 
 There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, go to ```TATSSI/notebooks``` and enjoy!
 
