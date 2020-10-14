@@ -730,7 +730,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         ts_df = left_plot_sd.to_dataframe()
 
         # Mann-Kendall test
-        _mk_test = mk_test(left_plot_sd.data)
+        _mk_test = mk_test(left_plot_sd.data, _round=3)
 
         # Observations + peaks and valleys
         self.observed.plot(left_plot_sd.time, left_plot_sd.data,
@@ -955,7 +955,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         _layers, _rows, _cols = self.left_ds.shape
 
         # Seasonal decompose
-        left_plot_sd = self.left_ds[:, int(_cols / 2), int(_rows / 2)]
+        left_plot_sd = self.left_ds[:, int(_rows / 2), int(_cols / 2)]
         ts_df = left_plot_sd.to_dataframe()
         self.seasonal_decompose = seasonal_decompose(
                 ts_df[self.data_vars.currentText()],

@@ -20,7 +20,7 @@ def get_s(x, n):
             s += np.sign(x[j] - x[k])
     return s
 
-def mk_test(x, alpha=0.05):
+def mk_test(x, alpha=0.05, _round=None):
     """
     This function is derived from code originally posted by Sat Kumar Tomer
     (satkumartomer@gmail.com)
@@ -92,7 +92,10 @@ def mk_test(x, alpha=0.05):
     else:
         trend = '+1'
 
-    return trend, h, f'{p}', f'{z}'
+    if _round is None:
+        return trend, h, f'{p}', f'{z}'
+    else:
+        return trend, h, f'{p:.4f}', f'{z:.2f}'
 
 def check_num_samples(beta, delta, std_dev, alpha=0.05, n=4, num_iter=1000,
                       tol=1e-6, num_cycles=10000, m=5):
