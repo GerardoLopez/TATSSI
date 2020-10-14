@@ -29,11 +29,12 @@ class AboutUI(QtWidgets.QDialog):
         Opens the corresponding TATSSI help file
         """
         # Set help file
-        fname = os.path.join(src_dir, 'doc', 'TATSSI-v0.1-beta.1.pdf')
+        doc_dir = os.path.join(src_dir, 'doc')
+        fname = 'TATSSI-v0.1-beta.1.pdf'
 
         # Open file
         try:
-            cmd = f"/usr/bin/xdg-open {fname}"
+            cmd = f"cd {doc_dir} ; /usr/bin/xdg-open {fname}"
             os.system(cmd)
         except:
             message_text = (
