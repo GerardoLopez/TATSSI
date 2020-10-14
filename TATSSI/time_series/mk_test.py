@@ -88,9 +88,9 @@ def mk_test(x, alpha=0.05, _round=None):
     if (z < 0) and h:
         trend = '-1'
     elif (z > 0) and h:
-        trend = '0'
-    else:
         trend = '+1'
+    else:
+        trend = '0'
 
     if _round is None:
         return trend, h, f'{p}', f'{z}'
