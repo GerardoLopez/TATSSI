@@ -8,12 +8,18 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
+from TATSSI.UI.helpers.utils import *
+
+import ogr
 import numpy as np
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import urllib
+from cartopy.io.shapereader import Reader as cReader
+from cartopy.feature import ShapelyFeature
 import osr
+
+import urllib
 
 import matplotlib
 matplotlib.use("Qt5Agg")
@@ -47,10 +53,58 @@ class PlotExtent(QtWidgets.QMainWindow):
 
         # Extent
         self.extent = None
+        # Figure and axis
+        self.fig, self.ax = None, None
 
-        # Connect event
+        # Connect events
         self.pbGetExtent.clicked.connect(
                 self.on_pbGetExtent_click)
+
+        self.pbOverlay.clicked.connect(
+                self.on_pbOverlay_click)
+
+    def on_pbOverlay_click(self):
+        """
+        EXPERIMENTAL
+        Overlay a specific geometry on maps
+        """
+        fname = open_file_dialog(dialog_type = 'open_specific',
+                data_format = 'Shapefile',
+                extension = 'shp')
+
+        # If there is no selection
+        if fname == '':
+            return None
+
+        # If file does not exists
+        if os.path.exists(fname) is False:
+            return None
+
+        # Open file
+        spatial_reference = self.get_shapefile_spatial_reference(fname)
+
+        # Get ellipsoid/datum parameters
+        globe=ccrs.Globe(ellipse=None,
+                semimajor_axis=spatial_reference.GetSemiMajor(),
+                semiminor_axis=spatial_reference.GetSemiMinor())
+
+        self.shapefile_projection = ccrs.Sinusoidal(globe=globe)
+            #ccrs.CRS(spatial_reference.ExportToProj4())
+
+        from IPython import embed ; ipshell = embed()
+
+        try:
+            shape_feature = ShapelyFeature(cReader(fname).geometries(),
+                self.shapefile_projection, facecolor='none')
+
+            for _axis in [self.ax]:
+                _axis.add_feature(shape_feature,
+                        edgecolor='gray')
+        except:
+            return None
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def on_pbGetExtent_click(self):
         """
@@ -77,37 +131,37 @@ class PlotExtent(QtWidgets.QMainWindow):
         else:
             proj = None
 
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8),
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(8, 8),
                 subplot_kw=dict(projection=proj))
 
-        # Set axis as attribute to access extent
-        self.ax = ax
-        self.extent = ax.get_extent()
+        self.extent = self.ax.get_extent()
 
         if proj is not None:
             try:
                 cfeature.BORDERS.geometries()
-                ax.coastlines(resolution='50m', color='black')
-                ax.add_feature(cfeature.BORDERS, edgecolor='black')
+                self.ax.coastlines(resolution='50m', color='black')
+                self.ax.add_feature(cfeature.BORDERS, edgecolor='black')
             except urllib.error.URLError:
                 pass
-            ax.gridlines()
+
+            # Gridlines
+            self.ax.gridlines()
 
         # Make all values NaN
         # data_array = (data_array.astype(np.float32) * np.nan)
         # Plot
         data_array[0].plot.imshow(
-                ax=ax, add_colorbar=False, cmap='viridis',
+                ax=self.ax, add_colorbar=False, cmap='viridis',
                 transform=proj
         )
 
-        ax.set_frame_on(False)
-        ax.axis('off')
-        ax.set_aspect('equal')
-        ax.title.set_text('')
+        self.ax.set_frame_on(False)
+        self.ax.axis('off')
+        self.ax.set_aspect('equal')
+        self.ax.title.set_text('')
 
         # Set plot on the plot widget
-        self.plotWidget = FigureCanvas(fig)
+        self.plotWidget = FigureCanvas(self.fig)
         lay = QtWidgets.QVBoxLayout(self.content_plot)
         lay.setContentsMargins(0, 40, 0, 0)
         lay.addWidget(self.plotWidget)
@@ -122,6 +176,16 @@ class PlotExtent(QtWidgets.QMainWindow):
         self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
 
         # Needed in order to use a tight layout with Cartopy axes
-        fig.canvas.draw()
+        self.fig.canvas.draw()
         plt.tight_layout()
+
+    @staticmethod
+    def get_shapefile_spatial_reference(fname):
+        driver = ogr.GetDriverByName('ESRI Shapefile')
+        dataset = driver.Open(fname)
+
+        layer = dataset.GetLayer()
+        spatialRef = layer.GetSpatialRef()
+
+        return spatialRef
 

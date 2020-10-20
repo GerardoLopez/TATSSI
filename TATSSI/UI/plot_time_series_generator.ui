@@ -22,12 +22,25 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>851</width>
+      <width>401</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
      <string>Get extent for subsetting</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbOverlay">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>10</y>
+      <width>441</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Overlay geometry</string>
     </property>
    </widget>
   </widget>

@@ -72,9 +72,14 @@ def quality_decode_from_int(qa_layer_def, intValue, bitField, qualityCache):
             decoded_int_bin = decoded_int[-bits::]
             decoded_int_dec = int(decoded_int_bin, 2)
 
-            description = subset[subset.Value == decoded_int_dec].Description.values[0]
-            quality[layer] = {"bits" : f"0b{decoded_int_bin}",
-                              "description" : description}
+            if len(subset[subset.Value == decoded_int_dec]) > 0:
+                description = subset[subset.Value == decoded_int_dec].Description.values[0]
+                quality[layer] = {"bits" : f"0b{decoded_int_bin}",
+                                  "description" : description}
+            else:
+                description = 'NODATA'
+                quality[layer] = {"bits" : f"0b{decoded_int_bin}",
+                                  "description" : description}
 
             # Trim decoded_int_bin
             decoded_int = decoded_int[:-bits]
@@ -194,6 +199,8 @@ def qualityDecoder(inRst, product, qualityLayer,
             fill_value = [value for key, value in bm.items() if 'fillvalue' in key.lower()]
             if len(fill_value) > 0 and fill_value[0].find('d') > 0:
                 fill_value = int(fill_value[0].split('d')[0])
+            elif len(fill_value) == 1 and fill_value[0] == ' ':
+                fill_value = -1
             else:
                 # Cannot read fill value from metadata
                 # get elemet(s) that are in the QA data values but not in
