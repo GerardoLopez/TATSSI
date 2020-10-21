@@ -212,22 +212,29 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
             z = np.where(s > 0,
                     (s - 1)/np.sqrt(var_s),
-                    (s + 1)/np.sqrt(var_s))
+                    (s + 1)/np.sqrt(var_s)).astype(np.float32)
 
             z[s==0] = 0.0
 
             return z
 
         def __get_p(z):
-            p = 2*(1-norm.cdf(abs(z)))  # two tail test
+            # Two tail test
+            p = (2*(1-norm.cdf(abs(z)))).astype(np.float32)
 
             return p
 
-        #def __get_h(z, alpha=0.05):
-        def __get_h(z, alpha=0.01):
-            h = abs(z) > norm.ppf(1-alpha/2)
+        def __get_h(z, alpha=0.05):
+            h = (abs(z) > norm.ppf(1-alpha/2)).astype(np.int8)
 
             return h
+
+        def __get_trend(z, h):
+            trend = np.where((z < 0) & (h == True), -1, 0).astype(np.int16)
+
+            trend = np.where((z > 0) & (h == True), 1, trend)
+
+            return trend
 
         z = xr.apply_ufunc(__get_z, _data,
                 input_core_dims=[['time']],
@@ -242,12 +249,16 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         h = xr.apply_ufunc(__get_h, z,
                 dask='parallelized',
-                output_dtypes=[np.int8])
+                output_dtypes=[np.int16])
+
+        trend = xr.apply_ufunc(__get_trend, z, h,
+                dask='parallelized',
+                output_dtypes=[np.int16])
 
         # Save products
         var = self.data_vars.currentText()
-        products = [z, p, h]
-        product_names = ['z', 'p', 'h']
+        products = [z, p, h, trend]
+        product_names = ['z', 'p', 'h', 'trend']
 
         for i, product in enumerate(product_names):
             fname = (f'{os.path.splitext(self.fname)[0]}'

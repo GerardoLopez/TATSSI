@@ -293,7 +293,7 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         # Plot the centroid
         _layers, _rows, _cols = self.img_ds.shape
 
-        plot_sd = self.img_ds[:, int(_cols / 2), int(_rows / 2)]
+        plot_sd = self.img_ds[:, int(_rows / 2), int(_cols / 2)]
         plot_sd.plot(ax = self.ts_p, color='black',
                 linestyle = '-', linewidth=1, label='Original data')
 

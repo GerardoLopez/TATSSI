@@ -327,7 +327,7 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         # Plot the centroid
         _layers, _rows, _cols = self.left_ds.shape
 
-        plot_sd = self.left_ds[:, int(_cols / 2), int(_rows / 2)]
+        plot_sd = self.left_ds[:, int(_rows / 2), int(_cols / 2)]
         plot_sd.plot(ax = self.ts_p, color='black',
                 linestyle = '--', linewidth=1, label='Original data')
 
