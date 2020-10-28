@@ -8,6 +8,8 @@
 
 ## Install using Anaconda
 
+You can install TATSSI on your favourite Linux distro or if you want to run it on Windows [here](https://github.com/GerardoLopez/TATSSI/wiki/Run-TATSSI-on-Windows-10-using-the-Windows-Subsystem-for-Linux-(WSL)) you can follow the instructions to do it.
+
 * Download conda
   * ```wget https://repo.continuum.io/archive/Anaconda3-2019.07-Linux-x86_64.sh```
     * Install conda ```bash ./Anaconda3-2019.07-Linux-x86_64.sh```
@@ -48,13 +50,17 @@ TATSSI is a set of software tools to analise Earth Observation (EO) data. It all
 * Smooth time series using robust spline smoothing following [Garcia. 2010](https://doi.org/10.1016/j.csda.2009.09.020)
 * Analyse time series using different tools such as decomposition, climatologies, trends, change point detection, etc.
 
-There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, go to ```TATSSI/notebooks``` and enjoy!
+There are some [Jupyter Notebooks](https://jupyter.org/) associated to each module, [here](https://github.com/GerardoLopez/TATSSI/wiki/Use-TATSSI-Jupyter-Notebooks) you can find a description of each one.
 
-## Presentaciones del primer taller
+## First workshop presentations (In Spanish)
 * [Introducción al manejo de calidad de datos](presentaciones/IntroduccionManejoCalidadDeDatos.pptx)
 * [Introducción a TATSSI](presentaciones/IntroduccionTATSSI.pptx)
 * [Aplicaciones del análisis de series de tiempo](presentaciones/AplicasionesSeriesTiempo.pdf)
 * [Análisis de algunos métodos de interpolación](presentaciones/AnalisisMetodosInterpolacion.pdf)
+
+## Second workshop videos (In Spanish)
+* [First day](https://www.youtube.com/watch?v=zNnw0WbnIoo&ab_channel=BiodiversidadMexicana) showing the ```Downloaders```, ```Time Series Generation```, ```QA Analytics```, ```Interpolation``` and ```Smoothing``` TATSSI modules.
+* [Second day](https://www.youtube.com/watch?v=2S6J-8b7z4k&t=4739s&ab_channel=BiodiversidadMexicana) showing the ```Time Series Analysis``` TATSSI module.
 
 ## Some plots and presentations...
 * A quick glimpse of a simple [plot](https://gerardolopez.github.io/TATSSI/TATSSI/scratch/plotty/VI_QA.html) for EVI and associated QAs 
