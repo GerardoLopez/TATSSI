@@ -1,7 +1,7 @@
 # Tools for Analysing Time Series of Satellite Imagery (TATSSI)
 
 <p align="center">
-  <img src="https://github.com/GerardoLopez/TATSSI/blob/master/TATSSI/UI/static/TATSSI.svg" alt="TATSSI logo" width="40%">
+  <img src="hhttps://raw.githubusercontent.com/GerardoLopez/TATSSI/master/TATSSI/UI/static/TATSSI.svg" alt="TATSSI logo" width="40%">
 </p>
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4081163.svg)](https://doi.org/10.5281/zenodo.4081163)
