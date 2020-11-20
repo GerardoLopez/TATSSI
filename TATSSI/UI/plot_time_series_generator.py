@@ -91,8 +91,6 @@ class PlotExtent(QtWidgets.QMainWindow):
         self.shapefile_projection = ccrs.Sinusoidal(globe=globe)
             #ccrs.CRS(spatial_reference.ExportToProj4())
 
-        from IPython import embed ; ipshell = embed()
-
         try:
             shape_feature = ShapelyFeature(cReader(fname).geometries(),
                 self.shapefile_projection, facecolor='none')
