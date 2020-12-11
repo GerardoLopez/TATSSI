@@ -178,12 +178,12 @@
      <rect>
       <x>730</x>
       <y>10</y>
-      <width>131</width>
+      <width>71</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Overlay geometry</string>
+     <string>Geometry</string>
     </property>
    </widget>
    <widget class="QProgressBar" name="progressBar">
@@ -239,6 +239,19 @@
     </property>
     <property name="maxCount">
      <number>366</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbCPD">
+    <property name="geometry">
+     <rect>
+      <x>810</x>
+      <y>10</y>
+      <width>51</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>CPD</string>
     </property>
    </widget>
   </widget>

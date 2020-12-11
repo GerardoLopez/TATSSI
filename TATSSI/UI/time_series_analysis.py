@@ -141,6 +141,10 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.pbMKTest.clicked.connect(
                 self.on_pbMKTest_click)
 
+        # Change Point Detection button
+        self.pbCPD.clicked.connect(
+                self.on_pbCPD_click)
+
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
 
@@ -1075,25 +1079,39 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
 
         self.addToolBar(QtCore.Qt.BottomToolBarArea, toolbar)
 
-    def __get_change_points(self, trend):
+    def on_pbCPD_click(self):
         """
         Compute change points on the detrended time series
         """
+        # Wait cursor
+        QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
         msg = f"Identifying change points..."
+        self.progressBar.setEnabled(True)
         self.progressBar.setFormat(msg)
         self.progressBar.setValue(1)
 
+        # Compute first the trend
+        period = int(self.bandwidth.currentText())
+        nobs = len(self.left_ds)
+
+        # Get data type
+        dtype = self.left_ds.dtype
+
+        # Get trend based on a moving window
+        trend = self.left_ds.rolling(time=period, min_periods=1,
+                center=True).mean().astype(dtype)
         trend = trend.compute()
+        trend.attrs = self.left_ds.attrs
 
         # Output data
         output = xr.zeros_like(trend).astype(np.int16).load()
+        output.attrs = self.left_ds.attrs
 
         layers, rows, cols = trend.shape
 
         for x in range(cols):
-            print(x)
             self.progressBar.setValue(int((x / rows) * 100))
-            #_data = trend[:,:,x].compute()
             for y in range(rows):
                 _data = trend[:,y,x]
                 r_vector = FloatVector(_data)
@@ -1102,8 +1120,12 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 #changepoints_r = self.cpt.cpt_var(r_vector, method='PELT',
                 #        penalty='Manual', pen_value='2*log(n)')
 
+                # CPD methods
+                _method = 'BinSeg'
+                _penalty = 'SIC'
+
                 changepoints_r = self.cpt.cpt_meanvar(r_vector,
-                        test_stat='Normal', method='BinSeg', penalty="SIC")
+                        test_stat='Normal', method=_method, penalty=_penalty)
 
                 changepoints = numpy2ri.rpy2py(
                         self.cpt.cpts(changepoints_r)).astype(int)
@@ -1121,6 +1143,12 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         save_dask_array(fname=fname, data=output,
                 data_var=self.data_vars.currentText(), method=None,
                 n_workers=4, progressBar=self.progressBar)
+
+        self.progressBar.setValue(0)
+        self.progressBar.setEnabled(False)
+
+        # Standard cursor
+        QtWidgets.QApplication.restoreOverrideCursor()
 
     @staticmethod
     def message_box(message_text):
