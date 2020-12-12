@@ -125,13 +125,13 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.bandwidth.view().setVerticalScrollBarPolicy(
                 Qt.ScrollBarAsNeeded)
 
-        # Climatology button
+        # Anomalies button
         self.pbAnomalies.clicked.connect(
                 self.on_pbAnomalies_click)
         # Overlay button
         self.pbOverlay.clicked.connect(
                 self.on_pbOverlay_click)
-        # Save products button
+        # Climatology button
         self.pbClimatology.clicked.connect(
                 self.on_pbClimatology_click)
         # Decomposition button
@@ -291,6 +291,85 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Standard cursor
         QtWidgets.QApplication.restoreOverrideCursor()
 
+    def __frequency_analysis(self):
+        """
+        Computes the annual frequency of peaks and valleys
+        """
+        self.progressBar.setEnabled(True)
+        msg = f"Computing one and two-peak annual frequencies..."
+        self.progressBar.setFormat(msg)
+        self.progressBar.setValue(1)
+
+        # Ouput xarrays
+        peaks = xr.zeros_like(self.left_ds)
+        peaks = peaks.compute()
+
+        layers, rows, cols = self.left_ds.shape
+
+        # Set required distance to be consider an independent peak
+        # The assumption is that a peak should occure on a different
+        # season, hence getting all time steps on a single year / 4
+        distance = int(np.ceil(len(self.single_year_ds.time) / 4))
+
+        # TODO Extremely inefficient way to compute peaks and valleys
+        # must be changes for a array-based solution!
+        for c in range(cols):
+            self.progressBar.setValue(int(((c+1) / cols) * 100))
+            for r in range(rows):
+                idx, _ = find_peaks(self.left_ds[:,r,c], distance=distance)
+                peaks[idx,r,c] = 1
+
+        # Get the number of peaks and valleys on a calendar year
+        annual_peaks = peaks.groupby("time.year")
+        annual_peaks = annual_peaks.sum(dim='time').astype(np.int8)
+        # Copy attributes
+        annual_peaks.attrs = self.left_ds.attrs
+
+        # Get the frequency of one and two peaks
+        n_years = len(annual_peaks.year)
+        freq_one_peak = annual_peaks.where(annual_peaks==1).count(dim='year')
+        freq_one_peak = freq_one_peak / n_years
+        # Copy attributes
+        freq_one_peak.attrs = self.left_ds.attrs
+        # Add time dimension
+        freq_one_peak = freq_one_peak.expand_dims(
+                dim='time', axis=0)
+
+        freq_two_peak = annual_peaks.where(annual_peaks==2).count(dim='year')
+        freq_two_peak = freq_two_peak / n_years
+        # Copy attributes
+        freq_two_peak.attrs = self.left_ds.attrs
+        # Add time dimension
+        freq_two_peak = freq_two_peak.expand_dims(
+                dim='time', axis=0)
+
+        msg = f"Saving peaks and valleys frequencies..."
+        self.progressBar.setFormat(msg)
+        self.progressBar.setValue(1)
+
+        fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_peaks.tif')
+
+        save_dask_array(fname=fname, data=annual_peaks,
+                data_var=self.data_vars.currentText(), method=None,
+                n_workers=4, progressBar=self.progressBar)
+
+        fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_one_peak_frequency.tif')
+
+        save_dask_array(fname=fname, data=freq_one_peak,
+                data_var=self.data_vars.currentText(), method=None,
+                n_workers=4, progressBar=self.progressBar)
+
+        fname = (f'{os.path.splitext(self.fname)[0]}'
+                     f'_two_peaks_frequency.tif')
+
+        save_dask_array(fname=fname, data=freq_two_peak,
+                data_var=self.data_vars.currentText(), method=None,
+                n_workers=4, progressBar=self.progressBar)
+
+        self.progressBar.setValue(0)
+
     def on_pbDecomposition_click(self):
         """
         Save decomposition products:
@@ -298,6 +377,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         """
         # Wait cursor
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        # Annual frequency of peaks and valleys
+        self.__frequency_analysis()
 
         self.progressBar.setEnabled(True)
         msg = f"Computing time series decomposition..."
@@ -378,8 +460,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Wait cursor
         QtWidgets.QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        self.left_imshow.set_data(self.self.single_year_ds.data[index])
-        self.right_imshow.set_data(self.self.single_year_ds.data[index])
+        self.left_imshow.set_data(self.single_year_ds.data[index])
+        self.right_imshow.set_data(self.single_year_ds.data[index])
 
         # Set titles
         self.left_p.set_title(self.time_steps_left.currentText())
@@ -751,13 +833,14 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.observed.plot(left_plot_sd.time, left_plot_sd.data,
                 label=f'Observed {_mk_test}')
 
-        peaks, _ = find_peaks(left_plot_sd.data)
+        distance = int(np.ceil(len(self.single_year_ds.time) / 4))
+        peaks, _ = find_peaks(left_plot_sd.data, distance=distance)
         self.observed.plot(left_plot_sd.time[peaks],
                 left_plot_sd[peaks],
                 label=f'Peaks [{peaks.shape[0]}]',
                 marker='x', color='C1', alpha=0.3)
 
-        valleys, _ = find_peaks(left_plot_sd.data*(-1))
+        valleys, _ = find_peaks(left_plot_sd.data*(-1), distance=distance)
         self.observed.plot(left_plot_sd.time[valleys],
                 left_plot_sd[valleys],
                 label=f'Valleys, [{valleys.shape[0]}]',
@@ -1111,7 +1194,7 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         layers, rows, cols = trend.shape
 
         for x in range(cols):
-            self.progressBar.setValue(int((x / rows) * 100))
+            self.progressBar.setValue(int((x / cols) * 100))
             for y in range(rows):
                 _data = trend[:,y,x]
                 r_vector = FloatVector(_data)
