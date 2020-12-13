@@ -136,7 +136,18 @@ class Analysis():
         if 'data_var' in md:
             return md['data_var']
         else:
-            return 'data'
+            fnames = d.GetFileList()
+            if len(fnames) > 2:
+                d = gdal.Open(fnames[1])
+                # Get band metadata
+                b = d.GetRasterBand(1)
+                md = b.GetMetadata()
+                if 'data_var' in md:
+                    return md['data_var']
+                else:
+                    return 'data'
+            else:
+                return 'data'
  
     def __check_is_xarray(self, data):
         """
