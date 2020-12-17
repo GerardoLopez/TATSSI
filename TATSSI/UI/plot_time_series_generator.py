@@ -127,7 +127,8 @@ class PlotExtent(QtWidgets.QMainWindow):
 
             proj = ccrs.Sinusoidal(globe=globe)
         else:
-            proj = None
+            globe = ccrs.Globe(ellipse='WGS84')
+            self.projection = ccrs.Mollweide(globe=globe)
 
         self.fig, self.ax = plt.subplots(1, 1, figsize=(8, 8),
                 subplot_kw=dict(projection=proj))

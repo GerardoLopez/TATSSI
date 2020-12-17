@@ -371,6 +371,9 @@ class PlotInterpolation(QtWidgets.QMainWindow):
                 semiminor_axis=6371007.181)
 
             self.projection = ccrs.Sinusoidal(globe=globe)
+        else:
+            globe = ccrs.Globe(ellipse='WGS84')
+            self.projection = ccrs.Mollweide(globe=globe)
 
         # Figure
         self.fig = plt.figure(figsize=(8.0, 7.0))
@@ -505,7 +508,8 @@ class PlotMaxGapLength(QtWidgets.QMainWindow):
 
             proj = ccrs.Sinusoidal(globe=globe)
         else:
-            proj = None
+            globe = ccrs.Globe(ellipse='WGS84')
+            proj = ccrs.Mollweide(globe=globe)
 
         fig, (ax, bx) = plt.subplots(1, 2, figsize=(16, 9.6),
                 #sharex=True, sharey=True, tight_layout=True, dpi=dpi,

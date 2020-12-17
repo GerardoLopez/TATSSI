@@ -629,13 +629,24 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Open file
         spatial_reference = self.get_shapefile_spatial_reference(fname)
 
-        # Get ellipsoid/datum parameters
-        globe=ccrs.Globe(ellipse=None,
+        # Get projection from first data variable
+        for key in self.ts.data.data_vars:
+            proj4_string = getattr(self.ts.data, key).crs
+            break
+
+        # If projection is Sinusoidal
+        srs = get_projection(proj4_string)
+        if srs.GetAttrValue('PROJECTION') == 'Sinusoidal':
+            # Get ellipsoid/datum parameters
+            globe=ccrs.Globe(ellipse=None,
                 semimajor_axis=spatial_reference.GetSemiMajor(),
                 semiminor_axis=spatial_reference.GetSemiMinor())
 
-        self.shapefile_projection = ccrs.Sinusoidal(globe=globe)
+            self.shapefile_projection = ccrs.Sinusoidal(globe=globe)
             #ccrs.CRS(spatial_reference.ExportToProj4())
+        else:
+            globe = ccrs.Globe(ellipse='WGS84')
+            self.shapefile_projection = ccrs.Mollweide(globe=globe)
 
         try:
             shape_feature = ShapelyFeature(cReader(fname).geometries(),
@@ -1096,6 +1107,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
                 semiminor_axis=6371007.181)
 
             self.projection = ccrs.Sinusoidal(globe=globe)
+        else:
+            globe = ccrs.Globe(ellipse='WGS84')
+            self.projection = ccrs.Mollweide(globe=globe)
 
         # Figure
         self.fig = plt.figure(figsize=(11.0, 6.0))
