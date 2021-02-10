@@ -38,6 +38,18 @@ You can install TATSSI on your favourite Linux distro or if you want to run it o
   * If you prefer to use the UI:
     * Go to the ```TATSSI/TATSSI/UI``` directory and run ```python tatssi.py```
 
+## Downloading products from LP DAAC with TATSSI
+
+Downloading products from the LP DAAC requires a NASA [EarthData](https://urs.earthdata.nasa.gov/) login, please, first regsiter as a user to get the login credentials.
+
+* If gedit is not installed in your system:
+  * ```sudo apt install gedit```
+
+* Update config.json file with login credentials:
+  * ```cd TATSSI/TATSSI/download```
+  * ```gedit config.json```
+  * Replace USERNAME and PASSWORD with login credentials, save and close 
+
 ## Description
 
 TATSSI is a set of software tools to analise Earth Observation (EO) data. It allows you to:
