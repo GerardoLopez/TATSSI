@@ -40,7 +40,7 @@ You can install TATSSI on your favourite Linux distro or if you want to run it o
 
 ## Downloading products from LP DAAC with TATSSI
 
-Downloading products from the LP DAAC requires a NASA [EarthData](https://urs.earthdata.nasa.gov/) login, please, first regsiter as a user to get the login credentials.
+Downloading products from the LP DAAC requires a NASA [EarthData](https://urs.earthdata.nasa.gov/) login. Please, first register as an EarthData user to get login credentials.
 
 * If gedit is not installed in your system:
   * ```sudo apt install gedit```
