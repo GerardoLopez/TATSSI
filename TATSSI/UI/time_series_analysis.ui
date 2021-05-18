@@ -53,7 +53,7 @@
    <widget class="QPushButton" name="pbAnomalies">
     <property name="geometry">
      <rect>
-      <x>870</x>
+      <x>950</x>
       <y>10</y>
       <width>131</width>
       <height>23</height>
@@ -163,7 +163,7 @@
    <widget class="QPushButton" name="pbClimatology">
     <property name="geometry">
      <rect>
-      <x>1290</x>
+      <x>810</x>
       <y>10</y>
       <width>131</width>
       <height>23</height>
@@ -205,7 +205,7 @@
    <widget class="QPushButton" name="pbDecomposition">
     <property name="geometry">
      <rect>
-      <x>1150</x>
+      <x>1090</x>
       <y>10</y>
       <width>131</width>
       <height>23</height>
@@ -218,7 +218,7 @@
    <widget class="QPushButton" name="pbMKTest">
     <property name="geometry">
      <rect>
-      <x>1010</x>
+      <x>1230</x>
       <y>10</y>
       <width>131</width>
       <height>23</height>
@@ -244,7 +244,7 @@
    <widget class="QPushButton" name="pbCPD">
     <property name="geometry">
      <rect>
-      <x>810</x>
+      <x>1370</x>
       <y>10</y>
       <width>51</width>
       <height>23</height>

@@ -67,6 +67,8 @@ def export_image(ee_object, filename, scale=None,
             params['crs'] = crs
 
         url = ee_object.getDownloadURL(params)
+        # url = ee_object.select(['B2', 'B3']).getDownloadURL(params)
+
         LOG.info(f'Downloading data from {url}\nPlease wait ...')
         r = requests.get(url, stream=True)
 
@@ -96,11 +98,11 @@ def export_image(ee_object, filename, scale=None,
         print(e)
 
 def export_collection(ee_collection, output_dir, bands,
-                      product, version,
+                      product, version=None,
                       scale=None, crs=None, region=None,
                       file_per_band=False):
     """
-    Export a GEE collection to a set of GeoTif files
+    Export a GEE collection to a set of GeoTiff files
     """
     if not isinstance(ee_collection, ee.ImageCollection):
         print('The ee_object must be an ee.ImageCollection.')
@@ -113,8 +115,16 @@ def export_collection(ee_collection, output_dir, bands,
 
     datasets = []
 
-    product_name = product.split('/')[2]
-    version_code = product.split('/')[1]
+    collection_name = product.split('/')[0]
+    if collection_name.lower() == 'modis':
+        product_name = product.split('/')[2]
+        version_code = product.split('/')[1]
+    elif collection_name.lower() == 'copernicus':
+        product_name = product.split('/')[1]
+        version_code = 'sen2cor'
+    else:
+        product_name = product.split('/')[1]
+        version_code = ''
 
     try:
 
