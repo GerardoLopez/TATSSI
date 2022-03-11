@@ -887,7 +887,14 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.trend_p.set_ylim(self.observed.get_ylim())
 
         # Climatology
-        sbn.boxplot(ts_df.index.dayofyear,
+        #   check if data is monthly to group by month
+        unique_diffs = np.sort(np.unique(np.diff(ts_df.index.month.values)))
+        if unique_diffs[0] == -11 and unique_diffs[1] == 1:
+            _idx = ts_df.index.month
+        else:
+            _idx = ts_df.index.dayofyear
+
+        sbn.boxplot(_idx,
                 ts_df[self.data_vars.currentText()], ax=self.climatology)
         # Plot year to analyse
         single_year_df = single_year_ds.to_dataframe()
@@ -1079,7 +1086,14 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.seasonal_decompose.resid.plot(ax=self.resid_p)
 
         # Climatology
-        sbn.boxplot(ts_df.index.dayofyear,
+        #   check if data is monthly to group by month
+        unique_diffs = np.sort(np.unique(np.diff(ts_df.index.month.values)))
+        if unique_diffs[0] == -11 and unique_diffs[1] == 1:
+            _idx = ts_df.index.month
+        else:
+            _idx = ts_df.index.dayofyear
+
+        sbn.boxplot(_idx,
                 ts_df[self.data_vars.currentText()],
                 ax=self.climatology)
         self.climatology.tick_params(axis='x', rotation=70)

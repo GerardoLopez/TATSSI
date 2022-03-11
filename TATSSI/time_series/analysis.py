@@ -62,9 +62,16 @@ class Analysis():
         """
         tmp_ds = getattr(self.data, self.dataset_name)
 
+        #   Check if data is monthly to group by month
+        unique_diffs = np.sort(np.unique(np.diff(tmp_ds.time.dt.month.values)))
+        if unique_diffs[0] == -11 and unique_diffs[1] == 1:
+            _idx = 'time.month'
+        else:
+            _idx = 'time.dayofyear'
+
         # Compute mean and std
-        _mean = tmp_ds.groupby('time.dayofyear').mean('time')
-        _std = tmp_ds.groupby('time.dayofyear').std('time')
+        _mean = tmp_ds.groupby(_idx).mean('time')
+        _std = tmp_ds.groupby(_idx).std('time')
 
         # Copy attributes
         _mean.attrs = tmp_ds.attrs

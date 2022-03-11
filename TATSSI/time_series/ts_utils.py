@@ -60,8 +60,12 @@ def get_times_from_file_band(fname):
         elif key in dmd:
             start_date = dmd['RANGEBEGINNINGDATE']
         else:
-            err_msg = f"File {fname} does not have date information"
-            raise Exception(err_msg)
+            key = 'time'
+            if key in md:
+                start_date = md['time']
+            else:
+                err_msg = f"File {fname} does not have date information"
+                raise Exception(err_msg)
 
         times.append(np.datetime64(start_date))
 

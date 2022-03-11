@@ -6,6 +6,13 @@ from scipy.fftpack.realtransforms import dct,idct
 import numpy as np
 import numpy.ma as ma
 
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import plot
+from matplotlib.pyplot import title
+from matplotlib.pyplot import quiver
+from matplotlib.pyplot import subplot
+from numpy.random import randn
+
 def H(y,t0=0):
   '''
   Step fn with step at t0
@@ -519,19 +526,18 @@ def peaks(n):
   xp = arange(n)
   [x,y] = meshgrid(xp,xp)
   z = np.zeros_like(x).astype(float)
-  for i in xrange(n/5):
-    x0 = random()*n
-    y0 = random()*n
-    sdx = random()*n/4.
+  for i in range(int(n/5)):
+    x0 = randn()*n
+    y0 = randn()*n
+    sdx = randn()*n/4.
     sdy = sdx
-    c = random()*2 - 1.
+    c = randn()*2 - 1.
     f = exp(-((x-x0)/sdx)**2-((y-y0)/sdy)**2 - (((x-x0)/sdx))*((y-y0)/sdy)*c)
-    #f /= f.sum()
-    f *= random()
+    f /= f.sum()
+    # f *= randn()
     z += f
   return z 
 
-'''
 def test1():
    plt.figure(1)
    plt.clf()
@@ -549,31 +555,45 @@ def test1():
    plot(x,y,'r.')
    plot(x,zr,'k')
    title('Robust smoothing')
+   plt.show()
 
 def test2(axis=None):
    # 2-D example
    plt.figure(2)
    plt.clf()
-   xp = arange(0,1,.02)
+   xp = arange(0,4,.01)
    [x,y] = meshgrid(xp,xp);
    f = exp(x+y) + sin((x-2*y)*3);
    fn = f + (randn(f.size)*0.5).reshape(f.shape);
    fs = smoothn(fn,axis=axis)[0];
+
    subplot(121); plt.imshow(fn,interpolation='Nearest');# axis square
    subplot(122); plt.imshow(fs,interpolation='Nearest'); # axis square
+   plt.show()
 
 def test3(axis=None):
    # 2-D example with missing data
    plt.figure(3)
    plt.clf()
-   n = 256;
-   y0 = peaks(n);
-   y = (y0 + random(shape(y0))*2 - 1.0).flatten();
+
+   # Load data
+   import gdal
+   fname = '/data/ASTER_Global_DEM_V2/20150722122932_1832907520.tif'
+   y0 = gdal.Open(fname).ReadAsArray()
+   n = 256
+   y0 = y0[n:n+n,n:n+n]
+
+   # n = 256;
+   # y0 = peaks(n);
+
+   cols, rows = shape(y0)
+   y = (y0 + randn(cols, rows)*2 - 1.0).flatten();
    I = np.random.permutation(range(n**2));
-   y[I[1:n**2*0.5]] = nan; # lose 50% of data
+   y[I[1:int(n**2*0.5)]] = nan; # lose 50% of data
    y = y.reshape(y0.shape)
-   y[40:90,140:190] = nan; # create a hole
+   # y[40:50,140:150] = nan; # create a hole
    yData = y.copy()
+
    z0,s,exitflag,Wtot = smoothn(yData,axis=axis); # smooth data
    yData = y.copy()
    z,s,exitflag,Wtot = smoothn(yData,isrobust=True,axis=axis); # smooth data
@@ -588,6 +608,7 @@ def test3(axis=None):
    title('Recovered data #2')
    subplot(224); plt.imshow(y0,interpolation='Nearest',vmin=vmin,vmax=vmax);
    title('... compared with original data')
+   plt.show()
 
 def test4(i=10,step=0.2,axis=None):
   [x,y,z] = mgrid[-2:2:step,-2:2:step,-2:2:step]
@@ -607,6 +628,7 @@ def test4(i=10,step=0.2,axis=None):
   subplot(224); plt.imshow(v[:,:,i],interpolation='Nearest',vmin=vmin,vmax=vmax);
   title('cleaned')
 
+  plt.show()
 
 def test5():
    t = linspace(0,2*pi,1000);
@@ -619,6 +641,7 @@ def test5():
    plt.title('Cardioid')
    plot(x,y,'r.')
    plot(zx,zy,'k')
+   plt.show()
 
 def test6(noise=0.05,nout=30):
   plt.figure(6)
@@ -630,10 +653,10 @@ def test6(noise=0.05,nout=30):
   Vy = Vy0 + noise*randn(24,24); # adding Gaussian noise
   I = np.random.permutation(range(Vx.size))
   Vx = Vx.flatten()
-  Vx[I[0:nout]] = (rand(nout,1)-0.5)*5; # adding outliers
+  Vx[I[0:nout]] = ((randn(nout,1)-0.5)*5).reshape(nout); # adding outliers
   Vx = Vx.reshape(Vy.shape)
   Vy = Vy.flatten()
-  Vy[I[0:nout]] = (rand(nout,1)-0.5)*5; # adding outliers
+  Vy[I[0:nout]] = ((randn(nout,1)-0.5)*5).reshape(nout); # adding outliers
   Vy = Vy.reshape(Vx.shape)
   Vsx = smoothn(Vx,isrobust=True)[0];
   Vsy = smoothn(Vy,isrobust=True)[0];
@@ -643,6 +666,7 @@ def test6(noise=0.05,nout=30):
   title('Recovered')
   subplot(133); quiver(x,y,Vx0,Vy0)          
   title('Original')
+  plt.show()
 
 def sparseSVD(D):
   import scipy.sparse
@@ -711,5 +735,3 @@ def sparseTest(n=1000):
   # Ut.T * Ut = I
   # ((Vt.T * (np.diag(np.array(eigenvalues).flatten())**2)) * Vt)
   # we see you get the same as m.T * m by squaring the eigenvalues
-
-'''

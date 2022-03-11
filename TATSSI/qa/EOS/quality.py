@@ -177,7 +177,10 @@ def qualityDecoder(inRst, product, qualityLayer,
             qa_layer_def = qa_layer
 
     if '_FillValue' in md:
-        fill_value = int(md['_FillValue'])
+        if not md['_FillValue'] == 'NA':
+            fill_value = int(md['_FillValue'])
+        else:
+            fill_value
 
     xr_d = xr.open_rasterio(inRst)
     if 'nodatavals' in xr_d.attrs:
