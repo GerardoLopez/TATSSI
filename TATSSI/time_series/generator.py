@@ -46,10 +46,8 @@ class Generator():
 
         # Check that the source dir has the requested product
         # to create time series
-        version = '061'
         fnames = glob(os.path.join(self.source_dir,
             f"*{product}*.{version}.*.{data_format}"))
-        from IPython import embed ; ipshell = embed()
 
         if len(fnames) == 0 and preprocessed == False:
             err_msg = (f"There are no {product} files in "
@@ -57,7 +55,6 @@ class Generator():
             raise(IOError(err_msg))
         #elif len(fnames) > 0:
         else:
-            from IPython import embed ; ipshell = embed()
             self.product = f"{product}.{version}"
             self.product_name = product
             self.version = version
