@@ -13,7 +13,8 @@ from TATSSI.time_series.analysis import Analysis
 from TATSSI.time_series.mk_test import mk_test
 from TATSSI.UI.plots_time_series_analysis import PlotAnomalies
 from TATSSI.input_output.utils import save_dask_array, \
-        get_geotransform_from_xarray
+        get_geotransform_from_xarray, validate_coordinates, \
+        transform_to_wgs84
 from TATSSI.UI.helpers.utils import *
 
 #from TATSSI.notebooks.helpers.time_series_analysis import \
@@ -145,6 +146,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.pbCPD.clicked.connect(
                 self.on_pbCPD_click)
 
+        # Location text event filter to capture ENTER key press
+        self.txtLocation.installEventFilter(self)
+
         # Data variables
         self.data_vars.addItems(self.__fill_data_variables())
 
@@ -172,6 +176,16 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Climatology year
         self.climatology_year = None
         self.anomalies = None
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.KeyPress and \
+                obj is self.txtLocation:
+            if event.key() == QtCore.Qt.Key_Return and \
+                    self.txtLocation.hasFocus():
+                # Plot on_click event
+                self.on_click(event)
+
+        return super().eventFilter(obj, event)
 
     def on_pbMKTest_click(self):
         """
@@ -801,8 +815,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         Event handler
         """
         # Event does not apply for time series plot
-        if event.inaxes not in [self.left_p, self.right_p]:
-            return
+        if not type(event) == QtGui.QKeyEvent:
+            if event.inaxes not in [self.left_p, self.right_p]:
+                return
 
         # Clear subplots
         self.observed.clear()
@@ -816,19 +831,42 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
             del self.left_p.lines[0]
             del self.right_p.lines[0]
 
+        # Check whether the x and y data are coming from the user or
+        # from the map plot click event
+        if type(event) == QtGui.QKeyEvent:
+            location = self.txtLocation.text()
+            # Validate coordinates and use the native CRS to plot data
+            coords = validate_coordinates(location, self.left_ds)
+            if coords[0] is False:
+                message_text = (f'Coordinates {location} in WGS84 are not  '
+                                f'within the bounding box of the data.')
+                self.message_box(message_text)
+                return None
+
+            xdata = coords[1][0]
+            ydata = coords[1][1]
+
+        else:
+            xdata = event.xdata
+            ydata = event.ydata
+            _xdata, _ydata = transform_to_wgs84(xdata, ydata,
+                                 self.left_ds.crs)
+            # Set location text
+            self.txtLocation.setText(f'{_ydata:.9f},{_xdata:.9f}')
+
         # Draw a point as a reference
-        self.left_p.plot(event.xdata, event.ydata,
+        self.left_p.plot(xdata, ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
-        self.right_p.plot(event.xdata, event.ydata,
+        self.right_p.plot(xdata, ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
 
         # Non-masked data
-        left_plot_sd = self.left_ds.sel(longitude=event.xdata,
-                                        latitude=event.ydata,
+        left_plot_sd = self.left_ds.sel(longitude=xdata,
+                                        latitude=ydata,
                                         method='nearest')
         # Sinlge year dataset
-        single_year_ds = self.single_year_ds.sel(longitude=event.xdata,
-                                                 latitude=event.ydata,
+        single_year_ds = self.single_year_ds.sel(longitude=xdata,
+                                                 latitude=ydata,
                                                  method='nearest')
 
         if left_plot_sd.chunks is not None:

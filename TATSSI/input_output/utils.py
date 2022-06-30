@@ -1,6 +1,7 @@
 
 import os
 import gdal
+import osr
 from osgeo import osr
 import numpy as np
 import xarray as xr
@@ -14,6 +15,66 @@ Utilities to handle data.
 import logging
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
+
+def transform_coordinates(x, y, src, tgt):
+    """
+    Transform coordinates from a source SRS to a target SRS
+    """
+    # Source spatial reference system
+    src = osr.SpatialReference()
+    src.ImportFromProj4(src)
+
+    # Target spatial reference system
+    tgt = osr.SpatialReference()
+    tgt.ImportFromProj4(tgt)
+
+    transform = osr.CoordinateTransformation(src, tgt)
+    coords = transform.TransformPoint(x, y)
+
+    return coords[0], coords[1]
+
+def transform_to_wgs84(x, y, crs):
+    """
+    Transform coordinates from CRS to WGS84
+    """
+    # Source spatial reference system
+    src = osr.SpatialReference()
+    src.ImportFromProj4(crs)
+
+    # Target
+    tgt = osr.SpatialReference()
+    tgt.ImportFromEPSG(4326)
+
+    transform = osr.CoordinateTransformation(src, tgt)
+    coords = transform.TransformPoint(x, y)
+
+    return coords[0], coords[1]
+
+def validate_coordinates(coordinates, data):
+    """
+    Validate that the coordinates in WGS84 are within the data bounding box
+    """
+    # Source spatial reference system
+    src = osr.SpatialReference()
+    src.ImportFromEPSG(4326)
+
+    # Target
+    tgt = osr.SpatialReference()
+    tgt.ImportFromProj4(data.crs)
+
+    transform = osr.CoordinateTransformation(src, tgt)
+    x = float(coordinates.split(',')[1])
+    y = float(coordinates.split(',')[0])
+    coords = transform.TransformPoint(x, y)
+
+    # Coordinates to validate
+    _x, _y = coords[0], coords[1]
+
+    if (data.longitude[0].values <= _x <= data.longitude[-1].values) and \
+       (data.latitude[-1].values <= _y <= data.latitude[0].values):
+           return True, coords
+    else:
+        return False, coords
 
 def get_geotransform_from_xarray(data):
     """
