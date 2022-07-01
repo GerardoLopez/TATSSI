@@ -988,7 +988,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.climatology.grid(axis='both', alpha=.3)
 
         # Redraw plot
-        plt.draw()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     @pyqtSlot(int)
     def __on_years_change(self,  index):
