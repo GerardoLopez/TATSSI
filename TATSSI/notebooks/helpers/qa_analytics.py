@@ -29,7 +29,7 @@ import json
 import collections
 from itertools import groupby as i_groupby
 from itertools import product as i_product
-import gdal, ogr
+from osgeo import gdal, ogr
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -497,8 +497,10 @@ class Analytics():
         # Create the percentage of data available mask
         # Get the per-pixel per-time step binary mask
         pct_data_available = (self.mask.sum(axis=0) * 100.0) / _time
-        pct_data_available.latitude.data = v.latitude.data
-        pct_data_available.longitude.data = v.longitude.data
+        # pct_data_available.latitude.data = v.latitude.data
+        # pct_data_available.longitude.data = v.longitude.data
+        pct_data_available.latitude.data[:] = v.latitude.data
+        pct_data_available.longitude.data[:] = v.longitude.data
         # Set the pct_data_available object
         self.pct_data_available = pct_data_available
 

@@ -28,7 +28,7 @@ from IPython.display import clear_output
 from IPython.display import display
 
 import json
-import gdal, ogr
+from osgeo import gdal, ogr
 from osgeo import gdal_array
 from osgeo import osr
 import pandas as pd

@@ -27,7 +27,7 @@ from IPython.display import clear_output
 from IPython.display import display
 
 import json
-import gdal, ogr
+from osgeo import gdal, ogr
 import pandas as pd
 import xarray as xr
 from rasterio import logging as rio_logging

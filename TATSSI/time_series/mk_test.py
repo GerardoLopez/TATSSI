@@ -10,9 +10,9 @@ from __future__ import division
 import numpy as np
 from scipy.stats import norm
 
-from numba import jit
+# from numba import jit
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def get_s(x, n):
     s = 0.0
     for k in range(n-1):

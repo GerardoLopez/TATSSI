@@ -1,6 +1,6 @@
 
 import os
-import gdal
+from osgeo import gdal
 import pandas as pd
 import rasterio as rio
 import logging

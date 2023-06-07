@@ -36,8 +36,9 @@ class Catalogue():
 
         # Appeears API services
         # Doc: https://lpdaacsvc.cr.usgs.gov/appeears/api/
-        self.SERVICES_URL = "https://lpdaacsvc.cr.usgs.gov/" + \
-                             "services/appeears-api/"
+        # self.SERVICES_URL = "https://lpdaacsvc.cr.usgs.gov/" + \
+        #                      "services/appeears-api/"
+        self.SERVICES_URL = "https://appeears.earthdatacloud.nasa.gov/api"
 
         # Set products catalogue file
         self.products_pkl = os.path.join(self.datadir, 'products.pkl')
@@ -60,10 +61,11 @@ class Catalogue():
         """
         Get all products available from Appeears
         """
-        url_str = '{}/product?format=json'.format(self.SERVICES_URL)
+        # url_str = '{}/product?format=json'.format(self.SERVICES_URL)
+        url_str = f'{self.SERVICES_URL}/product'
 
         if requests.get(url_str).status_code == 404:
-        #  HTTP 404, 404 Not Found
+            #  HTTP 404, 404 Not Found
             return None
 
         products = json.loads(requests.get(url_str).text,

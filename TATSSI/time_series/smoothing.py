@@ -1,6 +1,6 @@
 
 import os
-import gdal
+from osgeo import gdal
 import xarray as xr
 from dask.distributed import Client
 from dask.diagnostics import ProgressBar

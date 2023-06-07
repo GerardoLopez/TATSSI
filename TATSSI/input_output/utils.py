@@ -1,7 +1,7 @@
 
 import os
-import gdal
-import osr
+import osgeo.gdal as gdal
+import osgeo.osr as osr
 from osgeo import osr
 import numpy as np
 import xarray as xr
@@ -393,7 +393,7 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
             if _progressBar_val == 0:
                 progressBar.setValue(1)
             else:
-                progressBar.setValue(_progressBar_val)
+                progressBar.setValue(int(_progressBar_val))
 
         if start_row + block > rows:
             end_row = rows

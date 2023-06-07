@@ -1,6 +1,6 @@
 
 import os
-import gdal
+import osgeo.gdal as gdal
 from osgeo import osr
 import h5py
 
@@ -120,7 +120,7 @@ class Translate():
         projParams = [i for i in fileMetadata if 'ProjParams' in i][0]
         projParams = projParams.split('=')[1]
         # Array elements 13 and 14 are set to zero.
-        projParams = np.array(projParams[1:-1].split(',')).astype(np.float)
+        projParams = np.array(projParams[1:-1].split(',')).astype(np.float32)
         projParams = np.append(projParams, np.array([0.0, 0.0]))
         # Get sphere code
         sphere_code = [i for i in fileMetadata if 'SphereCode' in i][0]

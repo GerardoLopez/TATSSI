@@ -17,13 +17,14 @@ import pickle
 from pathlib import Path
 
 import requests
+from requests.auth import HTTPBasicAuth
 from concurrent import futures
 
 import logging
 logging.basicConfig(level=logging.INFO)
 
 LOG = logging.getLogger(__name__)
-BASE_URL = "http://e4ftl01.cr.usgs.gov/"
+BASE_URL = "https://e4ftl01.cr.usgs.gov/"
 
 class WebError (RuntimeError):
     """An exception for web issues"""
@@ -142,8 +143,10 @@ def download_tile_list(url, tiles):
 
 def download_tiles(url, session, username, password, output_dir):
 
+    basicAuth = HTTPBasicAuth(username,password)
     r1 = session.request('get', url)
-    r = session.get(r1.url, stream=True)
+    r = session.get(r1.url, auth=basicAuth, stream=True)
+
     fname = url.split("/")[-1]
     LOG.debug("Getting %s from %s(-> %s)" % (fname, url, r1.url))
 
@@ -275,7 +278,6 @@ def get_viirs_data(platform, product, tiles,
     # and start downloading them in parallel.
     dload_files = []
     with requests.Session() as s:
-        s.auth = (username, password)
         download_tile_patch = partial(download_tiles,
                                      session=s,
                                      output_dir=output_dir,

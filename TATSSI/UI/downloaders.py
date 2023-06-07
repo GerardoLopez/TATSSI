@@ -15,7 +15,7 @@ from TATSSI.qa.EOS.catalogue import Catalogue
 from TATSSI.download.modis_downloader import get_modis_data, LOG
 from TATSSI.download.viirs_downloader import get_viirs_data
 
-import ogr
+from osgeo import ogr
 from datetime import datetime
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic

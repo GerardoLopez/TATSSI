@@ -1,7 +1,7 @@
 
 import os
 from pathlib import Path
-import gdal
+import osgeo.gdal as gdal
 import xarray as xr
 from rasterio import logging as rio_logging
 import subprocess
@@ -183,6 +183,7 @@ class Generator():
                         # SDS name is the last elemtent of : separated string
                         sds_name = sds[0].split(':')[-1]
                         sds_name = sds_name.replace(" ", "_")
+                        sds_name = sds_name.replace("\"", "")
                     elif diver_name == 'HDF5':
                         # SDS name is the last elemtent of : separated string
                         # and last element of a / substring
@@ -236,7 +237,7 @@ class Generator():
                               extent=self.extent)
 
             if self.progressBar is not None:
-                self.progressBar.setValue((i/n_files) * 100.0)
+                self.progressBar.setValue(int((i/n_files) * 100.0))
 
         # Create layerstack of bands or subdatasets
         msg = f"Generating {self.product} layer stacks..."
@@ -455,7 +456,7 @@ class Generator():
                                bitField='ALL', createDir=True)
 
                 if self.progressBar is not None:
-                    self.progressBar.setValue((i/n_files) * 100.0)
+                    self.progressBar.setValue(int((i/n_files) * 100.0))
 
         for qa_layer in qa_layer_names:
             msg = (f"Generating {self.product} QA layer stacks "
@@ -533,8 +534,9 @@ class Generator():
 
         # TODO Create a text file with input files instead of wildcards
         # -input_file_list my_list.txt
-        conda_path = os.path.dirname(os.environ['CONDA_EXE'])
-        command = os.path.join(conda_path, 'gdalbuildvrt')
+        # conda_path = os.path.dirname(os.environ['CONDA_EXE'])
+        conda_path = os.environ['CONDA_PREFIX']
+        command = os.path.join(conda_path, 'bin', 'gdalbuildvrt')
 
         command = (f'{command} -separate -overwrite '
                    f'{fname} {output_fnames}')

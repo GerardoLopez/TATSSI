@@ -20,7 +20,7 @@ from TATSSI.UI.helpers.utils import *
 #from TATSSI.notebooks.helpers.time_series_analysis import \
 #        TimeSeriesAnalysis
 
-import ogr
+from osgeo import ogr
 import xarray as xr
 import numpy as np
 from rasterio import logging as rio_logging
@@ -31,7 +31,7 @@ from scipy.stats import norm
 import seaborn as sbn
 
 from dask.diagnostics import ProgressBar
-from numba import jit
+# from numba import jit
 
 import matplotlib
 matplotlib.use("Qt5Agg")
@@ -45,7 +45,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.io.shapereader import Reader as cReader
 from cartopy.feature import ShapelyFeature
-import osr
+from osgeo import osr
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSlot
@@ -100,6 +100,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.left_imshow = None
         self.right_imshow = None
         self.projection = None
+        self.point_left = []
+        self.point_right = []
+
         # decomposition objects
         self.trend = None
         self.seasonal = None
@@ -827,9 +830,14 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         self.climatology.clear()
 
         # Delete last reference point
-        if len(self.left_p.lines) > 0:
-            del self.left_p.lines[0]
-            del self.right_p.lines[0]
+        # if len(self.left_p.lines) > 0:
+        #     del self.left_p.lines[0]
+        #     del self.right_p.lines[0]
+        if len(self.point_left) > 0 or len(self.point_right) > 0:
+            _point_l = self.point_left.pop(0)
+            _point_l.remove()
+            _point_r = self.point_right.pop(0)
+            _point_r.remove()
 
         # Check whether the x and y data are coming from the user or
         # from the map plot click event
@@ -855,9 +863,9 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
             self.txtLocation.setText(f'{_ydata:.9f},{_xdata:.9f}')
 
         # Draw a point as a reference
-        self.left_p.plot(xdata, ydata,
+        self.point_left = self.left_p.plot(xdata, ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
-        self.right_p.plot(xdata, ydata,
+        self.point_right = self.right_p.plot(xdata, ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
 
         # Non-masked data
@@ -932,8 +940,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         else:
             _idx = ts_df.index.dayofyear
 
-        sbn.boxplot(_idx,
-                ts_df[self.data_vars.currentText()], ax=self.climatology)
+        sbn.boxplot(x=_idx,
+                y=ts_df[self.data_vars.currentText()], ax=self.climatology)
         # Plot year to analyse
         single_year_df = single_year_ds.to_dataframe()
         sbn.stripplot(x=single_year_df.index.dayofyear,
@@ -1112,10 +1120,11 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         # Seasonal decompose
         left_plot_sd = self.left_ds[:, int(_rows / 2), int(_cols / 2)]
         ts_df = left_plot_sd.to_dataframe()
+ 
         self.seasonal_decompose = seasonal_decompose(
                 ts_df[self.data_vars.currentText()],
                 model=self.model.currentText(),
-                freq=self.single_year_ds.shape[0],
+                period=self.single_year_ds.shape[0],
                 extrapolate_trend='freq')
 
         # Plot seasonal decompose
@@ -1132,8 +1141,8 @@ class TimeSeriesAnalysisUI(QtWidgets.QMainWindow):
         else:
             _idx = ts_df.index.dayofyear
 
-        sbn.boxplot(_idx,
-                ts_df[self.data_vars.currentText()],
+        sbn.boxplot(x=_idx,
+                y=ts_df[self.data_vars.currentText()],
                 ax=self.climatology)
         self.climatology.tick_params(axis='x', rotation=70)
 

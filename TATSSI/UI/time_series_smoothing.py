@@ -52,6 +52,7 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
 
         # imshow plots
         self.img_imshow = None
+        self.point = []
 
         # Hide progress bar
         self.progressBar.hide()
@@ -161,12 +162,12 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         Fill smoothing methods
         """
         # TODO document smoothing methods
-        # smoothing_methods = ['smoothn',
-        #                      'ExponentialSmoothing',
-        #                      'SimpleExpSmoothing',
-        #                      'Holt']
+        smoothing_methods = ['smoothn',
+                             'ExponentialSmoothing',
+                             'SimpleExpSmoothing',
+                             'Holt']
 
-        smoothing_methods = ['smoothn']
+        # smoothing_methods = ['smoothn']
 
         self.smoothing_methods.addItems(smoothing_methods)
 
@@ -183,11 +184,14 @@ class TimeSeriesSmoothingUI(QtWidgets.QMainWindow):
         self.ts_p.clear()
 
         # Delete last reference point
-        if len(self.img_p.lines) > 0:
-            del self.img_p.lines[0]
+        # if len(self.img_p.lines) > 0:
+        #    del self.img_p.lines[0]
+        if len(self.point) > 0:
+            _point = self.point.pop(0)
+            _point.remove()
 
         # Draw a point as a reference
-        self.img_p.plot(event.xdata, event.ydata,
+        self.point = self.img_p.plot(event.xdata, event.ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
 
         # Interpolated data to smooth

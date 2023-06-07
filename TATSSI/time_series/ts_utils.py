@@ -1,6 +1,6 @@
 
 import os
-import gdal
+import osgeo.gdal as gdal
 import numpy as np
 import xarray as xr
 from rasterio import logging as rio_logging

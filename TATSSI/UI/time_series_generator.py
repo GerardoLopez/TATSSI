@@ -16,11 +16,11 @@ from TATSSI.qa.EOS.catalogue import Catalogue
 from TATSSI.time_series.generator import Generator
 from TATSSI.UI.plot_time_series_generator import PlotExtent
 
-import gdal
+from osgeo import gdal
 import xarray as xr
 from glob import glob
 
-import ogr
+from osgeo import ogr
 from datetime import datetime
 import tempfile
 

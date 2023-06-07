@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 
-import gdal
+import osgeo.gdal as gdal
 
 import datetime as dt
 from scipy import stats

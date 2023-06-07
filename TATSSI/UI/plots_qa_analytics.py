@@ -22,7 +22,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import osr
+from osgeo import osr
 
 from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSlot
@@ -54,6 +54,8 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         # imshow plots
         self.left_imshow = None
         self.right_imshow = None
+        self.point_l = []
+        self.point_r = []
         self.projection = None
 
         # Set widgets connections with methods
@@ -246,15 +248,22 @@ class PlotInterpolation(QtWidgets.QMainWindow):
         self.ts_p.clear()
 
         # Delete last reference point
-        if len(self.left_p.lines) > 0:
-            del self.left_p.lines[0]
-            del self.right_p.lines[0]
+        # if len(self.left_p.lines) > 0:
+        #     del self.left_p.lines[0]
+        #     del self.right_p.lines[0]
+
+        if len(self.point_l) > 0:
+            _point = self.point_l.pop(0)
+            _point.remove()
+
+        if len(self.point_r) > 0:
+            _point = self.point_r.pop(0)
+            _point.remove()
 
         # Draw a point as a reference
-        # Draw a point as a reference
-        self.left_p.plot(event.xdata, event.ydata,
+        self.point_l = self.left_p.plot(event.xdata, event.ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
-        self.right_p.plot(event.xdata, event.ydata,
+        self.point_r = self.right_p.plot(event.xdata, event.ydata,
                 marker='o', color='red', markersize=7, alpha=0.7)
 
         # Non-masked data

@@ -19,7 +19,7 @@ from TATSSI.UI.plots_qa_analytics import PlotMaxGapLength
 from TATSSI.UI.plots_qa_analytics import PlotInterpolation
 from TATSSI.UI.plots_qa_analytics import PlotStatistics
 
-import ogr
+from osgeo import ogr
 from datetime import datetime
 
 from PyQt5 import QtCore, QtGui, QtWidgets, uic

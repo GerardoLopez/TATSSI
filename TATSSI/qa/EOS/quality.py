@@ -1,6 +1,6 @@
 
 import os
-import gdal
+import osgeo.gdal as gdal
 from glob import glob
 
 import json

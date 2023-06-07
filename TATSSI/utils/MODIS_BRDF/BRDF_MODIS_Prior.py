@@ -163,7 +163,7 @@ def GetDimSubDataset(File):
     return rows, cols
 
 #-------------------------------------------------------------------------#
-dataDir = "/data/MODIS/h10v08"
+dataDir = "/data/MODIS/h17v08/prior"
 
 doy = int(sys.argv[1])
 doy = f"{doy:03}"

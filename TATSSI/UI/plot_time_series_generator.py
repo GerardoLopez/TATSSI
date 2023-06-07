@@ -10,14 +10,14 @@ sys.path.append(str(src_dir.absolute()))
 
 from TATSSI.UI.helpers.utils import *
 
-import ogr
+from osgeo import ogr
 import numpy as np
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.io.shapereader import Reader as cReader
 from cartopy.feature import ShapelyFeature
-import osr
+from osgeo import osr
 
 import urllib
 
