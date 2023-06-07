@@ -1,0 +1,3 @@
+# packages in environment at /python/miniconda3/envs/satif:
+#
+# Name                    Version                   Build  Channel
