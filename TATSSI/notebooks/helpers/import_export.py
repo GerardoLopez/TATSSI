@@ -9,9 +9,9 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.input_output.translate import Translate
-from TATSSI.notebooks.helpers.utils import *
-from TATSSI.input_output.utils import *
+from TATSSI.TATSSI.input_output.translate import Translate
+from TATSSI.TATSSI.notebooks.helpers.utils import *
+from TATSSI.TATSSI.input_output.utils import *
 
 # Widgets
 import ipywidgets as widgets

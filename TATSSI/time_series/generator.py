@@ -11,11 +11,11 @@ from datetime import datetime as dt
 from glob import glob
 
 # Import TATSSI utils
-from TATSSI.input_output.utils import *
+from TATSSI.TATSSI.input_output.utils import *
 from .ts_utils import *
-from TATSSI.qa.EOS import catalogue
-from TATSSI.qa.EOS.quality import qualityDecoder
-from TATSSI.input_output.translate import Translate
+from TATSSI.TATSSI.qa.EOS import catalogue
+from TATSSI.TATSSI.qa.EOS.quality import qualityDecoder
+from TATSSI.TATSSI.input_output.translate import Translate
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -444,9 +444,7 @@ class Generator():
             if self.progressBar is not None:
                 msg = f"Decoding files for {qa_layer}..."
                 self.progressBar.setFormat(msg)
-
             qa_fnames = self.__get_qa_files(qa_layer, extension)
-
             # Number of files for this QA layer
             n_files = len(qa_fnames)
 
@@ -516,7 +514,6 @@ class Generator():
 
             if len(qa_fnames) == 0:
                 raise Exception(f"QA dir {qa_dir} is empty.")
-
         return qa_fnames
 
     def __generate_layerstack(self, dataset, extension):

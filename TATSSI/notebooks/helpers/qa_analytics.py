@@ -8,10 +8,10 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.generator import Generator
-from TATSSI.time_series.parmap import parmap
-from TATSSI.input_output.utils import *
-from TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.TATSSI.time_series.generator import Generator
+from TATSSI.TATSSI.time_series.parmap import parmap
+from TATSSI.TATSSI.input_output.utils import *
+from TATSSI.TATSSI.qa.EOS.catalogue import Catalogue
 
 # Widgets
 import ipywidgets as widgets
@@ -460,8 +460,8 @@ class Analytics():
             user_qa_fieldname = user_qa.replace(" ", "_").replace("/", "_")
 
             for j, qa_value in enumerate(self.user_qa_selection[user_qa]):
+                
                 qa_value_field_name = qa_value.replace(" ", "_")
-
                 qa_flag_val = self.qa_def[(self.qa_def.Name == user_qa) & 
                         (self.qa_def.Description == qa_value)].Value.iloc[0]
 

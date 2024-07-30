@@ -8,7 +8,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.UI.helpers.utils import *
+from TATSSI.TATSSI.UI.helpers.utils import *
 
 from osgeo import ogr
 import numpy as np
@@ -22,7 +22,7 @@ from osgeo import osr
 import urllib
 
 import matplotlib
-matplotlib.use("Qt5Agg")
+#matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \

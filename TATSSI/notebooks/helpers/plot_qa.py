@@ -8,13 +8,13 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.generator import Generator
-from TATSSI.input_output.translate import Translate
-from TATSSI.input_output.utils import *
-from TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.TATSSI.time_series.generator import Generator
+from TATSSI.TATSSI.input_output.translate import Translate
+from TATSSI.TATSSI.input_output.utils import *
+from TATSSI.TATSSI.qa.EOS.catalogue import Catalogue
 
-from TATSSI.download.modis_downloader import get_modis_data
-from TATSSI.download.viirs_downloader import get_viirs_data
+from TATSSI.TATSSI.download.modis_downloader import get_modis_data
+from TATSSI.TATSSI.download.viirs_downloader import get_viirs_data
 
 # Widgets
 import ipywidgets as widgets

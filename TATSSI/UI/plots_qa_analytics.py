@@ -8,13 +8,16 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.notebooks.helpers.time_series_interpolation import \
+from TATSSI.TATSSI.notebooks.helpers.time_series_interpolation import \
         TimeSeriesInterpolation
 
 import numpy as np
 
+# to handle this error: 'ImportError: Cannot load backend 'Qt5Agg' 
+# which requires the 'qt' interactive framework, as 'headless' is currently running' 
+# this error occurs when running TATSSI in loops without using UI
 import matplotlib
-matplotlib.use("Qt5Agg")
+#    matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \
