@@ -8,10 +8,10 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.input_output.translate import Translate
+from TATSSI.TATSSI.input_output.translate import Translate
 from .utils import *
-from TATSSI.time_series.analysis import Analysis
-from TATSSI.time_series.mk_test import mk_test
+from TATSSI.TATSSI.time_series.analysis import Analysis
+from TATSSI.TATSSI.time_series.mk_test import mk_test
 
 from statsmodels.tsa.seasonal import seasonal_decompose
 

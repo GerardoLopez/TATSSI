@@ -8,16 +8,16 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.smoothn import smoothn
-from TATSSI.time_series.analysis import Analysis
-from TATSSI.time_series.mk_test import mk_test
-from TATSSI.UI.plots_time_series_analysis import PlotAnomalies
-from TATSSI.input_output.utils import save_dask_array, \
+from TATSSI.TATSSI.time_series.smoothn import smoothn
+from TATSSI.TATSSI.time_series.analysis import Analysis
+from TATSSI.TATSSI.time_series.mk_test import mk_test
+from TATSSI.TATSSI.UI.plots_time_series_analysis import PlotAnomalies
+from TATSSI.TATSSI.input_output.utils import save_dask_array, \
         get_geotransform_from_xarray, validate_coordinates, \
         transform_to_wgs84
-from TATSSI.UI.helpers.utils import *
+from TATSSI.TATSSI.UI.helpers.utils import *
 
-#from TATSSI.notebooks.helpers.time_series_analysis import \
+#from TATSSI.TATSSI.notebooks.helpers.time_series_analysis import \
 #        TimeSeriesAnalysis
 
 from osgeo import ogr
@@ -34,7 +34,7 @@ from dask.diagnostics import ProgressBar
 # from numba import jit
 
 import matplotlib
-matplotlib.use("Qt5Agg")
+#matplotlib.use("Qt5Agg")
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvas

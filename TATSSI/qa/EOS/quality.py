@@ -13,7 +13,9 @@ import numpy as np
 
 # Import TATSSI utils
 from .catalogue import Catalogue
-from TATSSI.input_output.utils import save_to_file
+
+# from TATSSI.input_output.utils import save_to_file
+from TATSSI.TATSSI.input_output.utils import save_to_file
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -180,7 +182,8 @@ def qualityDecoder(inRst, product, qualityLayer,
         if not md['_FillValue'] == 'NA':
             fill_value = int(md['_FillValue'])
         else:
-            fill_value
+            # Fill value is NA
+            fill_value = -1 
 
     xr_d = xr.open_rasterio(inRst)
     if 'nodatavals' in xr_d.attrs:
@@ -245,4 +248,4 @@ def qualityDecoder(inRst, product, qualityLayer,
         save_to_file(dst_img, qualityDecoded, proj, gt, md,
                      fill_value, rat)
 
-    LOG.info(f"Decoding finished.")
+        LOG.info(f"Decoding finished.")

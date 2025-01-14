@@ -9,7 +9,7 @@ import logging
 from rasterio import logging as rio_logging
 import statsmodels.tsa.api as tsa
 
-from TATSSI.input_output.utils import save_dask_array
+from TATSSI.TATSSI.input_output.utils import save_dask_array
 
 from .ts_utils import *
 from .smoothn import *

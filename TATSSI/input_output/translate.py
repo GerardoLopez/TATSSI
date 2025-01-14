@@ -73,7 +73,6 @@ class Translate():
             gdal_warp_options = gdal.WarpOptions(
                     outputBounds=outputBounds,
                     format='MEM')
-
             # Warp to a memory dataset        
             src_dataset = gdal.Warp('', src_dataset,
                     options=gdal_warp_options)

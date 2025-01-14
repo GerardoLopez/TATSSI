@@ -8,11 +8,11 @@ current_dir = os.path.dirname(__file__)
 src_dir = Path(current_dir).parents[2]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.generator import Generator
-from TATSSI.time_series.smoothn import smoothn
-from TATSSI.input_output.translate import Translate
-from TATSSI.input_output.utils import *
-from TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.TATSSI.time_series.generator import Generator
+from TATSSI.TATSSI.time_series.smoothn import smoothn
+from TATSSI.TATSSI.input_output.translate import Translate
+from TATSSI.TATSSI.input_output.utils import *
+from TATSSI.TATSSI.qa.EOS.catalogue import Catalogue
 
 # Widgets
 import ipywidgets as widgets
@@ -45,7 +45,7 @@ class TimeSeriesInterpolation():
     """
     Class to plot a single time step and per-pixel time series
     """
-    def __init__(self, qa_analytics, isNotebook=True):
+    def __init__(self, qa_analytics, min_obs_ratio=0.2, isNotebook=True):
         """
         :param ts: TATSSI qa_analytics object
         """
@@ -59,6 +59,9 @@ class TimeSeriesInterpolation():
 
         # Mask
         self.mask = qa_analytics.mask
+
+        #
+        self.min_obs_ratio = min_obs_ratio
 
         # Data variables
         # set in __fill_data_variables
@@ -154,7 +157,9 @@ class TimeSeriesInterpolation():
         #tmp_ds[idx_no_data] = fill_value
 
         # Where are less than 20% of observations, use fill value
-        min_n_obs = int(tmp_ds.shape[0] * 0.2)
+        # min_n_obs = int(tmp_ds.shape[0] * 0.2)
+        min_n_obs = int(tmp_ds.shape[0] * self.min_obs_ratio)
+
         #idx_lt_two_obs = np.where(self.mask.sum(axis=0) < min_n_obs)
         tmp_ds = tmp_ds.where(self.mask.sum(axis=0) > min_n_obs, fill_value)
 
@@ -416,7 +421,7 @@ class TimeSeriesInterpolation():
 
         # For every interpol method selected by the user
         for method in self.interpolation_methods.value:
-            if method is 'smoothn':
+            if method == 'smoothn':
                 # Linear interpolation
                 y = right_plot_sd_masked.interpolate_na(dim='time').data
                 # Weigth obs

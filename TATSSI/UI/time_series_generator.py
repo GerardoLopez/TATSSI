@@ -8,13 +8,13 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.input_output.utils import has_subdatasets, \
+from TATSSI.TATSSI.input_output.utils import has_subdatasets, \
         get_subdatasets, get_formats
-from TATSSI.input_output.translate import Translate
+from TATSSI.TATSSI.input_output.translate import Translate
 #from TATSSI.notebooks.helpers.utils import *
-from TATSSI.qa.EOS.catalogue import Catalogue
-from TATSSI.time_series.generator import Generator
-from TATSSI.UI.plot_time_series_generator import PlotExtent
+from TATSSI.TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.TATSSI.time_series.generator import Generator
+from TATSSI.TATSSI.UI.plot_time_series_generator import PlotExtent
 
 from osgeo import gdal
 import xarray as xr
@@ -27,7 +27,7 @@ import tempfile
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSlot
 
-from TATSSI.UI.helpers.utils import *
+from TATSSI.TATSSI.UI.helpers.utils import *
 
 class TimeSeriesGeneratorUI(QtWidgets.QDialog):
     def __init__(self, parent=None):

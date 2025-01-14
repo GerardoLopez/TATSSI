@@ -36,7 +36,7 @@ class QTextEditLogger(logging.Handler):
 class DownloadersUI(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(DownloadersUI, self).__init__(parent)
-        uic.loadUi('downloaders.ui', self)
+        uic.loadUi('TATSSI/TATSSI/UI/downloaders.ui', self)
         self.parent = parent
 
         # Tile list

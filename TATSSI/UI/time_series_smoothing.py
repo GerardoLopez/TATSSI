@@ -10,9 +10,9 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.time_series.smoothn import smoothn
-from TATSSI.time_series.analysis import Analysis
-from TATSSI.time_series.smoothing import Smoothing
+from TATSSI.TATSSI.time_series.smoothn import smoothn
+from TATSSI.TATSSI.time_series.analysis import Analysis
+from TATSSI.TATSSI.time_series.smoothing import Smoothing
 #from TATSSI.notebooks.helpers.time_series_smoothing import \
 #        TimeSeriesSmoothing
 
@@ -20,7 +20,7 @@ from TATSSI.time_series.smoothing import Smoothing
 import statsmodels.tsa.api as tsa
 
 import matplotlib
-matplotlib.use("Qt5Agg")
+#matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT \

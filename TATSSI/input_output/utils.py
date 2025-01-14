@@ -191,6 +191,7 @@ def get_dst_dataset(dst_img, cols, rows, layers, dtype, proj, gt):
         dst_ds.SetGeoTransform(gt)
 
     except Exception as err:
+
         if err.err_level >= gdal.CE_Warning:
             print('Cannot write dataset: %s' % self.input.value)
             # Stop using GDAL exceptions
@@ -428,6 +429,7 @@ def save_dask_array(fname, data, data_var, method, tile_size=256,
                     xoff=0, yoff=start_row)
 
     dst_ds = None
+    del(dst_ds)
 
     if dask == True:
         pass

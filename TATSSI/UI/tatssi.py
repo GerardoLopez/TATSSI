@@ -12,21 +12,21 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.input_output.utils import *
-from TATSSI.UI.helpers.utils import *
+from TATSSI.TATSSI.input_output.utils import *
+from TATSSI.TATSSI.UI.helpers.utils import *
 
 # TATSSI UI dialogs
-from TATSSI.UI.downloaders import DownloadersUI
-from TATSSI.UI.time_series_generator import TimeSeriesGeneratorUI
-from TATSSI.UI.qa_analytics import QAAnalyticsUI
-from TATSSI.UI.time_series_smoothing import TimeSeriesSmoothingUI
-from TATSSI.UI.time_series_analysis import TimeSeriesAnalysisUI
-from TATSSI.UI.about import AboutUI
+from TATSSI.TATSSI.UI.downloaders import DownloadersUI
+from TATSSI.TATSSI.UI.time_series_generator import TimeSeriesGeneratorUI
+from TATSSI.TATSSI.UI.qa_analytics import QAAnalyticsUI
+from TATSSI.TATSSI.UI.time_series_smoothing import TimeSeriesSmoothingUI
+from TATSSI.TATSSI.UI.time_series_analysis import TimeSeriesAnalysisUI
+from TATSSI.TATSSI.UI.about import AboutUI
 
 class TATSSI_UI(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(TATSSI_UI, self).__init__()
-        uic.loadUi('tatssi.ui', self)
+        uic.loadUi('TATSSI/TATSSI/UI/tatssi.ui', self)
 
         # Connect actions
         self.actionDownloaders.triggered.connect(self._downloaders)

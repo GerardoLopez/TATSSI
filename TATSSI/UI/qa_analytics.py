@@ -8,16 +8,16 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 src_dir = Path(current_dir).parents[1]
 sys.path.append(str(src_dir.absolute()))
 
-from TATSSI.input_output.utils import *
-from TATSSI.notebooks.helpers.utils import *
-from TATSSI.notebooks.helpers.qa_analytics import Analytics
-from TATSSI.notebooks.helpers.time_series_interpolation import \
+from TATSSI.TATSSI.input_output.utils import *
+from TATSSI.TATSSI.notebooks.helpers.utils import *
+from TATSSI.TATSSI.notebooks.helpers.qa_analytics import Analytics
+from TATSSI.TATSSI.notebooks.helpers.time_series_interpolation import \
         TimeSeriesInterpolation
-from TATSSI.qa.EOS.catalogue import Catalogue
-from TATSSI.UI.helpers.utils import *
-from TATSSI.UI.plots_qa_analytics import PlotMaxGapLength
-from TATSSI.UI.plots_qa_analytics import PlotInterpolation
-from TATSSI.UI.plots_qa_analytics import PlotStatistics
+from TATSSI.TATSSI.qa.EOS.catalogue import Catalogue
+from TATSSI.TATSSI.UI.helpers.utils import *
+from TATSSI.TATSSI.UI.plots_qa_analytics import PlotMaxGapLength
+from TATSSI.TATSSI.UI.plots_qa_analytics import PlotInterpolation
+from TATSSI.TATSSI.UI.plots_qa_analytics import PlotStatistics
 
 from osgeo import ogr
 from datetime import datetime
