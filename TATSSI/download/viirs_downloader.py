@@ -31,12 +31,11 @@ class WebError (RuntimeError):
     def __init__(self, arg):
         self.args = arg
 
-def read_config():
+def read_config(fname):
     """
-    Read downloaders config file
+    Read downloaders config file from fname
+    fname: path of the config file that contains the EARTH DATA LOGIN creedentials set by the user
     """
-    downloaders_dir = os.path.dirname(__file__)
-    fname = os.path.join(downloaders_dir, 'config.json')
     with open(fname) as f:
         credentials = json.load(f)
 
@@ -188,9 +187,8 @@ def required_files (url_list, output_dir):
     return to_download
     
 def get_viirs_data(platform, product, tiles, 
-                   output_dir, start_date,
+                   output_dir, config_cred, start_date,
                    end_date=None, n_threads=5,
-                   username=None, password=None,
                    progressBar=None,
                    use_cache=False):
     """The main workhorse of VIIRS downloading. The products are specified
@@ -202,10 +200,7 @@ def get_viirs_data(platform, product, tiles,
 
     Parameters
     -----------
-    usearname: str
-        The username that is required to download data from the VIIRS archive.
-    password: str
-        The password required to download data from the VIIRS archive.
+    config_cred: json with the BASE_url, username and password for VIIRS data
     platform: str
         The platform, MOLT, MOLA or MOTA. This basically relates to the sensor
         used (or if a combination of AQUA & TERRA is used)
@@ -228,11 +223,7 @@ def get_viirs_data(platform, product, tiles,
 
     """
         # Read config
-    BASE_URL, _username, _password = read_config()
-    if username is not None:
-        username = _username
-    if password is not None:
-        password = _password
+    BASE_URL, username, password = read_config(config_cred)
 
     # Ensure the platform is OK
     assert platform.upper() in ["VIIRS"], \
@@ -282,7 +273,7 @@ def get_viirs_data(platform, product, tiles,
                                      session=s,
                                      output_dir=output_dir,
                                      username=username,
-                                     password=password )
+                                     password=password)
         
         with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
             for fich in executor.map(download_tile_patch, gr):
