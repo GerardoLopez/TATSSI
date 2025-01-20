@@ -213,7 +213,14 @@ def qualityDecoder(inRst, product, qualityLayer,
                 # the QA layer definition
                 _unique = np.unique(inArray)
                 mask = np.isin(_unique, qa_layer_def.Value.values)
-                fill_value = _unique[~mask][0]
+
+                # Added this line to process MCD64A1 values no fill_value in the metadata
+                if _unique[~mask].size > 0:
+                    fill_value = _unique[~mask][0]
+
+                else:
+                    # fallback value when all pixel values are valid QA flags
+                    fill_value = -1
 
     # Check if there are negative values
     inArray[inArray < 0] = fill_value
