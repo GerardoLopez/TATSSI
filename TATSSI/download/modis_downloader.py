@@ -123,6 +123,7 @@ def download_tile_list(url, tiles):
     """
     For a particular product and date, obtain the data tile URLs.
     """
+
     if not isinstance(tiles, type([])):
         tiles = [tiles]
     while True:
@@ -139,7 +140,26 @@ def download_tile_list(url, tiles):
                     and line.find("BROWSE") < 0:
                 fname = line.split("href=")[1].split('"')[1]
                 grab.append(url + "/" + fname)
-    return grab
+
+    def get_tile(url: str) -> str:
+        hdf_file = url.split("/")[-1]
+        return hdf_file.split(".")[2]
+
+    def get_produced_date(url: str) -> int:
+        hdf_file = url.split("/")[-1]
+        return int(hdf_file.split(".")[4])
+
+    tiles_dict = {}
+
+    for url_for_tile in grab:
+        tile = get_tile(url_for_tile)
+        produced_date = get_produced_date(url_for_tile)
+        if tile not in tiles_dict or produced_date > tiles_dict[tile]['produced_date']:
+            tiles_dict[tile] = {'url': url_for_tile, 'produced_date': produced_date}
+
+    nodup_grab = [info['url'] for info in tiles_dict.values()]
+
+    return nodup_grab
 
 def download_tiles(url, session, username, password, output_dir):
 
