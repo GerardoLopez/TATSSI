@@ -251,7 +251,8 @@ class Generator():
 
         # For the associated product layers, decode the 
         # corresponding bands or sub datasets
-        self.__decode_qa(extension)
+        if self.product not in ('MCD43A2.061', 'MCD64A1.061'):
+            self.__decode_qa(extension)
 
     def __get_layerstacks(self):
         """
