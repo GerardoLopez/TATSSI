@@ -62,14 +62,34 @@ class Translate():
             src_dataset.SetProjection(proj)
             src_dataset.SetGeoTransform(gt)
 
+        # No subsetting needed
+        if self.extent is None:
+            return src_dataset
+
+        # Get extent that snaps with the existing grid
+        w, e, s, n = self.extent
+        gt = src_dataset.GetGeoTransform()
+
+        # Get pixels associated with the extent
+        w_pixel = int((w - gt[0]) / gt[1])
+        e_pixel = int((e - gt[0]) / gt[1])
+        s_pixel = int((s - gt[3]) / gt[5])
+        n_pixel = int((n - gt[3]) / gt[5])
+
+        # Snapped coordinates
+        w_snapped = gt[0] + (w_pixel * gt[1])
+        e_snapped = gt[0] + (e_pixel * gt[1])
+        s_snapped = gt[3] + (s_pixel * gt[5])
+        n_snapped = gt[3] + (n_pixel * gt[5])
+
         if not self.extent is None:
             # GDAL warp option
             # outputBounds (minX, minY, maxX, maxY)
             # self.extent is (w, e, s, n)
-            outputBounds = (self.extent[0],
-                            self.extent[2],
-                            self.extent[1],
-                            self.extent[3])
+            outputBounds = (w_snapped,
+                            e_snapped,
+                            s_snapped,
+                            n_snapped)
             gdal_warp_options = gdal.WarpOptions(
                     outputBounds=outputBounds,
                     format='MEM')

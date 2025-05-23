@@ -196,7 +196,7 @@ class TimeSeriesInterpolation():
                     method=method)
 
             # Set data type to match the original (non-interpolated)
-            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
+            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(np.float32)
             # Copy metadata attributes
             tmp_interpol_ds.attrs = tmp_ds.attrs
 
@@ -416,7 +416,7 @@ class TimeSeriesInterpolation():
 
         # For every interpol method selected by the user
         for method in self.interpolation_methods.value:
-            if method is 'smoothn':
+            if method == 'smoothn':
                 # Linear interpolation
                 y = right_plot_sd_masked.interpolate_na(dim='time').data
                 # Weigth obs
