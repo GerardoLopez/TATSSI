@@ -197,11 +197,21 @@ class TimeSeriesInterpolation():
                 tmp_interpol_ds.data = tmp_smoothed
 
             else:
+                # Check for time index duplicates if any print it out
+                time = tmp_ds['time'].compute()
+                time_index = pd.to_datetime(time)
+                duplicates = time_index.duplicated()
+                if duplicates.any():
+                    print(f"Duplicate time values found for {data_var}!")
+                    print(time_index[duplicates])
+                else:
+                    print(f"No duplicate time values for {data_var}")
+
                 tmp_interpol_ds = tmp_ds.interpolate_na(dim='time',
                     method=method)
 
-            # Set data type to match the original (non-interpolated)
-            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(dtype)
+            # Set data type to float32
+            tmp_interpol_ds.data = tmp_interpol_ds.data.astype(np.float32)
             # Copy metadata attributes
             tmp_interpol_ds.attrs = tmp_ds.attrs
 
