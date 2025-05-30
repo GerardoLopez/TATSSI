@@ -87,8 +87,8 @@ class Translate():
             # outputBounds (minX, minY, maxX, maxY)
             # self.extent is (w, e, s, n)
             outputBounds = (w_snapped,
-                            e_snapped,
                             s_snapped,
+                            e_snapped,
                             n_snapped)
             gdal_warp_options = gdal.WarpOptions(
                     outputBounds=outputBounds,
